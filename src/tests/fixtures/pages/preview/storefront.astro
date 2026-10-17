@@ -1,0 +1,8 @@
+---
+import { Marketplace } from '../../../../storefront/marketplace';
+import { isLocalDemo } from '../../../../backend/context';
+if (!isLocalDemo()) return new Response('Local demo is disabled.', { status: 404 });
+const pagination = Astro.url.searchParams.get('pagination') === 'infinite' ? 'infinite' : 'pages';
+const limit = Number(Astro.url.searchParams.get('limit')) || 12;
+---
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><meta name="robots" content="noindex,nofollow"/><title>Showroom preview</title><style>body{margin:0;background:#f4f6f1}main{max-width:1200px;margin:30px auto;background:white;border:1px solid #e3e8df;border-radius:14px;overflow:clip}.banner{font:13px system-ui;padding:14px 24px;background:#edf4ef;color:#196947}a{color:inherit}@media(max-width:600px){main{margin:0;border:0;border-radius:0}}</style></head><body><main><div class="banner">Local storefront preview · Only your published real listings appear. <a href="/preview">Back to dashboard</a></div><Marketplace client:only="react" pagination={pagination} limit={limit}/></main></body></html>

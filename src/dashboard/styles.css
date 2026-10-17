@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+  :root {
+    --background: 80 14% 97%;
+    --foreground: 145 18% 15%;
+    --primary: 150 59% 25%;
+    --border: 100 10% 87%;
+  }
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Trebuchet MS", system-ui, sans-serif;
+    margin: 0;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+  input[type="number"] {
+    appearance: textfield;
+  }
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+@layer components {
+  .surface {
+    @apply rounded-xl border bg-white;
+  }
+  .field {
+    @apply flex h-10 w-full rounded-md border bg-white px-3 py-2 text-sm placeholder:text-muted-foreground disabled:opacity-50;
+  }
+  .label {
+    @apply mb-2 block text-sm font-medium;
+  }
+  .section-heading {
+    @apply text-lg font-semibold tracking-tight;
+  }
+  .hint {
+    @apply text-sm text-muted-foreground;
+  }
+}

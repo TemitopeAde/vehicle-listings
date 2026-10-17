@@ -1,0 +1,14 @@
+---
+import { context } from '../../../../backend/context';
+import { getVehicle } from '../../../../backend/services/vehicle-service';
+import { VehicleDetail } from '../../../../storefront/vehicle-detail';
+import { money } from '../../../../shared/utils';
+let vehicle;
+try { vehicle = await getVehicle(await context(), Astro.params.slug ?? '', true); }
+catch { return new Response('Vehicle not found or no Wix site session supplied.', { status: 404 }); }
+const canonical = new URL(`/cars/${vehicle.slug}`, Astro.url.origin).href;
+// Social previews and structured data need absolute image URLs.
+const images = vehicle.media.map((m) => new URL(m.url, Astro.url.origin).href);
+const structured = { '@context':'https://schema.org', '@type':'Vehicle', name:vehicle.title, brand:{'@type':'Brand',name:vehicle.make}, model:vehicle.model, vehicleModelDate:String(vehicle.year), vehicleTransmission:vehicle.transmission, fuelType:vehicle.fuel, mileageFromOdometer:{'@type':'QuantitativeValue',value:vehicle.mileage,unitCode:vehicle.mileageUnit==='km'?'KMT':'SMI'}, image:images, description:vehicle.description, offers:{'@type':'Offer',price:vehicle.price,priceCurrency:vehicle.currency,availability:vehicle.status==='sold'?'https://schema.org/SoldOut':'https://schema.org/InStock',url:canonical} };
+---
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><title>{vehicle.seoTitle||vehicle.title}</title><meta name="description" content={vehicle.seoDescription||vehicle.description.slice(0,170)}/><link rel="canonical" href={canonical}/><meta property="og:title" content={vehicle.seoTitle||vehicle.title}/><meta property="og:description" content={vehicle.seoDescription||vehicle.description.slice(0,170)}/><meta property="og:url" content={canonical}/><meta property="og:type" content="product"/>{images[0]&&<meta property="og:image" content={images[0]}/>}<script type="application/ld+json" set:html={JSON.stringify(structured).replace(/</g,'\\u003c')}/><style>body{margin:0;padding:24px;background:#fff;color:#243b2e;font-family:system-ui,sans-serif}main{max-width:1180px;margin:auto}</style></head><body><main class="autohaus"><header><h1>{vehicle.title}</h1><p>{money(vehicle.price,vehicle.currency)} · {vehicle.location}</p></header><section><p>{vehicle.description}</p></section><VehicleDetail slug={vehicle.slug} initialVehicle={vehicle} consent={false} onRelated={undefined} client:load/></main></body></html>

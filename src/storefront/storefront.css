@@ -1,0 +1,323 @@
+@config "../../tailwind.storefront.config.mjs";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+.autohaus {
+  --accent: #196947;
+  --radius: 12px;
+  --sf-bg: #fff;
+  --sf-fg: #243b2e;
+  --sf-muted: #64756b;
+  --sf-subtle: #f3f6f3;
+  --sf-border: #dce4de;
+  --sf-danger: #8c3327;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 24px;
+  background: var(--sf-bg);
+  color: var(--sf-fg);
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  container-type: inline-size;
+}
+.autohaus *,
+.autohaus *::before,
+.autohaus *::after {
+  box-sizing: border-box;
+  border: 0 solid var(--sf-border);
+}
+.autohaus :is(h2, h3, h4, p, dl, dd, ul) {
+  margin: 0;
+}
+.autohaus ul {
+  padding: 0;
+  list-style: none;
+}
+.autohaus :is(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+}
+.autohaus img {
+  display: block;
+  max-width: 100%;
+}
+.autohaus a {
+  color: inherit;
+  text-decoration: none;
+}
+.autohaus input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.autohaus input[type="number"]::-webkit-inner-spin-button,
+.autohaus input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.autohaus summary {
+  cursor: pointer;
+}
+@container (min-width: 651px) {
+  .autohaus .sf-detail {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  }
+}
+.autohaus .sf-related {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+}
+/* A container can't query its own width, so the root's padding follows the viewport. */
+@media (max-width: 650px) {
+  .autohaus {
+    padding: 16px;
+  }
+}
+/* Narrow widgets (phones, Wix mobile view): drop secondary UI and tighten the layout. */
+@container (max-width: 650px) {
+  .autohaus.autohaus .sf-hide-sm {
+    display: none !important;
+  }
+  .autohaus.autohaus .sf-related {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(240px, 80%);
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .autohaus.autohaus .sf-push-sm {
+    margin-left: auto;
+  }
+  .autohaus.autohaus [data-filters-open="false"] .sf-collapsible {
+    display: none !important;
+  }
+  .autohaus.autohaus .sf-title {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  .autohaus.autohaus .sf-detail-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .autohaus.autohaus .sf-detail-header > .sf-price-block {
+    margin-left: 0;
+    grid-auto-flow: column;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+@container (min-width: 651px) {
+  .autohaus.autohaus .sf-show-sm {
+    display: none !important;
+  }
+}
+/* Shopping layout: filter sidebar beside the results, like a classifieds results page. */
+.autohaus .sf-shop {
+  display: grid;
+  align-items: start;
+  gap: 1.5rem;
+}
+.autohaus .sf-sidebar {
+  min-width: 0;
+}
+.autohaus .sf-sidebar summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.autohaus.autohaus input.sf-range[type="range"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 1.5rem;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+.autohaus.autohaus input.sf-range[type="range"]::-webkit-slider-runnable-track {
+  height: 0;
+  background: transparent;
+  border: 0;
+}
+.autohaus.autohaus input.sf-range[type="range"]::-webkit-slider-thumb {
+  pointer-events: auto;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--sf-border);
+  cursor: pointer;
+}
+.autohaus.autohaus input.sf-range[type="range"]::-moz-range-track {
+  height: 0;
+  background: transparent;
+  border: 0;
+}
+.autohaus.autohaus input.sf-range[type="range"]::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--accent);
+  cursor: pointer;
+}
+.autohaus.autohaus input.sf-range[type="range"]:focus-visible::-webkit-slider-thumb,
+.autohaus.autohaus input.sf-range[type="range"]:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--accent);
+}
+@container (min-width: 860px) {
+  .autohaus .sf-shop:has(.sf-sidebar) {
+    grid-template-columns: 16rem minmax(0, 1fr);
+    column-gap: 1.75rem;
+  }
+  .autohaus .sf-sidebar {
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow: auto;
+    border-right: 1px solid var(--sf-border);
+    padding-right: 1.25rem;
+  }
+}
+
+/* Higher specificity than scoped utilities keeps explicit settings authoritative. */
+.autohaus.autohaus {
+  text-decoration: var(--sf-body-decoration, none);
+  color: var(--sf-body-color, var(--sf-fg));
+}
+.autohaus.autohaus [data-sf="card"] {
+  background: var(--sf-card-bg, var(--sf-bg));
+}
+.autohaus.autohaus :is(input:not([type="checkbox"]), select, textarea) {
+  background: var(--sf-input-bg, var(--sf-bg));
+}
+.autohaus.autohaus :is(input, textarea)::placeholder {
+  color: var(--sf-placeholder, var(--sf-muted));
+}
+.autohaus.autohaus [data-sf="button"] {
+  background: var(--sf-button-bg, var(--accent));
+}
+.autohaus.autohaus [data-sf="button"]:hover {
+  background: var(--sf-button-hover, var(--sf-button-bg, var(--accent)));
+}
+.autohaus.autohaus [data-sf="secondary-button"] {
+  background: var(--sf-secondary-bg, transparent);
+}
+.autohaus.autohaus [data-sf="secondary-button"]:hover {
+  background: var(--sf-secondary-hover, var(--sf-subtle));
+}
+.autohaus.autohaus [data-sf="badge"] {
+  background: var(--sf-badge-bg, var(--sf-subtle));
+}
+
+.autohaus.autohaus[data-font-roles~="brand"] [data-sf="brand"] {
+  font: var(--sf-brand-font);
+  text-decoration: var(--sf-brand-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="brand"] [data-sf="brand"] {
+  color: var(--sf-brand-color);
+}
+
+.autohaus.autohaus[data-font-roles~="heading"]
+  :is([data-sf="heading"], h2, h3:not([data-sf="vehicle-title"]), h4) {
+  font: var(--sf-heading-font);
+  text-decoration: var(--sf-heading-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="heading"]
+  :is([data-sf="heading"], h2, h3:not([data-sf="vehicle-title"]), h4) {
+  color: var(--sf-heading-color);
+}
+
+.autohaus.autohaus[data-font-roles~="description"] [data-sf="description"] {
+  font: var(--sf-description-font);
+  text-decoration: var(--sf-description-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="description"] [data-sf="description"] {
+  color: var(--sf-description-color);
+}
+
+.autohaus.autohaus[data-font-roles~="label"] :is(label, summary, th, dt) {
+  font: var(--sf-label-font);
+  text-decoration: var(--sf-label-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="label"] :is(label, summary, th, dt) {
+  color: var(--sf-label-color);
+}
+
+.autohaus.autohaus[data-font-roles~="input"]
+  :is(input:not([type="checkbox"]), select, textarea) {
+  font: var(--sf-input-font);
+  text-decoration: var(--sf-input-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="input"]
+  :is(input:not([type="checkbox"]), select, textarea) {
+  color: var(--sf-input-color);
+}
+
+.autohaus.autohaus[data-font-roles~="vehicle-title"] [data-sf="vehicle-title"] {
+  font: var(--sf-vehicle-title-font);
+  text-decoration: var(--sf-vehicle-title-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="vehicle-title"]
+  [data-sf="vehicle-title"] {
+  color: var(--sf-vehicle-title-color);
+}
+
+.autohaus.autohaus[data-font-roles~="vehicle-meta"] [data-sf="vehicle-meta"] {
+  font: var(--sf-vehicle-meta-font);
+  text-decoration: var(--sf-vehicle-meta-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="vehicle-meta"] [data-sf="vehicle-meta"] {
+  color: var(--sf-vehicle-meta-color);
+}
+
+.autohaus.autohaus[data-font-roles~="price"] [data-sf="price"] {
+  font: var(--sf-price-font);
+  text-decoration: var(--sf-price-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="price"] [data-sf="price"] {
+  color: var(--sf-price-color);
+}
+
+.autohaus.autohaus[data-font-roles~="badge"] [data-sf="badge"] {
+  font: var(--sf-badge-font);
+  text-decoration: var(--sf-badge-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="badge"] [data-sf="badge"] {
+  color: var(--sf-badge-color);
+}
+
+.autohaus.autohaus[data-font-roles~="button"] [data-sf="button"] {
+  font: var(--sf-button-font);
+  text-decoration: var(--sf-button-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="button"] [data-sf="button"] {
+  color: var(--sf-button-color);
+}
+
+.autohaus.autohaus[data-font-roles~="secondary-button"]
+  [data-sf="secondary-button"] {
+  font: var(--sf-secondary-button-font);
+  text-decoration: var(--sf-secondary-button-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="secondary-button"]
+  [data-sf="secondary-button"] {
+  color: var(--sf-secondary-button-color);
+}
+
+.autohaus.autohaus[data-font-roles~="message"]
+  :is([data-sf="message"], [role="status"], [role="alert"]) {
+  font: var(--sf-message-font);
+  text-decoration: var(--sf-message-decoration, none);
+}
+.autohaus.autohaus[data-color-roles~="message"]
+  :is([data-sf="message"], [role="status"], [role="alert"]) {
+  color: var(--sf-message-color);
+}

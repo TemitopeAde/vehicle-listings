@@ -1,0 +1,52 @@
+.fallbackDirection:not([dir]) {
+  direction: ltr;
+}
+.root {
+  --display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background: #fff;
+  color: #243b2e;
+  padding: 24px;
+  gap: 12px;
+  pointer-events: auto;
+}
+.heading {
+  box-sizing: border-box;
+  font-family: system-ui, sans-serif;
+  font-size: 32px;
+  font-weight: 650;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.description {
+  box-sizing: border-box;
+  font-family: system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.inventory {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border-radius: 12px;
+  border: 1px solid #dce4de;
+  background: #fff;
+  color: #243b2e;
+}
+/* Phones: the widget inside has its own padding, so don't stack another 48px around it. */
+@media (max-width: 650px) {
+  .root {
+    padding: 8px;
+  }
+  .heading {
+    font-size: 24px;
+  }
+  .inventory {
+    border-radius: 8px;
+  }
+}

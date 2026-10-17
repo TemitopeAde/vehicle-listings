@@ -1,0 +1,20 @@
+.fallbackDirection:not([dir]) {
+  direction: var(--wix-opt-in-direction);
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  background: #fff;
+  color: #243b2e;
+  pointer-events: auto;
+}
+
+.form {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}

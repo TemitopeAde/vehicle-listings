@@ -1,0 +1,520 @@
+import { useEffect, useRef, useState } from "react";
+import { useForm, type FieldErrors } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { ArrowLeft, Save, Globe } from "lucide-react";
+import {
+  vehicleInput,
+  type Vehicle,
+  type VehicleInput,
+  type Dealer,
+} from "../shared/schemas";
+import { api } from "./api";
+type Client = <T>(
+  route: string,
+  body?: unknown,
+  method?: string,
+) => Promise<T>;
+import { VehicleSections } from "./components/vehicle-sections";
+import { useResource } from "./hooks";
+import { Button, cn } from "./components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "./components/ui/dialog";
+import { Badge } from "./components/common";
+import { useVehicleUploads } from "./use-vehicle-uploads";
+import type { UploadDependencies } from "./media-upload";
+import { isCommercial, isTrailer } from "../shared/vehicle-options";
+const sections = [
+  "Basics",
+  "Pricing",
+  "Specifications",
+  "Features",
+  "Media",
+  "Seller",
+  "Description & SEO",
+  "Publishing",
+];
+type FormInput = z.input<typeof vehicleInput>;
+const basicsFields = [
+  "title",
+  "category",
+  "make",
+  "model",
+  "year",
+  "condition",
+  "mileageUnit",
+] as const satisfies readonly (keyof VehicleInput)[];
+const pricingFields = ["price", "currency"] as const satisfies readonly (keyof VehicleInput)[];
+function specificationFields(category: string): (keyof VehicleInput)[] {
+  const fields: (keyof VehicleInput)[] = ["bodyStyle"];
+  if (!isTrailer(category)) fields.push("transmission", "fuel", "doors", "seats");
+  if (isCommercial(category)) fields.push("axles");
+  return fields;
+}
+function requiredFields(step: number, category: string): (keyof VehicleInput)[] {
+  if (step === 0) return [...basicsFields];
+  if (step === 1) return [...pricingFields];
+  if (step === 2) return specificationFields(category);
+  return [];
+}
+function blankField(value: unknown) {
+  return (
+    value === "" ||
+    value === undefined ||
+    value === null ||
+    (typeof value === "number" && Number.isNaN(value))
+  );
+}
+function requiredMessage(name: keyof VehicleInput, category: string) {
+  switch (name) {
+    case "title":
+      return "Enter a listing title.";
+    case "category":
+      return "Select vehicle category.";
+    case "make":
+      return "Select make.";
+    case "model":
+      return "Enter the model.";
+    case "year":
+      return "Select model year.";
+    case "condition":
+      return "Select condition.";
+    case "mileageUnit":
+      return "Select mileage unit.";
+    case "price":
+      return "Enter the asking price.";
+    case "currency":
+      return "Select currency.";
+    case "bodyStyle":
+      return category === "car" ? "Select body style." : "Select body type.";
+    case "transmission":
+      return "Select transmission.";
+    case "fuel":
+      return "Select fuel.";
+    case "doors":
+      return "Select doors.";
+    case "seats":
+      return "Select seats.";
+    case "axles":
+      return "Select axles.";
+    default:
+      return "Complete this field.";
+  }
+}
+function stepForField(name: string) {
+  if (
+    (
+      [
+        "title",
+        "category",
+        "vin",
+        "make",
+        "model",
+        "trim",
+        "year",
+        "condition",
+        "firstRegistration",
+        "mileage",
+        "mileageUnit",
+      ] as string[]
+    ).includes(name)
+  )
+    return 0;
+  if (
+    (["price", "currency", "originalPrice", "negotiable", "taxDisclaimer"] as string[]).includes(
+      name,
+    )
+  )
+    return 1;
+  if (
+    (
+      [
+        "bodyStyle",
+        "transmission",
+        "fuel",
+        "drivetrain",
+        "engineSize",
+        "horsepower",
+        "doors",
+        "seats",
+        "axles",
+        "grossWeight",
+        "payload",
+        "bodyLength",
+        "exteriorColor",
+        "interiorColor",
+        "emissionClass",
+      ] as string[]
+    ).includes(name)
+  )
+    return 2;
+  if (name === "features") return 3;
+  if (name === "media" || name === "videos") return 4;
+  if (name === "dealerId" || name === "location") return 5;
+  if (name === "description" || name === "seoTitle" || name === "seoDescription")
+    return 6;
+  return 7;
+}
+export function VehicleEditor({
+  vehicle,
+  onBack,
+  lockedDealer,
+  client = api,
+  backLabel = "Back to inventory",
+  submitDisabled = false,
+  uploadDependencies,
+  showFeatured = true,
+}: {
+  vehicle: Vehicle | null;
+  onBack?: () => void;
+  lockedDealer?: Pick<Dealer, "_id" | "businessName" | "approvalState" | "location">;
+  client?: Client;
+  backLabel?: string;
+  /** The form stays usable, but saving and publishing stay off. */
+  submitDisabled?: boolean;
+  /** Replaces how a photo or video reaches the Media Manager. */
+  uploadDependencies?: Partial<UploadDependencies>;
+  showFeatured?: boolean;
+}) {
+  const [section, setSection] = useState(0),
+    [saved, setSaved] = useState(vehicle),
+    [busy, setBusy] = useState(false),
+    [confirm, setConfirm] = useState("");
+  const createKey = useRef("");
+  const dealerList = useResource<{ items: Dealer[] }>(
+    lockedDealer || submitDisabled ? null : "dealers",
+    client,
+  );
+  const dealers = lockedDealer
+    ? {
+        data: {
+          items: [
+            {
+              _id: lockedDealer._id,
+              businessName: lockedDealer.businessName,
+              approvalState: lockedDealer.approvalState,
+              location: lockedDealer.location,
+            } as Dealer,
+          ],
+        },
+        error: "",
+      }
+    : dealerList;
+  const form = useForm<FormInput, unknown, VehicleInput>({
+    resolver: zodResolver(vehicleInput),
+    defaultValues: vehicle
+      ? vehicleInput.parse(
+          Object.fromEntries(
+            Object.keys(vehicleInput.shape).map((k) => [
+              k,
+              vehicle[k as keyof Vehicle],
+            ]),
+          ),
+        )
+      : {
+          title: "",
+          make: "",
+          model: "",
+          currency: "USD",
+          condition: "" as FormInput["condition"],
+          mileageUnit: "" as FormInput["mileageUnit"],
+          category: "" as FormInput["category"],
+          bodyStyle: "" as FormInput["bodyStyle"],
+          transmission: "" as FormInput["transmission"],
+          fuel: "" as FormInput["fuel"],
+          doors: Number.NaN,
+          seats: Number.NaN,
+          features: [],
+          media: [],
+          videos: [],
+          description: "",
+          dealerId: lockedDealer?._id ?? "",
+          location: lockedDealer?.location ?? "",
+        },
+  });
+  const uploads = useVehicleUploads(form, uploadDependencies);
+  const {
+    formState: { isDirty },
+  } = form;
+  useEffect(() => {
+    const fn = (e: BeforeUnloadEvent) => {
+      if (isDirty || uploads.busy) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", fn);
+    return () => window.removeEventListener("beforeunload", fn);
+  }, [isDirty, uploads.busy]);
+  function revealInvalid(errors: FieldErrors<FormInput>) {
+    const steps = Object.keys(errors).map(stepForField);
+    if (steps.length) setSection(Math.min(...steps));
+  }
+  async function stepReady(step: number) {
+    const category = String(form.getValues("category") ?? "");
+    const names = requiredFields(step, category);
+    if (!names.length) return true;
+    form.clearErrors(names);
+    const formatOk = await form.trigger(names, { shouldFocus: step === section });
+    let blanks = false;
+    for (const name of names) {
+      if (!blankField(form.getValues(name))) continue;
+      form.setError(name, { type: "required", message: requiredMessage(name, category) });
+      blanks = true;
+    }
+    return formatOk && !blanks;
+  }
+  async function goToSection(next: number) {
+    if (next === section) return;
+    if (next < section) {
+      setSection(next);
+      return;
+    }
+    for (let step = section; step < next; step++) {
+      if (await stepReady(step)) continue;
+      setSection(step);
+      return;
+    }
+    setSection(next);
+  }
+  function back() {
+    if (!onBack) return;
+    if (isDirty || uploads.busy) setConfirm("leave");
+    else onBack();
+  }
+  async function save(input: VehicleInput, publish = false) {
+    if (uploads.busy) {
+      toast.error("Wait for media uploads to finish before saving.");
+      return;
+    }
+    setBusy(true);
+    try {
+      if (!createKey.current) createKey.current = crypto.randomUUID();
+      let result = await client<Vehicle>(
+        "vehicles",
+        saved
+          ? {
+              action: "update",
+              id: saved._id,
+              payload: input,
+              version: saved.version,
+            }
+          : {
+              action: "create",
+              payload: input,
+              idempotencyKey: createKey.current,
+            },
+      );
+      setSaved(result);
+      form.reset(
+        vehicleInput.parse(
+          Object.fromEntries(
+            Object.keys(vehicleInput.shape).map((k) => [
+              k,
+              result[k as keyof Vehicle],
+            ]),
+          ),
+        ),
+      );
+      if (publish) {
+        result = await client<Vehicle>("vehicles", {
+          action: "status",
+          id: result._id,
+          status: "published",
+        });
+        setSaved(result);
+      }
+      toast.success(publish ? "Vehicle published" : "Vehicle saved");
+      setConfirm("");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function statusAction(status: string) {
+    if (!saved) return;
+    setBusy(true);
+    try {
+      const result = await client<Vehicle>("vehicles", {
+        action: "status",
+        id: saved._id,
+        status,
+      });
+      setSaved(result);
+      toast.success(`Vehicle ${status}`);
+      setConfirm("");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div>
+      <div className="flex justify-between flex-wrap items-center gap-3 mb-6">
+        {onBack ? (
+          <Button variant="ghost" onClick={back}>
+            <ArrowLeft size={16} />
+            {backLabel}
+          </Button>
+        ) : (
+          <span />
+        )}
+        <div className="flex gap-2 items-center">
+          <Badge status={saved?.status}>
+            {saved?.demo ? "Demo vehicle" : (saved?.status ?? "New draft")}
+          </Badge>
+          <Button
+            variant="outline"
+            onClick={() => void form.handleSubmit((i) => save(i), revealInvalid)()}
+            disabled={busy || uploads.busy || submitDisabled}
+            pending={busy}
+          >
+            <Save size={16} />
+            Save changes
+          </Button>
+          <Button
+            onClick={() => setConfirm("published")}
+            disabled={
+              busy ||
+              uploads.busy ||
+              submitDisabled ||
+              saved?.demo ||
+              saved?.status === "published"
+            }
+          >
+            <Globe size={16} />
+            Publish
+          </Button>
+        </div>
+      </div>
+      <div className="grid lg:grid-cols-[210px_1fr] gap-6">
+        <nav
+          aria-label="Vehicle editor sections"
+          className="surface p-3 h-fit flex lg:flex-col flex-wrap gap-1"
+        >
+          {sections.map((s, i) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => void goToSection(i)}
+              className={cn(
+                "px-3 py-3 rounded-lg text-sm text-left flex gap-3 items-center",
+                section === i
+                  ? "bg-green-50 text-primary font-semibold"
+                  : "text-muted-foreground hover:bg-muted",
+              )}
+              aria-current={section === i ? "step" : undefined}
+            >
+              <span className="text-xs opacity-60">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              {s}
+            </button>
+          ))}
+        </nav>
+        <form
+          className="surface p-6 lg:p-8"
+          onSubmit={(event) => {
+            if (submitDisabled) {
+              event.preventDefault();
+              return;
+            }
+            void form.handleSubmit((i) => save(i), revealInvalid)(event);
+          }}
+        >
+          <h2 className="text-xl font-semibold">{sections[section]}</h2>
+          <p className="hint mt-1 mb-7">
+            {section === 0
+              ? "Start with the facts that make this vehicle easy to find."
+              : "Keep details accurate so buyers know what to expect."}
+          </p>
+          <VehicleSections
+            section={section}
+            form={form}
+            saved={saved}
+            dealers={dealers}
+            setConfirm={setConfirm}
+            uploads={uploads}
+            client={client}
+            lockDealer={Boolean(lockedDealer)}
+            showFeatured={showFeatured}
+          />
+          <div className="border-t mt-8 pt-5 flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={section === 0}
+              onClick={() => setSection((s) => s - 1)}
+            >
+              Previous
+            </Button>
+            {section < sections.length - 1 ? (
+              <Button type="button" onClick={() => void goToSection(section + 1)}>
+                Continue
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={busy || uploads.busy || submitDisabled}
+                pending={busy}
+              >
+                Save changes
+              </Button>
+            )}
+          </div>
+        </form>
+      </div>
+      <Dialog
+        open={!!confirm}
+        onOpenChange={(open) => {
+          if (!open) setConfirm("");
+        }}
+      >
+        <DialogContent>
+          <DialogTitle className="section-heading">
+            {confirm === "leave"
+              ? "Discard unsaved changes?"
+              : confirm === "published"
+                ? "Publish this vehicle?"
+                : `Mark this vehicle ${confirm}?`}
+          </DialogTitle>
+          <DialogDescription className="hint my-4">
+            {confirm === "leave"
+              ? "Changes since your last save will be lost and pending uploads will be cancelled."
+              : confirm === "published"
+                ? "Your changes will be saved and this listing will become visible to site visitors."
+                : "This changes the availability of this listing on your storefront."}
+          </DialogDescription>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setConfirm("")}>
+              Cancel
+            </Button>
+            <Button
+              disabled={busy}
+              pending={busy}
+              onClick={() =>
+                confirm === "leave"
+                  ? onBack?.()
+                  : confirm === "published"
+                    ? void form.handleSubmit((i) => save(i, true), (errors) => {
+                        setConfirm("");
+                        revealInvalid(errors);
+                      })()
+                    : void statusAction(confirm)
+              }
+            >
+              Confirm
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
