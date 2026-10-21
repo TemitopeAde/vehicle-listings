@@ -20,14 +20,14 @@ export const plans: Record<PlanKey, PlanDefinition> = {
   },
   pro: {
     name: "Pro",
-    price: "Proposed $9.99 / month",
+    price: "$6.50 / month",
     vehicleLimit: 50,
     appPlanId: "pro",
     features: ["Up to 50 vehicles", "Import & export", "Expanded analytics"],
   },
   business: {
     name: "Business",
-    price: "Proposed $19.99 / month",
+    price: "$12 / month",
     vehicleLimit: null,
     appPlanId: "business",
     features: [
