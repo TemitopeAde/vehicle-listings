@@ -4,7 +4,6 @@ import { Check, Trash2, CarFront } from "lucide-react";
 import { api } from "./api";
 import { defaultTheme, type Theme } from "../shared/schemas";
 import { currencyOptions } from "../shared/currencies";
-import { languageOptions } from "../shared/i18n";
 import { useI18n } from "../shared/i18n-react";
 import { useResource } from "./hooks";
 import { SavedCarsSettings } from "./saved-cars-settings";
@@ -16,7 +15,7 @@ import {
   DialogDescription,
 } from "./components/ui/dialog";
 export function Settings() {
-  const { t, setLanguage } = useI18n();
+  const { t, language } = useI18n();
   const resource = useResource<Theme>("settings");
   const [theme, setTheme] = useState(defaultTheme),
     [confirm, setConfirm] = useState(false),
@@ -24,10 +23,8 @@ export function Settings() {
     [saving, setSaving] = useState(false);
   useEffect(() => {
     if (!resource.data) return;
-    const next = { ...defaultTheme, ...resource.data };
-    setTheme(next);
-    setLanguage(next.language);
-  }, [resource.data, setLanguage]);
+    setTheme({ ...defaultTheme, ...resource.data });
+  }, [resource.data]);
   async function demos(action: string) {
     setBusy(true);
     try {
@@ -49,35 +46,9 @@ export function Settings() {
       <section className="surface p-6">
         <h2 className="section-heading">{t("Showroom settings")}</h2>
         <p className="hint mt-1 mb-5">
-          {t("Language and default currency used across the showroom.")}
+          {t("Default currency for new listings.")}
         </p>
         <div className="grid sm:grid-cols-2 gap-5">
-          <div>
-            <label className="label" htmlFor="app-language">
-              {t("Language")}
-            </label>
-            <select
-              id="app-language"
-              className="field"
-              value={theme.language}
-              onChange={(e) => {
-                const language = e.target.value as Theme["language"];
-                setTheme({ ...theme, language });
-                setLanguage(language);
-              }}
-            >
-              {languageOptions.map(({ value, label }) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <p className="hint mt-2">
-              {t(
-                "This language is used in the dashboard, site widgets, and editor panels.",
-              )}
-            </p>
-          </div>
           <div>
             <label className="label" htmlFor="default-currency">
               {t("Default currency")}
@@ -108,9 +79,12 @@ export function Settings() {
           onClick={async () => {
             setSaving(true);
             try {
-              const saved = await api<Theme>("settings", theme, "PATCH");
+              const saved = await api<Theme>(
+                "settings",
+                { ...theme, language },
+                "PATCH",
+              );
               setTheme({ ...defaultTheme, ...saved });
-              setLanguage(saved.language);
               toast.success(t("Settings saved"));
             } catch (e) {
               toast.error(t((e as Error).message));

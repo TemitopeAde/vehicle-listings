@@ -94,7 +94,7 @@ export function VehicleFeatures({ form }: { form: VehicleForm }) {
               {custom.map((feature) => (
                 <li
                   key={feature}
-                  className="inline-flex items-center gap-1 rounded-md border bg-muted py-1 pl-2.5 pr-1 text-sm"
+                  className="inline-flex items-center gap-1 rounded-md border bg-muted py-1 ps-2.5 pe-1 text-sm"
                 >
                   {feature}
                   <button

@@ -12,6 +12,9 @@ export const vehicleCatalogAppId = wixConfig.appId;
 /** Wix eCommerce rejects a single item priced above this. */
 const maxCartPrice = 999_999_999;
 
+/** Wix caps a catalog item id at 36 characters, so the `vehicle-` prefix stays out of the cart. */
+export const catalogItemId = (vehicleId: string) => vehicleId.replace(/^vehicle-/, "");
+
 type CartLike = {
   _id?: string | null;
   lineItems?: {
@@ -26,7 +29,7 @@ export function vehicleLineItemIds(cart: CartLike | undefined, vehicleId: string
     .filter(
       (item) =>
         item.source?.catalogReference?.appId === vehicleCatalogAppId &&
-        item.source.catalogReference.catalogItemId === vehicleId,
+        item.source.catalogReference.catalogItemId === catalogItemId(vehicleId),
     )
     .map((item) => item._id)
     .filter((id): id is string => Boolean(id));
@@ -62,7 +65,7 @@ export function vehicleCartItem(vehicle: Vehicle, language: Language = "en") {
     source: {
       catalogReference: {
         appId: vehicleCatalogAppId,
-        catalogItemId: vehicle._id,
+        catalogItemId: catalogItemId(vehicle._id),
         options: { slug: vehicle.slug, stockId: vehicle.stockId },
       },
     },

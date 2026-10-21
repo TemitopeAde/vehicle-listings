@@ -18,6 +18,9 @@ export default defineConfig({
   security: { checkOrigin: false },
   devToolbar: { enabled: false },
   vite: {
+    optimizeDeps: {
+      include: ["react-quill"],
+    },
     server: {
       cors: true
     },

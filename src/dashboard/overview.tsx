@@ -223,7 +223,7 @@ export function Overview({
                 <button
                   key={n}
                   onClick={() => navigate(section ?? "Settings")}
-                  className="flex items-center gap-3 border-t py-4 text-left w-full text-sm"
+                  className="flex items-center gap-3 border-t py-4 text-start w-full text-sm"
                 >
                   <span className="rounded-full h-8 w-8 flex items-center justify-center bg-muted text-xs text-primary">
                     {n}
@@ -257,7 +257,7 @@ export function Overview({
             <button
               key={v._id}
               onClick={() => edit(v)}
-              className="p-4 text-left border-r hover:bg-muted/50"
+              className="p-4 text-start border-e hover:bg-muted/50"
             >
               <img
                 src={assetUrl(v.media[0]?.url ?? "/media/demo-car.svg")}

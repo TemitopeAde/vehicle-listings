@@ -16,8 +16,9 @@ import { Input, Label, NativeSelect } from "./ui/input";
 import { VehicleCard } from "./vehicle-card";
 import { DetailGallery } from "./vehicle-gallery";
 import { VehicleContact, type PublicDealer } from "./vehicle-contact";
-import { AddToCart } from "./add-to-cart";
+// import { AddToCart } from "./add-to-cart";
 import { VehicleShare } from "./vehicle-share";
+import { VehicleVideo } from "./vehicle-video";
 import { VehicleDetailSkeleton } from "./vehicle-detail-skeleton";
 import { PriceHistory } from "./price-history";
 import { descriptionHtml, descriptionText } from "../shared/rich-text";
@@ -174,12 +175,9 @@ export function VehicleDetail({
       </Alert>
     );
   if (!vehicle) return null;
-  const notSpecified = (value: string | number) =>
-    value || t("Not specified");
+  const notSpecified = (value: string | number) => value || t("Not specified");
   const weight = (value: number) =>
-    value
-      ? t("{weight} kg", { weight: number(value) })
-      : t("Not specified");
+    value ? t("{weight} kg", { weight: number(value) }) : t("Not specified");
   const trailer = isTrailer(vehicle.category);
   const specs: [string, string | number][] = [
     ["Category", t(categoryLabels[vehicle.category])],
@@ -187,21 +185,12 @@ export function VehicleDetail({
     ...(trailer
       ? []
       : ([
-          [
-            "Mileage",
-            `${number(vehicle.mileage)} ${vehicle.mileageUnit}`,
-          ],
+          ["Mileage", `${number(vehicle.mileage)} ${vehicle.mileageUnit}`],
           ["Transmission", t(vehicle.transmission)],
           ["Fuel", t(vehicle.fuel)],
         ] as [string, string][])),
-    [
-      vehicle.category === "car" ? "Body" : "Body type",
-      t(vehicle.bodyStyle),
-    ],
-    [
-      "Condition",
-      t(conditionLabel[vehicle.condition] ?? vehicle.condition),
-    ],
+    [vehicle.category === "car" ? "Body" : "Body type", t(vehicle.bodyStyle)],
+    ["Condition", t(conditionLabel[vehicle.condition] ?? vehicle.condition)],
     ...(trailer
       ? []
       : ([
@@ -251,9 +240,7 @@ export function VehicleDetail({
           <h2 className="sf-title text-3xl font-semibold tracking-tight">
             {vehicle.title}
           </h2>
-          <p className="text-muted-foreground">
-            {vehicle.location}
-          </p>
+          <p className="text-muted-foreground">{vehicle.location}</p>
         </div>
         <div className="sf-price-block ml-auto grid justify-items-end gap-3">
           <p data-sf="price" className="text-2xl font-semibold">
@@ -265,16 +252,15 @@ export function VehicleDetail({
               </small>
             )}
           </p>
-          <AddToCart
+          {/* <AddToCart
             key={vehicle._id}
             vehicle={vehicle}
             preview={preview}
             className="w-full min-w-[12rem]"
-          />
+          /> */}
           <VehicleShare vehicle={vehicle} />
         </div>
       </header>
-      <PriceHistory vehicle={vehicle} preview={preview} />
       <div className="sf-detail grid grid-cols-1 gap-8">
         <div className="grid min-w-0 content-start gap-6">
           <DetailGallery
@@ -286,25 +272,14 @@ export function VehicleDetail({
             <section className="grid gap-4" aria-label={t("Vehicle videos")}>
               <h3 className="text-lg font-semibold">{t("Videos")}</h3>
               {vehicle.videos.map((video, index) => (
-                <figure key={video.fileId ?? video.url} className="grid gap-2">
-                  <video
-                    src={video.url}
-                    poster={video.poster}
-                    controls
-                    playsInline
-                    preload="metadata"
-                    aria-label={
-                      video.title ||
-                      t("Vehicle video {index}", { index: number(index + 1) })
-                    }
-                    className="aspect-video w-full rounded-lg bg-black"
-                  />
-                  {video.title && (
-                    <figcaption className="text-sm text-muted-foreground">
-                      {video.title}
-                    </figcaption>
-                  )}
-                </figure>
+                <VehicleVideo
+                  key={video.fileId ?? video.url}
+                  src={video.url}
+                  poster={video.poster}
+                  label={t("Vehicle video {index}", {
+                    index: number(index + 1),
+                  })}
+                />
               ))}
             </section>
           )}
@@ -418,6 +393,7 @@ export function VehicleDetail({
           track={track}
         />
       </div>
+      <PriceHistory vehicle={vehicle} preview={preview} />
       {related.length > 0 && (
         <section className="grid min-w-0 gap-4">
           <h3 className="text-lg font-semibold">{t("You may also like")}</h3>

@@ -1,5 +1,4 @@
-import { useRef, useState } from "react";
-import { api } from "../shared/client";
+import { useState } from "react";
 import { useI18n } from "../shared/i18n-react";
 import type { Vehicle, Dealer } from "../shared/schemas";
 import { Button } from "./ui/button";
@@ -11,8 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
-import { Checkbox, Input, Label, NativeSelect, Textarea } from "./ui/input";
 import { VehicleQuoteRequest } from "./vehicle-quote-request";
+import { VehicleInquiryForm } from "./vehicle-inquiry-form";
 export type PublicDealer = Pick<
   Dealer,
   | "_id"
@@ -36,38 +35,7 @@ export function VehicleContact({
   track: (channel: string) => void;
 }) {
   const { t } = useI18n();
-  const [busy, setBusy] = useState(false),
-    [sent, setSent] = useState(false),
-    [formError, setFormError] = useState(""),
-    [mode, setMode] = useState<"message" | "quote">("message");
-  const key = useRef("");
-  async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!vehicle) return;
-    const data = Object.fromEntries(new FormData(e.currentTarget));
-    if (!key.current) key.current = crypto.randomUUID();
-    setBusy(true);
-    setFormError("");
-    try {
-      await api("inquiries", {
-        vehicleId: vehicle._id,
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        message: data.message,
-        consent: data.consent === "on",
-        kind: data.kind,
-        preferredDate: data.preferredDate ?? "",
-        honeypot: data.company ?? "",
-        idempotencyKey: key.current,
-      });
-      setSent(true);
-    } catch (e) {
-      setFormError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const [mode, setMode] = useState<"message" | "quote">("message");
   return (
     <Card className="h-fit">
       <CardHeader>
@@ -147,9 +115,7 @@ export function VehicleContact({
           </Alert>
         ) : vehicle.status === "sold" ? (
           <Alert>
-            {t(
-              "This vehicle has been sold. Explore similar vehicles below.",
-            )}
+            {t("This vehicle has been sold. Explore similar vehicles below.")}
           </Alert>
         ) : (
           <>
@@ -157,94 +123,9 @@ export function VehicleContact({
             <div hidden={mode !== "quote"}>
               <VehicleQuoteRequest vehicle={vehicle} />
             </div>
-            {mode === "message" &&
-              (sent ? (
-                <Alert role="status">
-                  {t(
-                    "Your request has been received. The dealership can follow up using your contact details.",
-                  )}
-                </Alert>
-              ) : (
-                <form onSubmit={submit} className="grid gap-4">
-                  <h4 className="font-semibold">{t("Ask about this vehicle")}</h4>
-                  <Label>
-                    {t("Name")}
-                    <Input
-                      name="name"
-                      required
-                      minLength={2}
-                      maxLength={100}
-                      autoComplete="name"
-                    />
-                  </Label>
-                  <Label>
-                    {t("Email")}
-                    <Input
-                      name="email"
-                      type="email"
-                      required
-                      autoComplete="email"
-                    />
-                  </Label>
-                  <Label>
-                    {t("Phone (optional)")}
-                    <Input
-                      name="phone"
-                      type="tel"
-                      maxLength={40}
-                      autoComplete="tel"
-                    />
-                  </Label>
-                  <Label>
-                    {t("Request type")}
-                    <NativeSelect name="kind" required>
-                      <option value="">{t("Select request type")}</option>
-                      <option value="inquiry">{t("General inquiry")}</option>
-                      <option value="test-drive">{t("Test drive")}</option>
-                      <option value="trade-in">{t("Trade-in")}</option>
-                    </NativeSelect>
-                  </Label>
-                  <Label>
-                    {t("Preferred date (optional)")}
-                    <Input type="date" name="preferredDate" />
-                  </Label>
-                  <Label>
-                    {t("Message")}
-                    <Textarea
-                      name="message"
-                      required
-                      minLength={10}
-                      maxLength={3000}
-                      rows={4}
-                      defaultValue={t(
-                        "I’m interested in {title}. Please share more details.",
-                        { title: vehicle.title },
-                      )}
-                    />
-                  </Label>
-                  <input
-                    name="company"
-                    tabIndex={-1}
-                    autoComplete="off"
-                    aria-hidden="true"
-                    hidden
-                  />
-                  <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
-                    <Checkbox name="consent" required />
-                    {t(
-                      "I agree that the dealership may store my contact details and contact me about this vehicle.",
-                    )}
-                  </label>
-                  {formError && (
-                    <Alert variant="destructive" role="alert">
-                      {t(formError)}
-                    </Alert>
-                  )}
-                  <Button disabled={busy} pending={busy}>
-                    {t("Send request")}
-                  </Button>
-                </form>
-              ))}
+            <div hidden={mode !== "message"}>
+              <VehicleInquiryForm key={vehicle._id} vehicle={vehicle} />
+            </div>
           </>
         )}
       </CardContent>

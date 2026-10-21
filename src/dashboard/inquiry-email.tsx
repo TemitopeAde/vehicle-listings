@@ -122,6 +122,7 @@ export function EmailComposer({
   const [editorError, setEditorError] = useState("");
   const [subject, setSubject] = useState(defaultSubject);
   const [html, setHtml] = useState("");
+  const [plainText, setPlainText] = useState("");
   const [hasText, setHasText] = useState(false);
   const [busy, setBusy] = useState(false);
   const [key, setKey] = useState(() => crypto.randomUUID());
@@ -135,7 +136,8 @@ export function EmailComposer({
       .then((module) => {
         if (active) setEditor(() => module.default);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("[Email editor] Could not load ReactQuill", error);
         if (active)
           setEditorError(
             "Could not load the email editor. Refresh the dashboard and try again.",
@@ -242,19 +244,33 @@ export function EmailComposer({
             }}
           />
         </div>
+      ) : editorError ? (
+        <textarea
+          className="field h-auto min-h-48 py-3"
+          aria-label={t("Email message")}
+          aria-required="true"
+          value={plainText}
+          disabled={busy || queued}
+          onChange={(event) => {
+            const text = event.target.value;
+            setPlainText(text);
+            setHtml(
+              `<p>${text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\r?\n/g, "<br>")}</p>`,
+            );
+            setHasText(Boolean(text.trim()));
+            setKey(crypto.randomUUID());
+          }}
+        />
       ) : (
-        !editorError && (
-          <p role="status">{t("Loading email editor…")}</p>
-        )
+        <p role="status">{t("Loading email editor…")}</p>
       )}
-      {branding.data && (
+      {branding.data?.replyTo && (
         <p className="hint">
-          {t(
-            "{siteName} is automatically included in the subject and email.",
-            { siteName: branding.data.siteName },
-          )}{" "}
-          {branding.data.replyTo &&
-            t("Replies go to {email}.", { email: branding.data.replyTo })}
+          {t("Replies go to {email}.", { email: branding.data.replyTo })}
         </p>
       )}
       {branding.data && !branding.data.enabled && (
@@ -270,7 +286,7 @@ export function EmailComposer({
           pending={busy}
           disabled={
             busy ||
-            !Editor ||
+            (!Editor && !editorError) ||
             !hasText ||
             !subject.trim() ||
             !branding.data?.enabled

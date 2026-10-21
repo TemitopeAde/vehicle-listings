@@ -38,7 +38,7 @@ test("the cart item carries the inventory price as a single, unshipped vehicle",
   assert.deepEqual(item.quantityInfo, { requestedQuantity: 1, fixedQuantity: true });
   assert.equal(item.attributes.physicalProperties.shippable, false);
   assert.equal(item.source.catalogReference.appId, vehicleCatalogAppId);
-  assert.equal(item.source.catalogReference.catalogItemId, "vehicle-1");
+  assert.equal(item.source.catalogReference.catalogItemId, "1");
   assert.equal("image" in item.attributes, false);
 });
 
@@ -48,11 +48,18 @@ test("cart lines are matched to this app's vehicle only", () => {
   });
   const cart = {
     lineItems: [
-      { _id: "a", ...ref(vehicleCatalogAppId, "vehicle-1") },
-      { _id: "b", ...ref("215238eb-22a5-4c36-9e7b-e7c08025e04e", "vehicle-1") },
-      { _id: "c", ...ref(vehicleCatalogAppId, "vehicle-2") },
+      { _id: "a", ...ref(vehicleCatalogAppId, "1") },
+      { _id: "b", ...ref("215238eb-22a5-4c36-9e7b-e7c08025e04e", "1") },
+      { _id: "c", ...ref(vehicleCatalogAppId, "2") },
     ],
   };
   assert.deepEqual(vehicleLineItemIds(cart, "vehicle-1"), ["a"]);
   assert.deepEqual(vehicleLineItemIds(undefined, "vehicle-1"), []);
+});
+
+test("a real vehicle id fits Wix's 36-character catalog item limit", () => {
+  const item = vehicleCartItem(
+    listed({ _id: "vehicle-0f8fad5b-d9cb-469f-a165-70867728950e" }),
+  );
+  assert.equal(item.source.catalogReference.catalogItemId.length, 36);
 });

@@ -177,7 +177,7 @@ export function Imports() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left border-b">
+                <tr className="text-start border-b">
                   <th className="py-3">{t("CSV row")}</th>
                   <th>{t("Vehicle")}</th>
                   <th>{t("Validation")}</th>

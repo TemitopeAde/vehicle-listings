@@ -44,6 +44,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
     items: Vehicle[];
     total: number;
     nextCursor: number | null;
+    stats: Record<string, { views: number; clicks: number }>;
   }>(
     `vehicles?search=${encodeURIComponent(search)}&status=${status}&category=${category}&sort=${sort}&cursor=${cursor}&limit=20`,
   );
@@ -145,11 +146,11 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
         <div className="flex flex-wrap items-center gap-3 p-4 border-b">
           <div className="relative min-w-48 flex-1">
             <Search
-              className="absolute left-3 top-3 text-muted-foreground"
+              className="absolute start-3 top-3 text-muted-foreground"
               size={16}
             />
             <input
-              className="field pl-9"
+              className="field ps-9"
               placeholder={t("Search by vehicle title…")}
               aria-label={t("Search vehicles")}
               value={search}
@@ -236,7 +237,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
         </div>
         {selected.length > 0 && (
           <div className="flex flex-wrap gap-3 items-center px-4 py-3 bg-green-50 border-b">
-            <p className="text-sm font-medium mr-auto">
+            <p className="text-sm font-medium me-auto">
               {t("{count} selected", { count: selected.length })}
             </p>
             <Button
@@ -276,7 +277,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5 p-5">
               {rows.map((v) => (
                 <div className="surface overflow-hidden" key={v._id}>
-                  <button className="w-full text-left" onClick={() => edit(v)}>
+                  <button className="w-full text-start" onClick={() => edit(v)}>
                     <img
                       src={assetUrl(v.media[0]?.url ?? "/media/demo-car.svg")}
                       title={v.media[0]?.credit}
@@ -332,9 +333,11 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
                       "Status",
                       "Price",
                       "Mileage",
+                      "Views",
+                      "Clicks",
                       "Actions",
                     ].map((heading) => (
-                      <th key={heading} className="text-left p-4 font-medium">
+                      <th key={heading} className="text-start p-4 font-medium">
                         {t(heading)}
                       </th>
                     ))}
@@ -358,7 +361,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
                       </td>
                       <td className="p-4">
                         <button
-                          className="flex items-center gap-3 text-left"
+                          className="flex items-center gap-3 text-start"
                           onClick={() => edit(v)}
                         >
                           <img
@@ -390,6 +393,12 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
                       </td>
                       <td className="p-4 whitespace-nowrap">
                         {number(v.mileage)} {t(v.mileageUnit)}
+                      </td>
+                      <td className="p-4 tabular-nums">
+                        {number(resource.data?.stats[v._id]?.views ?? 0)}
+                      </td>
+                      <td className="p-4 tabular-nums">
+                        {number(resource.data?.stats[v._id]?.clicks ?? 0)}
                       </td>
                       <td className="p-4">
                         <div className="flex gap-1">

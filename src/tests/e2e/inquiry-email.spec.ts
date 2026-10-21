@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("inquiry email composer uses Quill, includes website branding and preserves its key after a failed response", async ({
+test("inquiry email composer uses Quill, hides the site-name helper and preserves its key after a failed response", async ({
   page,
 }) => {
   const inquiry = {
@@ -68,7 +68,7 @@ test("inquiry email composer uses Quill, includes website branding and preserves
   await page.getByRole("button", { name: "Email buyer", exact: true }).click();
   await expect(
     page.getByText("Buyer Motors is automatically included", { exact: false }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   const editor = page.getByRole("textbox", { name: "Email message" });
   await expect(editor).toBeVisible();
   await editor.fill("Thank you for your inquiry, Jane.");

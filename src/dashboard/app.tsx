@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Toaster } from "sonner";
+import { toast, Toaster } from "sonner";
 import {
   CarFront,
   LayoutDashboard,
@@ -46,8 +46,10 @@ const Billing = lazy(() =>
   import("./settings").then((m) => ({ default: m.Billing })),
 );
 import { Button, cn } from "./components/ui/button";
+import { api } from "./api";
+import { defaultTheme, type Theme, type Vehicle } from "../shared/schemas";
+import { languageOptions, type Language } from "../shared/i18n";
 import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
-import type { Vehicle } from "../shared/schemas";
 import "./styles.css";
 const navigation = [
   { label: "Overview", icon: LayoutDashboard },
@@ -79,10 +81,36 @@ export default function App() {
   );
 }
 function Dashboard() {
-  const { t, language } = useI18n();
+  const { t, language, setLanguage } = useI18n();
   const [page, setPage] = useState("Overview"),
     [editor, setEditor] = useState<{ vehicle: Vehicle | null } | null>(null),
-    [mobile, setMobile] = useState(false);
+    [mobile, setMobile] = useState(false),
+    [savingLanguage, setSavingLanguage] = useState(false);
+  async function changeLanguage(next: Language) {
+    if (next === language || savingLanguage) return;
+    const previous = language;
+    setLanguage(next);
+    setSavingLanguage(true);
+    try {
+      const current = await api<Theme>("settings");
+      await api<Theme>(
+        "settings",
+        { ...defaultTheme, ...current, language: next },
+        "PATCH",
+      );
+    } catch (e) {
+      setLanguage(previous);
+      toast.error(t((e as Error).message));
+    } finally {
+      setSavingLanguage(false);
+    }
+  }
+  useEffect(() => {
+    const props = localeProps(language);
+    document.documentElement.lang = props.lang;
+    document.documentElement.dir = props.dir;
+    document.title = t("Dealer workspace");
+  }, [language, t]);
   useEffect(() => {
     const read = () => {
       const p = decodeURIComponent(window.location.hash.slice(1));
@@ -107,7 +135,7 @@ function Dashboard() {
       <Toaster richColors position="bottom-right" />
       <aside
         className={cn(
-          "fixed inset-y-0 start-0 z-30 w-60 bg-[#fbfcfa] border-r flex flex-col md:translate-x-0",
+          "fixed inset-y-0 start-0 z-30 w-60 overflow-hidden bg-[#fbfcfa] border-e flex flex-col md:translate-x-0",
           mobile ? "translate-x-0" : "-translate-x-full rtl:translate-x-full",
         )}
       >
@@ -138,14 +166,17 @@ function Dashboard() {
         <p className="text-[10px] tracking-widest text-muted-foreground px-7 mt-8 mb-3">
           {t("WORKSPACE")}
         </p>
-        <nav className="px-3 space-y-1" aria-label={t("Main navigation")}>
-          {navigation.map((n, i) => (
+        <nav
+          className="min-h-0 flex-1 overflow-y-auto px-3 space-y-1"
+          aria-label={t("Main navigation")}
+        >
+          {navigation.map((n) => (
             <button
               key={n.label}
               disabled={!!editor}
               onClick={() => navigate(n.label)}
               className={cn(
-                "flex gap-3 w-full items-center rounded-lg px-4 py-3 text-[13px] disabled:cursor-default",
+                "flex gap-3 w-full items-center rounded-lg px-4 py-3 text-[13px] cursor-pointer disabled:cursor-default",
                 page === n.label
                   ? "bg-[#e8f0e9] font-semibold text-primary"
                   : "text-[#64736a] hover:bg-muted",
@@ -158,14 +189,24 @@ function Dashboard() {
             </button>
           ))}
         </nav>
-        <div className="mt-auto p-4">
-          <div className="rounded-lg bg-[#eef2e9] p-4">
-            <p className="text-xs font-semibold">
-              {t("Built for your next chapter.")}
-            </p>
-            <p className="text-xs text-muted-foreground leading-relaxed mt-2">
-              {t("A connected showroom for the way you sell.")}
-            </p>
+        <div className="shrink-0 p-4">
+          <div>
+            <label className="label text-xs" htmlFor="dashboard-language">
+              {t("Language")}
+            </label>
+            <select
+              id="dashboard-language"
+              className="field"
+              value={language}
+              disabled={savingLanguage}
+              onChange={(e) => void changeLanguage(e.target.value as Language)}
+            >
+              {languageOptions.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </div>
           <p className="text-[10px] text-muted-foreground mt-4 px-2">
             {t("CAR DEALER LISTINGS · WIX APP")}
@@ -194,7 +235,7 @@ function Dashboard() {
             {t("Workspace")} <span className="px-2">/</span>
             <span className="text-foreground">{t(page)}</span>
           </p>
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ms-auto flex items-center gap-4">
             {!import.meta.env.DEV && (
               <Button
                 variant="outline"

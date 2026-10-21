@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "../shared/client";
@@ -15,42 +15,10 @@ import {
 import { useI18n } from "../shared/i18n-react";
 import { Button } from "./ui/button";
 import { Alert } from "./ui/card";
-import { Checkbox, Input, Label, NativeSelect, Textarea } from "./ui/input";
+import { Checkbox, Input, NativeSelect, Textarea } from "./ui/input";
+import { FormField as Field } from "./ui/form-field";
 
 type SubmitResult = { confirmationEmailStatus: string };
-
-/** A label, its control and the control's zod error, linked for screen readers. */
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: (props: {
-    id: string;
-    "aria-invalid": boolean;
-    "aria-describedby"?: string;
-  }) => ReactNode;
-}) {
-  const id = useId();
-  const errorId = `${id}-error`;
-  return (
-    <Label htmlFor={id}>
-      {label}
-      {children({
-        id,
-        "aria-invalid": Boolean(error),
-        ...(error ? { "aria-describedby": errorId } : {}),
-      })}
-      {error && (
-        <span id={errorId} className="text-xs font-normal text-destructive">
-          {error}
-        </span>
-      )}
-    </Label>
-  );
-}
 
 export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
   const { t } = useI18n();

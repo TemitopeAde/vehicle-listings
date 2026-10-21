@@ -68,10 +68,16 @@ export function Inquiries() {
               "inquiries-current-page.csv",
               [
                 ["Name", "Email", "Phone", "Status", "Message"]
-                  .map(csvCell)
+                  .map((heading) => csvCell(t(heading)))
                   .join(","),
                 ...(resource.data?.items ?? []).map((i) =>
-                  [i.name, i.email, i.phone, i.status, i.message]
+                  [
+                    i.name,
+                    i.email,
+                    i.phone,
+                    t(inquiryStatus(i.status)),
+                    i.message,
+                  ]
                     .map(csvCell)
                     .join(","),
                 ),
@@ -112,7 +118,7 @@ export function Inquiries() {
             <button
               key={i._id}
               className={cn(
-                "w-full text-left p-5 border-b hover:bg-muted",
+                "w-full text-start p-5 border-b hover:bg-muted",
                 selected === i._id && "bg-green-50",
               )}
               onClick={() => {

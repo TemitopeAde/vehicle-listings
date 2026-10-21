@@ -136,7 +136,7 @@ export function QuoteRequests() {
                   "Status",
                   "Quoted price",
                 ]
-                  .map(csvCell)
+                  .map((heading) => csvCell(t(heading)))
                   .join(","),
                 ...(resource.data?.items ?? []).map((q) =>
                   [
@@ -147,10 +147,10 @@ export function QuoteRequests() {
                     q.company,
                     q.vehicleTitle,
                     String(q.quantity),
-                    quotePaymentLabels[q.paymentMethod],
-                    quoteTimelineLabels[q.timeline],
-                    q.tradeIn ? q.tradeInDetails : "No",
-                    quoteStatusLabels[q.status],
+                    t(quotePaymentLabels[q.paymentMethod]),
+                    t(quoteTimelineLabels[q.timeline]),
+                    q.tradeIn ? q.tradeInDetails : t("No"),
+                    t(quoteStatusLabels[q.status]),
                     q.quotedPrice == null ? "" : String(q.quotedPrice),
                   ]
                     .map(csvCell)
@@ -195,7 +195,7 @@ export function QuoteRequests() {
             <button
               key={q._id}
               className={cn(
-                "w-full text-left p-5 border-b hover:bg-muted",
+                "w-full text-start p-5 border-b hover:bg-muted",
                 selected === q._id && "bg-green-50",
               )}
               onClick={() => select(q)}

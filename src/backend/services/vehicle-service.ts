@@ -30,6 +30,7 @@ import {
   type Row,
 } from "../repositories/repository";
 import { audit } from "./audit-service";
+import { vehicleStats } from "./vehicle-stats-service";
 import {
   recordOpeningPrice,
   recordPriceChange,
@@ -156,11 +157,16 @@ export async function listVehicles(
       result = await queryRows(ctx, "vehicles", sampleQuery, true);
     }
   }
+  const items = result.rows.map((row) => vehicleSchema.parse(row));
   return {
-    items: result.rows.map((row) => vehicleSchema.parse(row)),
+    items,
     total: result.total,
     nextCursor: f.cursor + f.limit < result.total ? f.cursor + f.limit : null,
     samples,
+    // Views and clicks are for the dealer and admin dashboards only, never the public site.
+    ...(publicOnly
+      ? {}
+      : { stats: await vehicleStats(ctx, items.map((item) => item._id)) }),
   };
 }
 export async function listVehicleMakes(

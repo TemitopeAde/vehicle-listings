@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useForm, type FieldErrors } from "react-hook-form";
+import { useForm, type DefaultValues, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -31,6 +31,7 @@ import type { UploadDependencies } from "./media-upload";
 import { isCommercial, isTrailer } from "../shared/vehicle-options";
 import { statusLabel } from "../shared/i18n";
 import { useI18n } from "../shared/i18n-react";
+import { createTestVehicle } from "./vehicle-test-data";
 const sections = [
   "Basics",
   "Pricing",
@@ -205,6 +206,26 @@ export function VehicleEditor({
     [busy, setBusy] = useState(false),
     [confirm, setConfirm] = useState("");
   const createKey = useRef("");
+  const testDataButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const button = testDataButton.current;
+    const bounds = button?.getBoundingClientRect();
+    console.info("[Vehicle test data] Editor state (debug v3)", {
+      development: import.meta.env.DEV,
+      editingExistingVehicle: Boolean(vehicle),
+      hasSavedVehicle: Boolean(saved),
+      buttonExpected: !saved,
+      buttonMounted: Boolean(button),
+      buttonDisabled: button?.disabled,
+      buttonDisplay: button ? window.getComputedStyle(button).display : null,
+      buttonVisibility: button ? window.getComputedStyle(button).visibility : null,
+      buttonBounds: bounds?.toJSON(),
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      submitDisabled,
+      dealerLocked: Boolean(lockedDealer),
+      automaticTestData: import.meta.env.DEV && !vehicle,
+    });
+  }, [vehicle, saved, submitDisabled, lockedDealer]);
   const dealerList = useResource<{ items: Dealer[] }>(
     lockedDealer || submitDisabled ? null : "dealers",
     client,
@@ -224,9 +245,8 @@ export function VehicleEditor({
         error: "",
       }
     : dealerList;
-  const form = useForm<FormInput, unknown, VehicleInput>({
-    resolver: zodResolver(vehicleInput),
-    defaultValues: vehicle
+  const [defaultValues] = useState<DefaultValues<FormInput>>(() =>
+    vehicle
       ? vehicleInput.parse(
           Object.fromEntries(
             Object.keys(vehicleInput.shape).map((k) => [
@@ -235,7 +255,15 @@ export function VehicleEditor({
             ]),
           ),
         )
-      : {
+      : import.meta.env.DEV
+        ? createTestVehicle({
+            dealerId: lockedDealer?._id ?? "",
+            location: lockedDealer?.location ?? "",
+            currency: "USD",
+            media: [],
+            videos: [],
+          })
+        : {
           title: "",
           make: "",
           model: "",
@@ -255,6 +283,10 @@ export function VehicleEditor({
           dealerId: lockedDealer?._id ?? "",
           location: lockedDealer?.location ?? "",
         },
+  );
+  const form = useForm<FormInput, unknown, VehicleInput>({
+    resolver: zodResolver(vehicleInput),
+    defaultValues,
   });
   const uploads = useVehicleUploads(form, uploadDependencies);
   const {
@@ -337,6 +369,34 @@ export function VehicleEditor({
   function revealInvalid(errors: FieldErrors<FormInput>) {
     const steps = Object.keys(errors).map(stepForField);
     if (steps.length) setSection(Math.min(...steps));
+  }
+  function fillTestData() {
+    console.info("[Vehicle test data] Fill button clicked");
+    try {
+      const current = form.getValues();
+      const sample = createTestVehicle({
+        dealerId: lockedDealer?._id ?? current.dealerId ?? "",
+        location: lockedDealer?.location ?? current.location ?? "",
+        currency: current.currency ?? showroom.data?.currency ?? "USD",
+        media: current.media ?? [],
+        videos: current.videos ?? [],
+      });
+      titleAuto.current = { last: sample.title, stop: false };
+      seoAuto.current = { last: sample.seoTitle, stop: false };
+      locationAuto.current = { last: sample.location, stop: false };
+      form.reset(sample, { keepDefaultValues: true });
+      setSection(0);
+      console.info("[Vehicle test data] Form filled", {
+        titleMatches: form.getValues("title") === sample.title,
+        category: form.getValues("category"),
+        photoCount: form.getValues("media")?.length ?? 0,
+        dealerSelected: Boolean(form.getValues("dealerId")),
+      });
+      toast.success(t("Test data filled. Review before saving or publishing."));
+    } catch (error) {
+      console.error("[Vehicle test data] Failed to fill form", error);
+      toast.error(t("Could not fill test data. Check the browser console."));
+    }
   }
   async function stepReady(step: number) {
     const category = String(form.getValues("category") ?? "");
@@ -432,7 +492,9 @@ export function VehicleEditor({
         status,
       });
       setSaved(result);
-      toast.success(t("Vehicle {status}", { status }));
+      toast.success(
+        t("Vehicle {status}", { status: t(statusLabel[status] ?? status) }),
+      );
       setConfirm("");
     } catch (e) {
       toast.error(t((e as Error).message));
@@ -452,6 +514,17 @@ export function VehicleEditor({
           <span />
         )}
         <div className="flex gap-2 items-center">
+          {!saved && (
+            <Button
+              ref={testDataButton}
+              type="button"
+              variant="outline"
+              onClick={fillTestData}
+              disabled={busy || uploads.busy}
+            >
+              {t("Fill test data")}
+            </Button>
+          )}
           <Badge status={saved?.status}>
             {saved?.demo
               ? t("Demo vehicle")
@@ -496,7 +569,7 @@ export function VehicleEditor({
               type="button"
               onClick={() => void goToSection(i)}
               className={cn(
-                "px-3 py-3 rounded-lg text-sm text-left flex gap-3 items-center",
+                "px-3 py-3 rounded-lg text-sm text-start flex gap-3 items-center cursor-pointer",
                 section === i
                   ? "bg-green-50 text-primary font-semibold"
                   : "text-muted-foreground hover:bg-muted",
@@ -576,7 +649,9 @@ export function VehicleEditor({
               ? t("Discard unsaved changes?")
               : confirm === "published"
                 ? t("Publish this vehicle?")
-                : t("Mark this vehicle {status}?", { status: confirm })}
+                : t("Mark this vehicle {status}?", {
+                    status: t(statusLabel[confirm] ?? confirm),
+                  })}
           </DialogTitle>
           <DialogDescription className="hint my-4">
             {confirm === "leave"
