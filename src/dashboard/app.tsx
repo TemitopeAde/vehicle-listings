@@ -47,6 +47,7 @@ const Billing = lazy(() =>
 );
 import { Button, cn } from "./components/ui/button";
 import { api } from "./api";
+import { vehicleCsvEnabled } from "./features";
 import { defaultTheme, type Theme, type Vehicle } from "../shared/schemas";
 import { languageOptions, type Language } from "../shared/i18n";
 import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
@@ -58,7 +59,7 @@ const navigation = [
   { label: "Inquiries", icon: MessageSquare },
   { label: "Quote requests", icon: FileText },
   { label: "Analytics", icon: ChartNoAxesCombined },
-  { label: "Import / Export", icon: Upload },
+  ...(vehicleCsvEnabled ? [{ label: "Import / Export", icon: Upload }] : []),
   { label: "Settings", icon: SettingsIcon },
   { label: "Billing", icon: CreditCard },
 ];
@@ -305,7 +306,7 @@ function Dashboard() {
               <QuoteRequests />
             ) : page === "Analytics" ? (
               <Analytics />
-            ) : page === "Import / Export" ? (
+            ) : vehicleCsvEnabled && page === "Import / Export" ? (
               <Imports />
             ) : page === "Settings" ? (
               <Settings />

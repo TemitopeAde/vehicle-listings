@@ -25,6 +25,7 @@ import {
 import { Badge, Empty, LoadState } from "./components/common";
 import { api, download } from "./api";
 import { exportCSV } from "../shared/csv";
+import { vehicleCsvEnabled } from "./features";
 import { categoryLabels, vehicleCategories } from "../shared/vehicle-options";
 import { statusLabel } from "../shared/i18n";
 import { useI18n } from "../shared/i18n-react";
@@ -128,14 +129,16 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            disabled={busy}
-            onClick={() => void exportAll()}
-          >
-            <Download size={16} />
-            {t("Export")}
-          </Button>
+          {vehicleCsvEnabled && (
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => void exportAll()}
+            >
+              <Download size={16} />
+              {t("Export")}
+            </Button>
+          )}
           <Button onClick={() => edit(null)}>
             <Plus size={16} />
             {t("Add vehicle")}
