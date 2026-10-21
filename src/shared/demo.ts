@@ -1,48 +1,10 @@
-import {
-  vehicleSchema,
-  dealerSchema,
-  type Vehicle,
-  type VehicleInput,
-} from "./schemas";
+import { vehicleSchema, type Dealer, type Vehicle, type VehicleInput } from "./schemas";
 import { samplePhotoPath, samplePhotos } from "./sample-photos";
 const date = "2026-10-10T08:00:00.000Z";
 const disclaimer =
   "This is a sample listing for exploring your dashboard. Vehicle details and prices are illustrative. Add your own verified inventory before publishing.";
-export const demoDealers = [
-  {
-    _id: "demo-dealer",
-    businessName: "Demo Motors Los Angeles",
-    location: "Los Angeles, CA",
-    address: "Sample dealership — replace with your business details",
-    email: "sales@example.com",
-    phone: "+1 213-555-0101",
-    whatsapp: "12135550101",
-    hours: "Mon–Fri 9:00–18:00, Sat 10:00–16:00",
-    description:
-      "Sample dealer profile used for demo listings. Replace it with your own dealership details.",
-  },
-  {
-    _id: "demo-dealer-austin",
-    businessName: "Demo Autos Austin",
-    location: "Austin, TX",
-    address: "Sample showroom — replace with your business details",
-    email: "austin@example.com",
-    phone: "+1 512-555-0102",
-    whatsapp: "15125550102",
-    hours: "Mon–Sat 9:00–17:00",
-    description:
-      "Second sample dealer that shows how multi-location inventory looks. Remove or replace it.",
-  },
-].map((d) =>
-  dealerSchema.parse({
-    ...d,
-    approvalState: "approved",
-    demo: true,
-    createdAt: date,
-    updatedAt: date,
-  }),
-);
-export const demoDealer = demoDealers[0];
+/** Demo dealers were removed; demo listings are not assigned to a dealer. */
+export const demoDealers: Dealer[] = [];
 type DemoCar = Pick<
   VehicleInput,
   "make" | "model" | "year" | "price" | "mileage" | "bodyStyle" | "fuel"
@@ -187,7 +149,6 @@ const cars: DemoCar[] = [
     highlights: ["Fuel efficient", "Ideal city car"],
     negotiable: true,
     location: "Austin, TX",
-    dealerId: "demo-dealer-austin",
   },
   {
     make: "Toyota",
@@ -207,7 +168,6 @@ const cars: DemoCar[] = [
     features: ["Tow bar", "Bed liner", "Hill descent control"],
     highlights: ["Workhorse spec"],
     location: "Austin, TX",
-    dealerId: "demo-dealer-austin",
   },
   {
     make: "Tesla",
@@ -252,7 +212,6 @@ const cars: DemoCar[] = [
     highlights: ["Brand new", "5-year warranty"],
     badges: ["New"],
     location: "Austin, TX",
-    dealerId: "demo-dealer-austin",
   },
   {
     make: "Ford",
@@ -317,7 +276,6 @@ const cars: DemoCar[] = [
     features: ["Retarder", "Sleeper cab", "Air suspension", "Cruise control"],
     highlights: ["Full service history"],
     location: "Austin, TX",
-    dealerId: "demo-dealer-austin",
   },
   {
     category: "trailer",
@@ -353,7 +311,7 @@ export const demoVehicles: Vehicle[] = cars.map((car, i) => {
     title: `${car.year} ${name}${car.trim ? ` ${car.trim}` : ""}`,
     stockId: `DEMO-${n}`,
     firstRegistration: `${car.year}-01-15`,
-    dealerId: car.dealerId ?? demoDealer._id,
+    dealerId: car.dealerId ?? "",
     location: car.location ?? "Los Angeles, CA",
     description:
       car.category === "trailer"

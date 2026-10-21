@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { api, cacheTtl, cachedApi } from "../shared/client";
 import { conditionLabel, statusLabel } from "../shared/i18n";
 import { useI18n } from "../shared/i18n-react";
@@ -323,9 +324,13 @@ export function VehicleDetail({
               {vehicle.taxDisclaimer}
             </p>
           )}
-          <details className="rounded-lg border p-5">
-            <summary className="font-medium">
+          <details className="group rounded-lg border p-5">
+            <summary className="flex list-none items-center justify-between gap-3 font-medium [&::-webkit-details-marker]:hidden">
               {t("Illustrative payment estimator")}
+              <ChevronDown
+                aria-hidden="true"
+                className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none"
+              />
             </summary>
             <div className="mt-4 grid gap-4">
               <p className="text-sm text-muted-foreground">

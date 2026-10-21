@@ -17,6 +17,8 @@ import { transitions, slugify } from "../../shared/utils";
 import { descriptionText } from "../../shared/rich-text";
 import { cleanDescription } from "../listing-html";
 import { rankSimilar } from "../../shared/similarity";
+import { plans } from "../../shared/plans";
+import { currentPlanKey, vehicleLimit } from "./plan-service";
 import { demoVehicles, demoDealers } from "../../shared/demo";
 import type { Context } from "../context";
 import { AppError } from "../errors";
@@ -328,8 +330,10 @@ export async function createVehicle(
       );
     return current;
   }
-  // Until billing entitlement integration is verified, every installation uses the Free quota.
+  const plan = await currentPlanKey(ctx);
+  const limit = vehicleLimit(plan);
   if (
+    limit !== null &&
     (await countRows(
       ctx,
       "vehicles",
@@ -337,11 +341,11 @@ export async function createVehicle(
         ne: { demo: true, status: "deleted" },
       },
       access.elevated,
-    )) >= 10
+    )) >= limit
   )
     throw new AppError(
       "QUOTA",
-      "The Free plan allows 10 vehicles. Remove an archived vehicle before adding more.",
+      `The ${plans[plan].name} plan allows ${limit} ${limit === 1 ? "vehicle" : "vehicles"}. Remove an archived vehicle or upgrade before adding more.`,
       409,
     );
   const stockId = assignedStockId(input.stockId, key);

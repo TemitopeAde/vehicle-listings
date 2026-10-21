@@ -84,6 +84,7 @@ function Dashboard() {
   const { t, language, setLanguage } = useI18n();
   const [page, setPage] = useState("Overview"),
     [editor, setEditor] = useState<{ vehicle: Vehicle | null } | null>(null),
+    [leaveRequest, setLeaveRequest] = useState<{ page: string } | null>(null),
     [mobile, setMobile] = useState(false),
     [savingLanguage, setSavingLanguage] = useState(false);
   async function changeLanguage(next: Language) {
@@ -120,10 +121,15 @@ function Dashboard() {
     window.addEventListener("hashchange", read);
     return () => window.removeEventListener("hashchange", read);
   }, []);
-  function navigate(s: string) {
+  function show(s: string) {
     setPage(s);
     window.location.hash = encodeURIComponent(s);
     setMobile(false);
+  }
+  // While the editor is open, the editor confirms unsaved changes before the page changes.
+  function navigate(s: string) {
+    if (editor) setLeaveRequest({ page: s });
+    else show(s);
   }
   function edit(v: Vehicle | null) {
     setEditor({ vehicle: v });
@@ -173,7 +179,6 @@ function Dashboard() {
           {navigation.map((n) => (
             <button
               key={n.label}
-              disabled={!!editor}
               onClick={() => navigate(n.label)}
               className={cn(
                 "flex gap-3 w-full items-center rounded-lg px-4 py-3 text-[13px] cursor-pointer disabled:cursor-default",
@@ -281,9 +286,11 @@ function Dashboard() {
               <VehicleEditor
                 key={editor.vehicle?._id ?? "new"}
                 vehicle={editor.vehicle}
-                onBack={() => {
+                leaveRequest={leaveRequest}
+                onBack={(target = "Vehicles") => {
+                  setLeaveRequest(null);
                   setEditor(null);
-                  navigate("Vehicles");
+                  show(target);
                 }}
               />
             ) : page === "Overview" ? (

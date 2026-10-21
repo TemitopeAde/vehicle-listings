@@ -182,6 +182,7 @@ function stepForField(name: string) {
 export function VehicleEditor({
   vehicle,
   onBack,
+  leaveRequest,
   lockedDealer,
   client = api,
   backLabel = "Back to inventory",
@@ -190,7 +191,10 @@ export function VehicleEditor({
   showFeatured = false,
 }: {
   vehicle: Vehicle | null;
-  onBack?: () => void;
+  /** Receives the page to open next, so the workspace can leave the editor on that page. */
+  onBack?: (target?: string) => void;
+  /** Set by the workspace when a sidebar link is clicked, so unsaved changes are still confirmed. */
+  leaveRequest?: { page: string } | null;
   lockedDealer?: Pick<Dealer, "_id" | "businessName" | "approvalState" | "location">;
   client?: Client;
   backLabel?: string;
@@ -204,7 +208,8 @@ export function VehicleEditor({
   const [section, setSection] = useState(0),
     [saved, setSaved] = useState(vehicle),
     [busy, setBusy] = useState(false),
-    [confirm, setConfirm] = useState("");
+    [confirm, setConfirm] = useState(""),
+    [leaveTarget, setLeaveTarget] = useState<string | undefined>();
   const createKey = useRef("");
   const testDataButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -223,7 +228,6 @@ export function VehicleEditor({
       viewport: { width: window.innerWidth, height: window.innerHeight },
       submitDisabled,
       dealerLocked: Boolean(lockedDealer),
-      automaticTestData: import.meta.env.DEV && !vehicle,
     });
   }, [vehicle, saved, submitDisabled, lockedDealer]);
   const dealerList = useResource<{ items: Dealer[] }>(
@@ -255,15 +259,7 @@ export function VehicleEditor({
             ]),
           ),
         )
-      : import.meta.env.DEV
-        ? createTestVehicle({
-            dealerId: lockedDealer?._id ?? "",
-            location: lockedDealer?.location ?? "",
-            currency: "USD",
-            media: [],
-            videos: [],
-          })
-        : {
+      : {
           title: "",
           make: "",
           model: "",
@@ -425,11 +421,17 @@ export function VehicleEditor({
     }
     setSection(next);
   }
-  function back() {
+  function back(target?: string) {
     if (!onBack) return;
-    if (isDirty || uploads.busy) setConfirm("leave");
-    else onBack();
+    if (isDirty || uploads.busy) {
+      setLeaveTarget(target);
+      setConfirm("leave");
+    } else onBack(target);
   }
+  useEffect(() => {
+    if (leaveRequest) back(leaveRequest.page);
+    // Runs once per click; `back` reads the latest form state on each render.
+  }, [leaveRequest]);
   async function save(input: VehicleInput, publish = false) {
     if (uploads.busy) {
       toast.error(t("Wait for media uploads to finish before saving."));
@@ -506,7 +508,7 @@ export function VehicleEditor({
     <div>
       <div className="flex justify-between flex-wrap items-center gap-3 mb-6">
         {onBack ? (
-          <Button variant="ghost" onClick={back}>
+          <Button variant="ghost" onClick={() => back()}>
             <ArrowLeft size={16} />
             {t(backLabel)}
           </Button>
@@ -675,7 +677,7 @@ export function VehicleEditor({
               pending={busy}
               onClick={() =>
                 confirm === "leave"
-                  ? onBack?.()
+                  ? onBack?.(leaveTarget)
                   : confirm === "published"
                     ? void form.handleSubmit((i) => save(i, true), (errors) => {
                         setConfirm("");

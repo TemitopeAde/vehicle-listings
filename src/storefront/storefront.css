@@ -40,6 +40,10 @@
   color: inherit;
   margin: 0;
 }
+.autohaus.autohaus :is(button, input[type="checkbox"]):not(:disabled),
+.autohaus.autohaus label:has(input[type="checkbox"]:not(:disabled)) {
+  cursor: pointer;
+}
 .autohaus img {
   display: block;
   max-width: 100%;
