@@ -3,6 +3,7 @@ import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useI18n } from "../../shared/i18n-react";
 import { Button } from "./button";
 import { cn } from "./utils";
 type CarouselApi = UseEmblaCarouselType[1];
@@ -32,6 +33,7 @@ export function Carousel({
   opts?: CarouselOptions;
   setApi?: (api: CarouselApi) => void;
 }) {
+  const { t } = useI18n();
   const [carouselRef, api] = useEmblaCarousel(opts);
   const [selected, setSelected] = React.useState(0),
     [count, setCount] = React.useState(0);
@@ -66,7 +68,7 @@ export function Carousel({
       <div
         className={cn("relative", className)}
         role="region"
-        aria-roledescription="carousel"
+        aria-roledescription={t("carousel")}
         onKeyDown={(e) => {
           if (e.key === "ArrowLeft") {
             e.preventDefault();
@@ -98,10 +100,11 @@ export function CarouselItem({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
+  const { t } = useI18n();
   return (
     <div
       role="group"
-      aria-roledescription="slide"
+      aria-roledescription={t("slide")}
       className={cn("min-w-0 shrink-0 grow-0 basis-full", className)}
       {...props}
     />
@@ -110,6 +113,7 @@ export function CarouselItem({
 const arrow =
   "absolute top-1/2 h-9 w-9 -translate-y-1/2 rounded-full border-0 bg-white/90 px-0 text-[#1d2b23] shadow-md hover:bg-white";
 export function CarouselPrevious({ className }: { className?: string }) {
+  const { t } = useI18n();
   const { scrollPrev, selected } = useCarousel();
   return (
     <Button
@@ -121,13 +125,14 @@ export function CarouselPrevious({ className }: { className?: string }) {
         e.stopPropagation();
         scrollPrev();
       }}
-      aria-label="Previous image"
+      aria-label={t("Previous image")}
     >
       <ChevronLeft className="h-5 w-5" />
     </Button>
   );
 }
 export function CarouselNext({ className }: { className?: string }) {
+  const { t } = useI18n();
   const { scrollNext, selected, count } = useCarousel();
   return (
     <Button
@@ -139,13 +144,14 @@ export function CarouselNext({ className }: { className?: string }) {
         e.stopPropagation();
         scrollNext();
       }}
-      aria-label="Next image"
+      aria-label={t("Next image")}
     >
       <ChevronRight className="h-5 w-5" />
     </Button>
   );
 }
 export function CarouselDots({ className }: { className?: string }) {
+  const { t, number } = useI18n();
   const { selected, count, scrollTo } = useCarousel();
   return (
     <div
@@ -162,7 +168,7 @@ export function CarouselDots({ className }: { className?: string }) {
             "h-2 cursor-pointer rounded-full border-0 bg-white/60 p-0 transition-all",
             i === selected ? "w-5 bg-white" : "w-2",
           )}
-          aria-label={`Go to image ${i + 1}`}
+          aria-label={t("Go to image {index}", { index: number(i + 1) })}
           aria-current={i === selected}
           onClick={(e) => {
             e.stopPropagation();

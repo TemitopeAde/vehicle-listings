@@ -4,6 +4,8 @@ import { Check, Trash2, CarFront } from "lucide-react";
 import { api } from "./api";
 import { defaultTheme, type Theme } from "../shared/schemas";
 import { currencyOptions } from "../shared/currencies";
+import { languageOptions } from "../shared/i18n";
+import { useI18n } from "../shared/i18n-react";
 import { useResource } from "./hooks";
 import { SavedCarsSettings } from "./saved-cars-settings";
 import { Button } from "./components/ui/button";
@@ -14,26 +16,30 @@ import {
   DialogDescription,
 } from "./components/ui/dialog";
 export function Settings() {
+  const { t, setLanguage } = useI18n();
   const resource = useResource<Theme>("settings");
   const [theme, setTheme] = useState(defaultTheme),
     [confirm, setConfirm] = useState(false),
     [busy, setBusy] = useState(false),
     [saving, setSaving] = useState(false);
   useEffect(() => {
-    if (resource.data) setTheme(resource.data);
-  }, [resource.data]);
+    if (!resource.data) return;
+    const next = { ...defaultTheme, ...resource.data };
+    setTheme(next);
+    setLanguage(next.language);
+  }, [resource.data, setLanguage]);
   async function demos(action: string) {
     setBusy(true);
     try {
       await api("onboarding", { action });
       toast.success(
         action === "seed"
-          ? "Sample inventory added as private drafts"
-          : "Demo vehicles removed from active inventory",
+          ? t("Sample inventory added as private drafts")
+          : t("Demo vehicles removed from active inventory"),
       );
       setConfirm(false);
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(t((e as Error).message));
     } finally {
       setBusy(false);
     }
@@ -41,12 +47,40 @@ export function Settings() {
   return (
     <div className="space-y-6">
       <section className="surface p-6">
-        <h2 className="section-heading">Showroom settings</h2>
-        <p className="hint mt-1 mb-5">Default showroom currency.</p>
+        <h2 className="section-heading">{t("Showroom settings")}</h2>
+        <p className="hint mt-1 mb-5">
+          {t("Language and default currency used across the showroom.")}
+        </p>
         <div className="grid sm:grid-cols-2 gap-5">
           <div>
+            <label className="label" htmlFor="app-language">
+              {t("Language")}
+            </label>
+            <select
+              id="app-language"
+              className="field"
+              value={theme.language}
+              onChange={(e) => {
+                const language = e.target.value as Theme["language"];
+                setTheme({ ...theme, language });
+                setLanguage(language);
+              }}
+            >
+              {languageOptions.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <p className="hint mt-2">
+              {t(
+                "This language is used in the dashboard, site widgets, and editor panels.",
+              )}
+            </p>
+          </div>
+          <div>
             <label className="label" htmlFor="default-currency">
-              Default currency
+              {t("Default currency")}
             </label>
             <select
               id="default-currency"
@@ -61,7 +95,7 @@ export function Settings() {
             >
               {currencyOptions.map(({ value, label }) => (
                 <option key={value} value={value}>
-                  {label}
+                  {t(label)}
                 </option>
               ))}
             </select>
@@ -74,22 +108,24 @@ export function Settings() {
           onClick={async () => {
             setSaving(true);
             try {
-              await api("settings", theme, "PATCH");
-              toast.success("Settings saved");
+              const saved = await api<Theme>("settings", theme, "PATCH");
+              setTheme({ ...defaultTheme, ...saved });
+              setLanguage(saved.language);
+              toast.success(t("Settings saved"));
             } catch (e) {
-              toast.error((e as Error).message);
+              toast.error(t((e as Error).message));
             } finally {
               setSaving(false);
             }
           }}
         >
-          Save settings
+          {t("Save settings")}
         </Button>
       </section>
       <section className="surface p-6">
-        <h3 className="section-heading">Install your storefront</h3>
+        <h3 className="section-heading">{t("Install your storefront")}</h3>
         <p className="hint mt-2 mb-5">
-          Complete these steps on your development site before publishing.
+          {t("Complete these steps on your development site before publishing.")}
         </p>
         {[
           "Add the Vehicle Marketplace widget in Wix Studio/classic, or Vehicle Inventory in Harmony.",
@@ -99,16 +135,17 @@ export function Settings() {
         ].map((s, i) => (
           <div key={s} className="flex gap-3 text-sm py-3 border-t">
             <span className="text-primary font-semibold">{i + 1}.</span>
-            <p>{s}</p>
+            <p>{t(s)}</p>
           </div>
         ))}
       </section>
       <SavedCarsSettings />
       <section className="surface p-6">
-        <h3 className="section-heading">Demo inventory</h3>
+        <h3 className="section-heading">{t("Demo inventory")}</h3>
         <p className="hint mt-2">
-          Sample listings are clearly labeled and cannot be published. You can
-          remove them in one action.
+          {t(
+            "Sample listings are clearly labeled and cannot be published. You can remove them in one action.",
+          )}
         </p>
         <div className="flex flex-wrap gap-3 mt-5">
           <Button
@@ -118,22 +155,23 @@ export function Settings() {
             onClick={() => void demos("seed")}
           >
             <CarFront size={16} />
-            Add sample inventory
+            {t("Add sample inventory")}
           </Button>
           <Button variant="outline" onClick={() => setConfirm(true)}>
             <Trash2 size={16} />
-            Remove demo listings
+            {t("Remove demo listings")}
           </Button>
         </div>
       </section>
       <Dialog open={confirm} onOpenChange={setConfirm}>
         <DialogContent>
           <DialogTitle className="section-heading">
-            Remove demo inventory?
+            {t("Remove demo inventory?")}
           </DialogTitle>
           <DialogDescription className="hint my-4">
-            The sample vehicle records will be marked deleted. Your own listings
-            are preserved.
+            {t(
+              "The sample vehicle records will be marked deleted. Your own listings are preserved.",
+            )}
           </DialogDescription>
           <Button
             disabled={busy}
@@ -141,7 +179,7 @@ export function Settings() {
             variant="destructive"
             onClick={() => void demos("clear")}
           >
-            Remove demos
+            {t("Remove demos")}
           </Button>
         </DialogContent>
       </Dialog>
@@ -149,13 +187,15 @@ export function Settings() {
   );
 }
 export function Billing() {
+  const { t } = useI18n();
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="section-heading">Room to grow</h2>
+        <h2 className="section-heading">{t("Room to grow")}</h2>
         <p className="hint mt-1">
-          Your current installation uses the Free plan. Paid billing is awaiting
-          Wix entitlement integration.
+          {t(
+            "Your current installation uses the Free plan. Paid billing is awaiting Wix entitlement integration.",
+          )}
         </p>
       </div>
       <div className="grid md:grid-cols-3 gap-6">
@@ -196,23 +236,23 @@ export function Billing() {
         ].map((p) => (
           <section key={p.name} className="surface p-7">
             <span className="text-xs uppercase tracking-widest text-primary">
-              {p.current ? "Your plan" : "Planned"}
+              {p.current ? t("Your plan") : t("Planned")}
             </span>
-            <h3 className="text-2xl font-semibold mt-4">{p.name}</h3>
-            <p className="font-semibold mt-3">{p.price}</p>
-            <p className="hint mt-1">{p.count}</p>
+            <h3 className="text-2xl font-semibold mt-4">{t(p.name)}</h3>
+            <p className="font-semibold mt-3">{t(p.price)}</p>
+            <p className="hint mt-1">{t(p.count)}</p>
             <ul className="space-y-4 mt-7">
               {p.features.map((f) => (
                 <li key={f} className="flex gap-3 text-sm">
                   <Check size={16} className="text-primary" />
-                  {f}
+                  {t(f)}
                 </li>
               ))}
             </ul>
             <p className="hint text-xs mt-7">
               {p.current
-                ? "Active · no payment required"
-                : "Pricing hypothesis. Not available for purchase yet."}
+                ? t("Active · no payment required")
+                : t("Pricing hypothesis. Not available for purchase yet.")}
             </p>
           </section>
         ))}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, Link, Mail, MoreHorizontal, Share2 } from "lucide-react";
+import { useI18n } from "../shared/i18n-react";
 import type { Vehicle } from "../shared/schemas";
-import { money } from "../shared/utils";
 import { Button } from "./ui/button";
 import { cn } from "./ui/utils";
 
@@ -77,6 +77,7 @@ function Item({
 }
 
 export function VehicleShare({ vehicle }: { vehicle: Vehicle }) {
+  const { t, money } = useI18n();
   const [open, setOpen] = useState(false),
     [copied, setCopied] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -132,11 +133,11 @@ export function VehicleShare({ vehicle }: { vehicle: Vehicle }) {
         onClick={() => setOpen((o) => !o)}
       >
         <Share2 className="h-4 w-4" />
-        Share
+        {t("Share")}
       </Button>
       <div
         role="menu"
-        aria-label={`Share ${vehicle.title}`}
+        aria-label={t("Share {title}", { title: vehicle.title })}
         hidden={!open}
         className={cn(
           "absolute right-0 top-full z-20 mt-2 w-56 rounded-lg border bg-background p-1.5 shadow-lg",
@@ -147,31 +148,31 @@ export function VehicleShare({ vehicle }: { vehicle: Vehicle }) {
           icon={icons.facebook}
           onClick={() => setOpen(false)}
         >
-          Facebook
+          {t("Facebook")}
         </Item>
         <Item href={links.x} icon={icons.x} onClick={() => setOpen(false)}>
-          X (Twitter)
+          {t("X (Twitter)")}
         </Item>
         <Item
           href={links.whatsapp}
           icon={icons.whatsapp}
           onClick={() => setOpen(false)}
         >
-          WhatsApp
+          {t("WhatsApp")}
         </Item>
         <Item
           href={links.linkedin}
           icon={icons.linkedin}
           onClick={() => setOpen(false)}
         >
-          LinkedIn
+          {t("LinkedIn")}
         </Item>
         <Item
           href={links.email}
           icon={<Mail className="h-4 w-4" />}
           onClick={() => setOpen(false)}
         >
-          Email
+          {t("Email")}
         </Item>
         <div className="my-1 h-px bg-border" />
         <Item
@@ -184,7 +185,9 @@ export function VehicleShare({ vehicle }: { vehicle: Vehicle }) {
           }
           onClick={() => void copy()}
         >
-          <span aria-live="polite">{copied ? "Link copied" : "Copy link"}</span>
+          <span aria-live="polite">
+            {copied ? t("Link copied") : t("Copy link")}
+          </span>
         </Item>
         {canNativeShare && (
           <Item
@@ -194,7 +197,7 @@ export function VehicleShare({ vehicle }: { vehicle: Vehicle }) {
               navigator.share({ title, url }).catch(() => {});
             }}
           >
-            More options…
+            {t("More options…")}
           </Item>
         )}
       </div>

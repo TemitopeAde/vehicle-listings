@@ -46,6 +46,7 @@ const Billing = lazy(() =>
   import("./settings").then((m) => ({ default: m.Billing })),
 );
 import { Button, cn } from "./components/ui/button";
+import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
 import type { Vehicle } from "../shared/schemas";
 import "./styles.css";
 const navigation = [
@@ -71,6 +72,14 @@ const descriptions: Record<string, string> = {
   Billing: "Choose the space your business needs.",
 };
 export default function App() {
+  return (
+    <LocaleProvider fresh>
+      <Dashboard />
+    </LocaleProvider>
+  );
+}
+function Dashboard() {
+  const { t, language } = useI18n();
   const [page, setPage] = useState("Overview"),
     [editor, setEditor] = useState<{ vehicle: Vehicle | null } | null>(null),
     [mobile, setMobile] = useState(false);
@@ -94,12 +103,12 @@ export default function App() {
     setMobile(false);
   }
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex" {...localeProps(language)}>
       <Toaster richColors position="bottom-right" />
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-30 w-60 bg-[#fbfcfa] border-r flex flex-col md:translate-x-0",
-          mobile ? "translate-x-0" : "-translate-x-full",
+          "fixed inset-y-0 start-0 z-30 w-60 bg-[#fbfcfa] border-r flex flex-col md:translate-x-0",
+          mobile ? "translate-x-0" : "-translate-x-full rtl:translate-x-full",
         )}
       >
         <div className="h-24 flex items-center px-6 gap-3">
@@ -108,7 +117,7 @@ export default function App() {
           </div>
           <div>
             <p className="text-[10px] uppercase tracking-[.2em] text-muted-foreground mt-1">
-              Dealer workspace
+              {t("Dealer workspace")}
             </p>
           </div>
         </div>
@@ -118,18 +127,18 @@ export default function App() {
               AM
             </span>
             <div className="flex-1">
-              <p className="text-xs font-semibold">Your dealership</p>
+              <p className="text-xs font-semibold">{t("Your dealership")}</p>
               <p className="text-[10px] text-muted-foreground mt-1">
-                Wix app workspace
+                {t("Wix app workspace")}
               </p>
             </div>
             <ChevronDown size={14} className="text-muted-foreground" />
           </div>
         </div>
         <p className="text-[10px] tracking-widest text-muted-foreground px-7 mt-8 mb-3">
-          WORKSPACE
+          {t("WORKSPACE")}
         </p>
-        <nav className="px-3 space-y-1" aria-label="Main navigation">
+        <nav className="px-3 space-y-1" aria-label={t("Main navigation")}>
           {navigation.map((n, i) => (
             <button
               key={n.label}
@@ -145,45 +154,45 @@ export default function App() {
               aria-current={page === n.label ? "page" : undefined}
             >
               <n.icon size={17} />
-              {n.label}
+              {t(n.label)}
             </button>
           ))}
         </nav>
         <div className="mt-auto p-4">
           <div className="rounded-lg bg-[#eef2e9] p-4">
             <p className="text-xs font-semibold">
-              Built for your next chapter.
+              {t("Built for your next chapter.")}
             </p>
             <p className="text-xs text-muted-foreground leading-relaxed mt-2">
-              A connected showroom for the way you sell.
+              {t("A connected showroom for the way you sell.")}
             </p>
           </div>
           <p className="text-[10px] text-muted-foreground mt-4 px-2">
-            CAR DEALER LISTINGS · WIX APP
+            {t("CAR DEALER LISTINGS · WIX APP")}
           </p>
         </div>
       </aside>
       {mobile && (
         <button
           className="fixed inset-0 z-20 bg-black/30 md:hidden"
-          aria-label="Close navigation"
+          aria-label={t("Close navigation")}
           onClick={() => setMobile(false)}
         />
       )}
-      <div className="min-w-0 flex-1 md:ml-60">
+      <div className="min-w-0 flex-1 md:ms-60">
         <header className="h-16 border-b bg-white/80 px-5 lg:px-9 flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             className="md:hidden"
-            aria-label="Toggle navigation"
+            aria-label={t("Toggle navigation")}
             onClick={() => setMobile(!mobile)}
           >
             {mobile ? <X size={19} /> : <Menu size={19} />}
           </Button>
           <p className="text-xs text-muted-foreground">
-            Workspace <span className="px-2">/</span>
-            <span className="text-foreground">{page}</span>
+            {t("Workspace")} <span className="px-2">/</span>
+            <span className="text-foreground">{t(page)}</span>
           </p>
           <div className="ml-auto flex items-center gap-4">
             {!import.meta.env.DEV && (
@@ -192,7 +201,7 @@ export default function App() {
                 size="sm"
                 onClick={() => navigate("Settings")}
               >
-                Set up storefront
+                {t("Set up storefront")}
                 <ArrowUpRight size={14} />
               </Button>
             )}
@@ -206,16 +215,16 @@ export default function App() {
             <div className="mb-7 flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[.15em] text-muted-foreground mb-2">
-                  DEALER WORKSPACE
+                  {t("DEALER WORKSPACE")}
                 </p>
                 <h1 className="text-3xl font-semibold tracking-tight">
-                  {page === "Overview" ? "Welcome to your showroom" : page}
+                  {page === "Overview" ? t("Welcome to your showroom") : t(page)}
                 </h1>
-                <p className="hint mt-2">{descriptions[page]}</p>
+                <p className="hint mt-2">{t(descriptions[page] ?? "")}</p>
               </div>
               {page === "Overview" && (
                 <span className="hidden lg:block text-xs border rounded-full px-3 py-2 bg-white text-muted-foreground">
-                  Inventory, people & possibilities
+                  {t("Inventory, people & possibilities")}
                 </span>
               )}
             </div>
@@ -223,7 +232,7 @@ export default function App() {
           <Suspense
             fallback={
               <p role="status" className="hint py-12">
-                Loading workspace…
+                {t("Loading workspace…")}
               </p>
             }
           >
@@ -257,8 +266,8 @@ export default function App() {
             )}
           </Suspense>
           <footer className="text-[10px] text-muted-foreground mt-9 flex justify-between border-t pt-5">
-            <span>Car Dealer Listings & Marketplace</span>
-            <span>Made for the road ahead.</span>
+            <span>{t("Car Dealer Listings & Marketplace")}</span>
+            <span>{t("Made for the road ahead.")}</span>
           </footer>
         </main>
       </div>

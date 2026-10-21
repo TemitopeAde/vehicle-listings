@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
+import { useI18n } from "../../shared/i18n-react";
 import type { VehicleForm } from "./vehicle-form-types";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
@@ -26,6 +27,7 @@ function sameFeature(a: string, b: string) {
 }
 
 export function VehicleFeatures({ form }: { form: VehicleForm }) {
+  const { t } = useI18n();
   const { watch, setValue, getValues } = form;
   const features = watch("features") ?? [];
   const [draft, setDraft] = useState("");
@@ -78,17 +80,17 @@ export function VehicleFeatures({ form }: { form: VehicleForm }) {
                 );
               }}
             />
-            {feature}
+            {t(feature)}
           </label>
         ))}
       </div>
       <div className="mt-6">
         <label className="label" htmlFor="custom-features">
-          Additional features
+          {t("Additional features")}
         </label>
         <div className="field h-auto flex-col items-stretch gap-2 border-solid p-2 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
           {custom.length > 0 && (
-            <ul className="mb-2 flex flex-wrap gap-2" aria-label="Additional features">
+            <ul className="mb-2 flex flex-wrap gap-2" aria-label={t("Additional features")}>
               {custom.map((feature) => (
                 <li
                   key={feature}
@@ -98,7 +100,7 @@ export function VehicleFeatures({ form }: { form: VehicleForm }) {
                   <button
                     type="button"
                     className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground hover:bg-white hover:text-foreground"
-                    aria-label={`Remove ${feature}`}
+                    aria-label={t("Remove {feature}", { feature })}
                     onClick={() => removeFeature(feature)}
                   >
                     <X size={14} aria-hidden />
@@ -112,7 +114,7 @@ export function VehicleFeatures({ form }: { form: VehicleForm }) {
               id="custom-features"
               className="h-8 min-w-0 flex-1 bg-transparent px-2 text-sm placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
               value={draft}
-              placeholder="Tow package"
+              placeholder={t("Tow package")}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -143,11 +145,11 @@ export function VehicleFeatures({ form }: { form: VehicleForm }) {
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => addFeatures(draft)}
             >
-              Add
+              {t("Add")}
             </Button>
           </div>
         </div>
-        <p className="hint mt-2">Type a feature and press Enter.</p>
+        <p className="hint mt-2">{t("Type a feature and press Enter.")}</p>
       </div>
     </>
   );

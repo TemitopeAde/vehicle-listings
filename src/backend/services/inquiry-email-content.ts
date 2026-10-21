@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
 import sanitizeHtml from "sanitize-html";
+import { translate, type Language } from "../../shared/i18n";
+import type { Context } from "../context";
 import { AppError } from "../errors";
+import { getSettings } from "./settings-service";
 
 export const escapeEmailText = (value: string) =>
   value.replace(
@@ -41,7 +44,22 @@ export function sanitizeEmailBody(html: string) {
   return clean;
 }
 
-export function brandedEmail(siteName: string, subject: string, body: string) {
+/** Language chosen in dashboard settings. English if settings cannot be read. */
+export async function showroomLanguage(ctx: Context): Promise<Language> {
+  try {
+    return (await getSettings(ctx)).language;
+  } catch (error) {
+    console.error("Could not read the showroom language", error);
+    return "en";
+  }
+}
+
+export function brandedEmail(
+  siteName: string,
+  subject: string,
+  body: string,
+  language: Language = "en",
+) {
   const name = siteName.trim();
   if (!name)
     throw new AppError(
@@ -52,7 +70,7 @@ export function brandedEmail(siteName: string, subject: string, body: string) {
   return {
     // Reserve room for the full site name in the body even if the subject must be shortened.
     emailSubject: `${name} — ${subject}`.replace(/[\r\n]/g, " ").slice(0, 200),
-    emailHtmlContent: `<div><h2>${escapeEmailText(name)}</h2>${sanitizeEmailBody(body)}<hr><p>Sent by ${escapeEmailText(name)}</p></div>`,
+    emailHtmlContent: `<div><h2>${escapeEmailText(name)}</h2>${sanitizeEmailBody(body)}<hr><p>${escapeEmailText(translate(language, "Sent by {name}", { name }))}</p></div>`,
     senderName: name.slice(0, 50),
   };
 }

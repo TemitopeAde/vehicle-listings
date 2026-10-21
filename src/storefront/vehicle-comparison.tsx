@@ -9,8 +9,9 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, Check, GitCompareArrows, Minus, X } from "lucide-react";
+import { conditionLabel } from "../shared/i18n";
+import { useI18n } from "../shared/i18n-react";
 import type { Vehicle } from "../shared/schemas";
-import { money } from "../shared/utils";
 import { categoryLabels, isCommercial } from "../shared/vehicle-options";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/input";
@@ -25,81 +26,103 @@ type Spec = {
   /** Numeric score where higher is better; used to highlight the best vehicle. */
   score?: (v: Vehicle) => number | undefined;
 };
-const known = (value: string | number | undefined | null) =>
-  value === undefined || value === null || value === "" || value === 0
-    ? "—"
-    : String(value);
-const groups: { title: string; specs: Spec[]; commercialOnly?: boolean }[] = [
-  {
-    title: "Overview",
-    specs: [
-      {
-        label: "Price",
-        value: (v) => money(v.price, v.currency),
-        score: (v) => -v.price,
-      },
-      { label: "Category", value: (v) => categoryLabels[v.category] },
-      { label: "Year", value: (v) => String(v.year), score: (v) => v.year },
-      {
-        label: "Mileage",
-        value: (v) => `${v.mileage.toLocaleString("en")} ${v.mileageUnit}`,
-        // Compare distances in one unit so km and mi listings rank fairly.
-        score: (v) => -(v.mileageUnit === "mi" ? v.mileage * 1.609 : v.mileage),
-      },
-      {
-        label: "Condition",
-        value: (v) => v.condition[0]!.toUpperCase() + v.condition.slice(1),
-      },
-      { label: "Location", value: (v) => known(v.location) },
-    ],
-  },
-  {
-    title: "Performance",
-    specs: [
-      { label: "Engine", value: (v) => known(v.engineSize) },
-      {
-        label: "Horsepower",
-        value: (v) => (v.horsepower ? `${v.horsepower} hp` : "—"),
-        score: (v) => v.horsepower || undefined,
-      },
-      { label: "Transmission", value: (v) => v.transmission },
-      { label: "Drivetrain", value: (v) => known(v.drivetrain) },
-      { label: "Fuel", value: (v) => v.fuel },
-    ],
-  },
-  {
-    title: "Body",
-    specs: [
-      { label: "Body type", value: (v) => v.bodyStyle },
-      { label: "Doors", value: (v) => known(v.doors) },
-      { label: "Seats", value: (v) => known(v.seats) },
-      { label: "Exterior", value: (v) => known(v.exteriorColor) },
-      { label: "Interior", value: (v) => known(v.interiorColor) },
-    ],
-  },
-  {
-    title: "Load",
-    commercialOnly: true,
-    specs: [
-      { label: "Axles", value: (v) => known(v.axles) },
-      {
-        label: "Gross weight",
-        value: (v) =>
-          v.grossWeight ? `${v.grossWeight.toLocaleString("en")} kg` : "—",
-      },
-      {
-        label: "Payload",
-        value: (v) =>
-          v.payload ? `${v.payload.toLocaleString("en")} kg` : "—",
-        score: (v) => v.payload || undefined,
-      },
-      {
-        label: "Body length",
-        value: (v) => (v.bodyLength ? `${v.bodyLength} m` : "—"),
-      },
-    ],
-  },
-];
+function specGroups(
+  formatMoney: (value: number, currency?: string) => string,
+  formatNumber: (value: number) => string,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+): { title: string; specs: Spec[]; commercialOnly?: boolean }[] {
+  const known = (value: string | number | undefined | null) =>
+    value === undefined || value === null || value === "" || value === 0
+      ? "—"
+      : typeof value === "number"
+        ? formatNumber(value)
+        : String(value);
+  return [
+    {
+      title: "Overview",
+      specs: [
+        {
+          label: "Price",
+          value: (v) => formatMoney(v.price, v.currency),
+          score: (v) => -v.price,
+        },
+        {
+          label: "Category",
+          value: (v) => t(categoryLabels[v.category] ?? v.category),
+        },
+        { label: "Year", value: (v) => String(v.year), score: (v) => v.year },
+        {
+          label: "Mileage",
+          value: (v) => `${formatNumber(v.mileage)} ${v.mileageUnit}`,
+          // Compare distances in one unit so km and mi listings rank fairly.
+          score: (v) =>
+            -(v.mileageUnit === "mi" ? v.mileage * 1.609 : v.mileage),
+        },
+        {
+          label: "Condition",
+          value: (v) => t(conditionLabel[v.condition] ?? v.condition),
+        },
+        { label: "Location", value: (v) => known(v.location) },
+      ],
+    },
+    {
+      title: "Performance",
+      specs: [
+        { label: "Engine", value: (v) => known(v.engineSize) },
+        {
+          label: "Horsepower",
+          value: (v) =>
+            v.horsepower
+              ? t("{power} hp", { power: formatNumber(v.horsepower) })
+              : "—",
+          score: (v) => v.horsepower || undefined,
+        },
+        { label: "Transmission", value: (v) => t(v.transmission) },
+        { label: "Drivetrain", value: (v) => known(v.drivetrain) },
+        { label: "Fuel", value: (v) => t(v.fuel) },
+      ],
+    },
+    {
+      title: "Body",
+      specs: [
+        { label: "Body type", value: (v) => t(v.bodyStyle) },
+        { label: "Doors", value: (v) => known(v.doors) },
+        { label: "Seats", value: (v) => known(v.seats) },
+        { label: "Exterior", value: (v) => known(v.exteriorColor) },
+        { label: "Interior", value: (v) => known(v.interiorColor) },
+      ],
+    },
+    {
+      title: "Load",
+      commercialOnly: true,
+      specs: [
+        { label: "Axles", value: (v) => known(v.axles) },
+        {
+          label: "Gross weight",
+          value: (v) =>
+            v.grossWeight
+              ? t("{weight} kg", { weight: formatNumber(v.grossWeight) })
+              : "—",
+        },
+        {
+          label: "Payload",
+          value: (v) =>
+            v.payload
+              ? t("{weight} kg", { weight: formatNumber(v.payload) })
+              : "—",
+          score: (v) => v.payload || undefined,
+        },
+        {
+          label: "Body length",
+          value: (v) =>
+            v.bodyLength
+              ? t("{length} m", { length: formatNumber(v.bodyLength) })
+              : "—",
+        },
+      ],
+    },
+  ];
+}
 
 /** IDs of the vehicles that score best on a spec, or none when they tie or can't be compared. */
 function best(spec: Spec, vehicles: Vehicle[]) {
@@ -131,6 +154,7 @@ export function CompareToggle({
   comparison: Vehicle[];
   setComparison: Dispatch<SetStateAction<Vehicle[]>>;
 }) {
+  const { t } = useI18n();
   const elementStyle = useElementStyle();
   const checked = comparison.some((c) => c._id === vehicle._id);
   const full = !checked && comparison.length >= compareLimit;
@@ -143,7 +167,11 @@ export function CompareToggle({
         className,
       )}
       title={
-        full ? `You can compare up to ${compareLimit} vehicles` : undefined
+        full
+          ? t("You can compare up to {count} vehicles", {
+              count: compareLimit,
+            })
+          : undefined
       }
     >
       <Checkbox
@@ -160,7 +188,7 @@ export function CompareToggle({
           )
         }
       />
-      Compare
+      {t("Compare")}
     </label>
   );
 }
@@ -210,6 +238,7 @@ export function CompareTray({
   /** Render in place instead, e.g. in the editor where a floating bar would cover the canvas. */
   inline?: boolean;
 }) {
+  const { t } = useI18n();
   const trayRef = useRef<HTMLElement>(null);
   const [mounted, setMounted] = useState(false);
   const [height, setHeight] = useState(0);
@@ -228,7 +257,7 @@ export function CompareTray({
   const tray = (
     <section
       ref={trayRef}
-      aria-label="Vehicles to compare"
+      aria-label={t("Vehicles to compare")}
       className={cn(
         "flex flex-wrap items-center gap-3 rounded-lg border bg-background p-3",
         inline
@@ -252,7 +281,9 @@ export function CompareTray({
                 variant="ghost"
                 size="sm"
                 className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 px-0"
-                aria-label={`Remove ${v.title} from comparison`}
+                aria-label={t("Remove {title} from comparison", {
+                  title: v.title,
+                })}
                 onClick={() =>
                   setComparison((c) => c.filter((x) => x._id !== v._id))
                 }
@@ -265,23 +296,23 @@ export function CompareTray({
               key={`empty-${i}`}
               className="flex min-h-[46px] items-center justify-center rounded-md border border-dashed px-2 text-center text-xs text-muted-foreground"
             >
-              Add a vehicle
+              {t("Add a vehicle")}
             </li>
           );
         })}
       </ul>
       <div className="flex items-center gap-2 max-sm:w-full">
         <Button variant="ghost" size="sm" onClick={() => setComparison([])}>
-          Clear
+          {t("Clear")}
         </Button>
         <Button
           className="max-sm:flex-1"
           disabled={!ready}
-          title={ready ? undefined : "Select at least 2 vehicles"}
+          title={ready ? undefined : t("Select at least 2 vehicles")}
           onClick={onCompare}
         >
           <GitCompareArrows className="h-4 w-4" aria-hidden="true" />
-          Compare {comparison.length}
+          {t("Compare {count}", { count: comparison.length })}
         </Button>
       </div>
     </section>
@@ -327,6 +358,8 @@ export function VehicleComparison({
   onBack: () => void;
   onView?: (v: Vehicle) => void;
 }) {
+  const { t, money: formatMoney, number: formatNumber } = useI18n();
+  const groups = specGroups(formatMoney, formatNumber, t);
   const [differencesOnly, setDifferencesOnly] = useState(false);
   const differs = (values: string[]) => new Set(values).size > 1;
   const shownGroups = groups.filter(
@@ -351,14 +384,14 @@ export function VehicleComparison({
             onClick={onBack}
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            Back to inventory
+            {t("Back to inventory")}
           </Button>
           <h3
             id="compare-heading"
             data-sf="heading"
             className="mt-3 text-2xl font-semibold tracking-tight"
           >
-            Compare vehicles
+            {t("Compare vehicles")}
           </h3>
         </div>
         <label className="flex items-center gap-2 text-sm">
@@ -367,19 +400,19 @@ export function VehicleComparison({
             checked={differencesOnly}
             onChange={(e) => setDifferencesOnly(e.target.checked)}
           />
-          Show only differences
+          {t("Show only differences")}
         </label>
       </div>
       {comparison.length < 2 && (
         <p className="rounded-lg border border-dashed p-6 text-center text-muted-foreground">
-          Add at least one more vehicle to compare.
+          {t("Add at least one more vehicle to compare.")}
         </p>
       )}
       {/* Labels stay pinned while the vehicle columns scroll on narrow screens. */}
       <div
         className="overflow-x-auto rounded-lg border"
         role="table"
-        aria-label="Vehicle comparison"
+        aria-label={t("Vehicle comparison")}
       >
         <div
           className="grid min-w-fit"
@@ -400,7 +433,9 @@ export function VehicleComparison({
                   variant="outline"
                   size="sm"
                   className="absolute right-4 top-4 z-[1] h-8 w-8 rounded-full px-0"
-                  aria-label={`Remove ${v.title} from comparison`}
+                  aria-label={t("Remove {title} from comparison", {
+                  title: v.title,
+                })}
                   onClick={() =>
                     setComparison((c) => c.filter((x) => x._id !== v._id))
                   }
@@ -415,11 +450,11 @@ export function VehicleComparison({
                   {v.title}
                 </span>
                 <span data-sf="price" className="text-lg font-semibold">
-                  {money(v.price, v.currency)}
+                  {formatMoney(v.price, v.currency)}
                 </span>
                 {onView && (
                   <Button size="sm" className="w-fit" onClick={() => onView(v)}>
-                    View vehicle
+                    {t("View vehicle")}
                   </Button>
                 )}
               </div>
@@ -437,7 +472,7 @@ export function VehicleComparison({
                   className="col-span-full bg-muted py-2 text-xs font-semibold uppercase tracking-wide text-foreground"
                 >
                   <span role="rowheader" className="sticky left-0 px-3">
-                    {group.title}
+                    {t(group.title)}
                   </span>
                 </div>
                 {rows.map((spec) => {
@@ -448,7 +483,7 @@ export function VehicleComparison({
                         role="rowheader"
                         className="sticky left-0 z-[1] border-b bg-background p-3 text-sm text-muted-foreground"
                       >
-                        {spec.label}
+                        {t(spec.label)}
                       </div>
                       {comparison.map((v) => (
                         <div
@@ -463,7 +498,7 @@ export function VehicleComparison({
                           {spec.value(v)}
                           {winners.has(v._id) && (
                             <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
-                              Best
+                              {t("Best")}
                             </span>
                           )}
                         </div>
@@ -481,7 +516,7 @@ export function VehicleComparison({
                 className="col-span-full bg-muted py-2 text-xs font-semibold uppercase tracking-wide text-foreground"
               >
                 <span role="rowheader" className="sticky left-0 px-3">
-                  Features
+                  {t("Features")}
                 </span>
               </div>
               {visibleFeatures.map((feature) => (
@@ -501,12 +536,12 @@ export function VehicleComparison({
                       {v.features.includes(feature) ? (
                         <Check
                           className="h-4 w-4 text-primary"
-                          aria-label="Included"
+                          aria-label={t("Included")}
                         />
                       ) : (
                         <Minus
                           className="h-4 w-4 text-muted-foreground"
-                          aria-label="Not listed"
+                          aria-label={t("Not listed")}
                         />
                       )}
                     </div>
@@ -523,7 +558,7 @@ export function VehicleComparison({
         ) &&
         visibleFeatures.length === 0 && (
           <p className="text-center text-sm text-muted-foreground">
-            These vehicles have identical specifications.
+            {t("These vehicles have identical specifications.")}
           </p>
         )}
     </section>

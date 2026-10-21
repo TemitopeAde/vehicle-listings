@@ -1,8 +1,9 @@
 import type { HTMLAttributes } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+import { conditionLabel, statusLabel } from "../shared/i18n";
+import { useI18n } from "../shared/i18n-react";
 import type { Vehicle } from "../shared/schemas";
-import { money } from "../shared/utils";
 import { isTrailer } from "../shared/vehicle-options";
 import { Button } from "./ui/button";
 import { AddToCart } from "./add-to-cart";
@@ -10,25 +11,36 @@ import { Badge } from "./ui/card";
 import { cn } from "./ui/utils";
 import { VehiclePhoto } from "./vehicle-photo";
 
-function specs(v: Vehicle): [string, string][] {
+function specs(
+  v: Vehicle,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  formatNumber: (value: number) => string,
+): [string, string][] {
   const rows: [string, string | number | undefined][] = isTrailer(v.category)
     ? [
-        ["Year", v.year],
-        ["Body", v.bodyStyle],
-        ["Axles", v.axles || undefined],
-        ["Length", v.bodyLength ? `${v.bodyLength} m` : undefined],
+        ["Year", String(v.year)],
+        ["Body", t(v.bodyStyle)],
+        ["Axles", v.axles ? formatNumber(v.axles) : undefined],
+        [
+          "Length",
+          v.bodyLength
+            ? t("{length} m", { length: formatNumber(v.bodyLength) })
+            : undefined,
+        ],
         [
           "Payload",
-          v.payload ? `${v.payload.toLocaleString("en")} kg` : undefined,
+          v.payload
+            ? t("{weight} kg", { weight: formatNumber(v.payload) })
+            : undefined,
         ],
         ["Location", v.location],
       ]
     : [
-        ["Year", v.year],
-        ["Mileage", `${v.mileage.toLocaleString("en")} ${v.mileageUnit}`],
-        ["Transmission", v.transmission],
-        ["Fuel", v.fuel],
-        ["Body", v.bodyStyle],
+        ["Year", String(v.year)],
+        ["Mileage", `${formatNumber(v.mileage)} ${v.mileageUnit}`],
+        ["Transmission", t(v.transmission)],
+        ["Fuel", t(v.fuel)],
+        ["Body", t(v.bodyStyle)],
         ["Location", v.location],
       ];
   return rows
@@ -59,7 +71,11 @@ export function VehicleQuickView({
   /** Editor preview: the cart button is shown but inactive. */
   preview?: boolean;
 }) {
+  const { t, money, number } = useI18n();
   const photo = vehicle?.media[0];
+  const badgeLabel = badge
+    ? t(statusLabel[badge] ?? conditionLabel[badge] ?? badge)
+    : "";
   return (
     <Dialog.Root
       open={vehicle !== null}
@@ -96,7 +112,7 @@ export function VehicleQuickView({
               )}
               <div className="grid gap-4 p-5">
                 <div className="grid gap-1.5 pr-8">
-                  {badge && <Badge className="w-fit">{badge}</Badge>}
+                  {badge && <Badge className="w-fit">{badgeLabel}</Badge>}
                   <Dialog.Title
                     data-sf="vehicle-title"
                     className="text-lg font-semibold leading-snug"
@@ -107,15 +123,17 @@ export function VehicleQuickView({
                     {money(vehicle.price, vehicle.currency)}
                     {vehicle.negotiable && (
                       <span className="ml-2 text-sm font-normal text-muted-foreground">
-                        Negotiable
+                        {t("Negotiable")}
                       </span>
                     )}
                   </p>
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
-                  {specs(vehicle).map(([label, value]) => (
+                  {specs(vehicle, t, number).map(([label, value]) => (
                     <div key={label} className="grid min-w-0 gap-0.5">
-                      <dt className="text-xs text-muted-foreground">{label}</dt>
+                      <dt className="text-xs text-muted-foreground">
+                        {t(label)}
+                      </dt>
                       <dd
                         data-sf="vehicle-meta"
                         className="truncate text-sm font-medium"
@@ -135,13 +153,13 @@ export function VehicleQuickView({
                   variant="outline"
                   onClick={() => onViewDetails(vehicle)}
                 >
-                  View full details
+                  {t("View full details")}
                 </Button>
               </div>
               {/* Dark and unthemed so it stays visible over any photo. */}
               <Dialog.Close
                 className="absolute right-3 top-3 grid h-9 w-9 cursor-pointer place-items-center rounded-full bg-black/70 text-white transition hover:bg-black/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                aria-label="Close quick view"
+                aria-label={t("Close quick view")}
               >
                 <X className="h-4 w-4" />
               </Dialog.Close>

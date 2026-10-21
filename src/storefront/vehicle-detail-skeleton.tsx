@@ -1,10 +1,12 @@
+import { useI18n } from "../shared/i18n-react";
 import { Skeleton as Bone } from "./ui/skeleton";
 
 /** Placeholder with the vehicle detail layout, shown while the vehicle loads. */
 export function VehicleDetailSkeleton() {
+  const { t } = useI18n();
   return (
     <div className="mt-6 grid gap-8" role="status" aria-busy="true">
-      <span className="sr-only">Loading vehicle details…</span>
+      <span className="sr-only">{t("Loading vehicle details…")}</span>
       <div className="sf-detail-header flex flex-wrap items-end justify-between gap-5">
         <div className="grid gap-3">
           <Bone className="h-5 w-24 rounded-full" />

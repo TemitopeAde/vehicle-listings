@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useI18n } from "../../shared/i18n-react";
 import { selectPlaceholder } from "./vehicle-fields";
 import { cn } from "./ui/button";
 
@@ -19,15 +20,17 @@ export function VehicleChoice({
   error?: string;
   allowCustom?: boolean;
 }) {
+  const { t } = useI18n();
   const [custom, setCustom] = useState(
     Boolean(value && !values.includes(value)),
   );
   const customSelected =
     allowCustom && (custom || Boolean(value && !values.includes(value)));
+  const customLabel = `Custom ${label.replace(/ \*$/, "").toLowerCase()}`;
   return (
     <div>
       <label className="label" htmlFor={`v-${name}`}>
-        {label}
+        {t(label)}
       </label>
       <select
         id={`v-${name}`}
@@ -41,22 +44,24 @@ export function VehicleChoice({
           onChange(next === "__custom__" ? "" : next);
         }}
       >
-        <option value="">{selectPlaceholder(label)}</option>
+        <option value="">{t(selectPlaceholder(label))}</option>
         {values.filter(Boolean).map((option) => (
           <option key={option} value={option}>
-            {option}
+            {t(option)}
           </option>
         ))}
         {allowCustom && (
           <option value="__custom__">
-            {name === "make" ? "Add a new make…" : "Other — enter a value"}
+            {name === "make"
+              ? t("Add a new make…")
+              : t("Other — enter a value")}
           </option>
         )}
       </select>
       {customSelected && (
         <div className="mt-2">
           <label className="label text-xs" htmlFor={`v-${name}-custom`}>
-            Custom {label.replace(/ \*$/, "").toLowerCase()}
+            {t(customLabel)}
           </label>
           <input
             id={`v-${name}-custom`}
@@ -69,7 +74,7 @@ export function VehicleChoice({
       )}
       {error && (
         <p id={`v-${name}-error`} className="text-xs text-red-700 mt-1">
-          {error}
+          {t(error)}
         </p>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { ImagePlus, Video, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { assetUrl } from "../../shared/client";
+import { useI18n } from "../../shared/i18n-react";
 import { Button } from "./ui/button";
 import type { VehicleForm } from "./vehicle-form-types";
 import type { VehicleUploads } from "../use-vehicle-uploads";
@@ -12,6 +13,7 @@ export function VehicleMedia({
   form: VehicleForm;
   uploads: VehicleUploads;
 }) {
+  const { t } = useI18n();
   const { watch, setValue } = form;
   const media = watch("media") ?? [];
   const videos = watch("videos") ?? [];
@@ -41,7 +43,7 @@ export function VehicleMedia({
         />
       </div>
       {uploads.jobs.some((job) => job.status !== "ready") && (
-        <section aria-label="Media upload progress" className="space-y-3">
+        <section aria-label={t("Media upload progress")} className="space-y-3">
           {uploads.jobs.filter((job) => job.status !== "ready").map((job) => (
             <div key={job.id} className="border rounded-lg p-3 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -53,7 +55,7 @@ export function VehicleMedia({
                     size="sm"
                     onClick={() => uploads.cancel(job.id)}
                   >
-                    Cancel
+                    {t("Cancel")}
                   </Button>
                 ) : (job.status === "failed" || job.status === "cancelled") &&
                   uploads.canRetry(job.id) ? (
@@ -64,7 +66,7 @@ export function VehicleMedia({
                     disabled={uploads.busy}
                     onClick={() => uploads.retry(job.id)}
                   >
-                    Retry
+                    {t("Retry")}
                   </Button>
                 ) : null}
               </div>
@@ -75,16 +77,17 @@ export function VehicleMedia({
                   role={job.error ? "alert" : "status"}
                   className={job.error ? "text-sm text-red-700" : "hint"}
                 >
-                  {job.error ??
-                    (job.status === "queued"
-                      ? "Waiting to upload…"
-                      : `Uploading ${job.progress}%`)}
+                  {job.error
+                    ? t(job.error)
+                    : job.status === "queued"
+                      ? t("Waiting to upload…")
+                      : t("Uploading {progress}%", { progress: job.progress })}
                 </p>
               ) : null}
               {job.status === "uploading" && (
                 <progress
                   className="w-full"
-                  aria-label={`Uploading ${job.name}`}
+                  aria-label={t("Uploading {name}", { name: job.name })}
                   value={job.progress}
                   max={100}
                 />
@@ -93,13 +96,13 @@ export function VehicleMedia({
           ))}
         </section>
       )}
-      <section className="space-y-4" aria-label="Vehicle photos">
+      <section className="space-y-4" aria-label={t("Vehicle photos")}>
         <h3 className="font-semibold flex gap-2 items-center">
           <ImagePlus size={18} />
-          Photos
+          {t("Photos")}
         </h3>
         {media.length === 0 && (
-          <p className="hint">Add photos to show buyers your vehicle.</p>
+          <p className="hint">{t("Add photos to show buyers your vehicle.")}</p>
         )}
         {media.map((item, index) => (
           <div
@@ -114,8 +117,9 @@ export function VehicleMedia({
             />
             <div className="flex-1 min-w-40">
               <label className="label text-xs" htmlFor={`alt-${index}`}>
-                Image {index + 1}
-                {index === 0 ? " · Cover" : ""} — alt text
+                {index === 0
+                  ? t("Image {index} · Cover — alt text", { index: index + 1 })
+                  : t("Image {index} — alt text", { index: index + 1 })}
               </label>
               <input
                 id={`alt-${index}`}
@@ -139,7 +143,7 @@ export function VehicleMedia({
                 size="icon"
                 variant="ghost"
                 disabled={index === 0}
-                aria-label={`Move photo ${index + 1} up`}
+                aria-label={t("Move photo {index} up", { index: index + 1 })}
                 onClick={() => movePhoto(index, -1)}
               >
                 <ArrowUp size={15} />
@@ -149,7 +153,7 @@ export function VehicleMedia({
                 size="icon"
                 variant="ghost"
                 disabled={index === media.length - 1}
-                aria-label={`Move photo ${index + 1} down`}
+                aria-label={t("Move photo {index} down", { index: index + 1 })}
                 onClick={() => movePhoto(index, 1)}
               >
                 <ArrowDown size={15} />
@@ -158,7 +162,7 @@ export function VehicleMedia({
                 type="button"
                 size="icon"
                 variant="ghost"
-                aria-label={`Remove photo ${index + 1}`}
+                aria-label={t("Remove photo {index}", { index: index + 1 })}
                 onClick={() =>
                   setValue(
                     "media",
@@ -173,13 +177,13 @@ export function VehicleMedia({
           </div>
         ))}
       </section>
-      <section className="space-y-4" aria-label="Vehicle videos">
+      <section className="space-y-4" aria-label={t("Vehicle videos")}>
         <h3 className="font-semibold flex gap-2 items-center">
           <Video size={18} />
-          Videos
+          {t("Videos")}
         </h3>
         {videos.length === 0 && (
-          <p className="hint">Add a walkaround or test-drive video.</p>
+          <p className="hint">{t("Add a walkaround or test-drive video.")}</p>
         )}
         {videos.map((item, index) => (
           <div
@@ -192,12 +196,14 @@ export function VehicleMedia({
               controls
               playsInline
               preload="metadata"
-              aria-label={item.title || `Vehicle video ${index + 1}`}
+              aria-label={
+                item.title || t("Vehicle video {index}", { index: index + 1 })
+              }
               className="w-full rounded"
             />
             <div>
               <label className="label text-xs" htmlFor={`video-title-${index}`}>
-                Video {index + 1} — title
+                {t("Video {index} — title", { index: index + 1 })}
               </label>
               <input
                 id={`video-title-${index}`}
@@ -219,7 +225,7 @@ export function VehicleMedia({
               type="button"
               size="icon"
               variant="ghost"
-              aria-label={`Remove video ${index + 1}`}
+              aria-label={t("Remove video {index}", { index: index + 1 })}
               onClick={() =>
                 setValue(
                   "videos",

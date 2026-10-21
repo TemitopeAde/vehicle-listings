@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { api } from "../shared/client";
+import { useI18n } from "../shared/i18n-react";
 import type { Vehicle, Dealer } from "../shared/schemas";
 import { Button } from "./ui/button";
 import {
@@ -34,6 +35,7 @@ export function VehicleContact({
   dealer: PublicDealer | null;
   track: (channel: string) => void;
 }) {
+  const { t } = useI18n();
   const [busy, setBusy] = useState(false),
     [sent, setSent] = useState(false),
     [formError, setFormError] = useState(""),
@@ -70,7 +72,7 @@ export function VehicleContact({
     <Card className="h-fit">
       <CardHeader>
         <CardTitle>
-          {dealer?.businessName ?? "Contact the dealership"}
+          {dealer?.businessName ?? t("Contact the dealership")}
         </CardTitle>
         {dealer?.address && <CardDescription>{dealer.address}</CardDescription>}
         {dealer?.hours && <CardDescription>{dealer.hours}</CardDescription>}
@@ -81,12 +83,12 @@ export function VehicleContact({
             {dealer.whatsapp && (
               <Button asChild>
                 <a
-                  href={`https://wa.me/${dealer.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(`Hello, I’m interested in ${vehicle.title}.`)}`}
+                  href={`https://wa.me/${dealer.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(t("Hello, I’m interested in {title}.", { title: vehicle.title }))}`}
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => track("whatsapp")}
                 >
-                  WhatsApp
+                  {t("WhatsApp")}
                 </a>
               </Button>
             )}
@@ -96,7 +98,7 @@ export function VehicleContact({
                   href={`tel:${dealer.phone.replace(/[^+\d]/g, "")}`}
                   onClick={() => track("phone")}
                 >
-                  Call
+                  {t("Call")}
                 </a>
               </Button>
             )}
@@ -106,7 +108,7 @@ export function VehicleContact({
                   href={`mailto:${dealer.email}?subject=${encodeURIComponent(vehicle.title)}`}
                   onClick={() => track("email")}
                 >
-                  Email
+                  {t("Email")}
                 </a>
               </Button>
             )}
@@ -115,13 +117,13 @@ export function VehicleContact({
         {!vehicle.demo && vehicle.status !== "sold" && (
           <div
             role="group"
-            aria-label="Contact options"
+            aria-label={t("Contact options")}
             className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1"
           >
             {(
               [
-                ["message", "Ask a question"],
-                ["quote", "Request a quote"],
+                ["message", t("Ask a question")],
+                ["quote", t("Request a quote")],
               ] as const
             ).map(([value, label]) => (
               <Button
@@ -139,12 +141,15 @@ export function VehicleContact({
         )}
         {vehicle.demo ? (
           <Alert>
-            This is a sample listing, so inquiries are turned off. Browse the
-            showroom again once real vehicles are published.
+            {t(
+              "This is a sample listing, so inquiries are turned off. Browse the showroom again once real vehicles are published.",
+            )}
           </Alert>
         ) : vehicle.status === "sold" ? (
           <Alert>
-            This vehicle has been sold. Explore similar vehicles below.
+            {t(
+              "This vehicle has been sold. Explore similar vehicles below.",
+            )}
           </Alert>
         ) : (
           <>
@@ -155,14 +160,15 @@ export function VehicleContact({
             {mode === "message" &&
               (sent ? (
                 <Alert role="status">
-                  Your request has been received. The dealership can follow up
-                  using your contact details.
+                  {t(
+                    "Your request has been received. The dealership can follow up using your contact details.",
+                  )}
                 </Alert>
               ) : (
                 <form onSubmit={submit} className="grid gap-4">
-                  <h4 className="font-semibold">Ask about this vehicle</h4>
+                  <h4 className="font-semibold">{t("Ask about this vehicle")}</h4>
                   <Label>
-                    Name
+                    {t("Name")}
                     <Input
                       name="name"
                       required
@@ -172,7 +178,7 @@ export function VehicleContact({
                     />
                   </Label>
                   <Label>
-                    Email
+                    {t("Email")}
                     <Input
                       name="email"
                       type="email"
@@ -181,7 +187,7 @@ export function VehicleContact({
                     />
                   </Label>
                   <Label>
-                    Phone (optional)
+                    {t("Phone (optional)")}
                     <Input
                       name="phone"
                       type="tel"
@@ -190,27 +196,30 @@ export function VehicleContact({
                     />
                   </Label>
                   <Label>
-                    Request type
+                    {t("Request type")}
                     <NativeSelect name="kind" required>
-                      <option value="">Select request type</option>
-                      <option value="inquiry">General inquiry</option>
-                      <option value="test-drive">Test drive</option>
-                      <option value="trade-in">Trade-in</option>
+                      <option value="">{t("Select request type")}</option>
+                      <option value="inquiry">{t("General inquiry")}</option>
+                      <option value="test-drive">{t("Test drive")}</option>
+                      <option value="trade-in">{t("Trade-in")}</option>
                     </NativeSelect>
                   </Label>
                   <Label>
-                    Preferred date (optional)
+                    {t("Preferred date (optional)")}
                     <Input type="date" name="preferredDate" />
                   </Label>
                   <Label>
-                    Message
+                    {t("Message")}
                     <Textarea
                       name="message"
                       required
                       minLength={10}
                       maxLength={3000}
                       rows={4}
-                      defaultValue={`I’m interested in ${vehicle.title}. Please share more details.`}
+                      defaultValue={t(
+                        "I’m interested in {title}. Please share more details.",
+                        { title: vehicle.title },
+                      )}
                     />
                   </Label>
                   <input
@@ -221,17 +230,18 @@ export function VehicleContact({
                     hidden
                   />
                   <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
-                    <Checkbox name="consent" required />I agree that the
-                    dealership may store my contact details and contact me about
-                    this vehicle.
+                    <Checkbox name="consent" required />
+                    {t(
+                      "I agree that the dealership may store my contact details and contact me about this vehicle.",
+                    )}
                   </label>
                   {formError && (
                     <Alert variant="destructive" role="alert">
-                      {formError}
+                      {t(formError)}
                     </Alert>
                   )}
                   <Button disabled={busy} pending={busy}>
-                    Send request
+                    {t("Send request")}
                   </Button>
                 </form>
               ))}

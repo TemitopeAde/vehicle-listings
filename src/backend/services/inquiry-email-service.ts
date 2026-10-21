@@ -10,6 +10,7 @@ import {
   brandedEmail,
   emailKey,
   escapeEmailText,
+  showroomLanguage,
 } from "./inquiry-email-content";
 
 export const inquiryReplyInput = z
@@ -146,10 +147,13 @@ export async function deliverInquiryEmail(
   const row = await deps.getRow(ctx, "inquiries", inquiryId, automatic);
   if (!row) throw new AppError("NOT_FOUND", "Inquiry not found.", 404);
   const inquiry = inquirySchema.parse(row);
-  const branding = await deps.branding(ctx);
+  const [branding, language] = await Promise.all([
+    deps.branding(ctx),
+    showroomLanguage(ctx),
+  ]);
   return deps.send(
     {
-      ...brandedEmail(branding.siteName, subject, html),
+      ...brandedEmail(branding.siteName, subject, html, language),
       toRecipients: [
         { emailAddress: inquiry.email, name: inquiry.name.slice(0, 50) },
       ],

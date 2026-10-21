@@ -29,6 +29,8 @@ import { Badge } from "./components/common";
 import { useVehicleUploads } from "./use-vehicle-uploads";
 import type { UploadDependencies } from "./media-upload";
 import { isCommercial, isTrailer } from "../shared/vehicle-options";
+import { statusLabel } from "../shared/i18n";
+import { useI18n } from "../shared/i18n-react";
 const sections = [
   "Basics",
   "Pricing",
@@ -106,6 +108,22 @@ function requiredMessage(name: keyof VehicleInput, category: string) {
       return "Complete this field.";
   }
 }
+function acceptAuto(
+  current: string,
+  generated: string,
+  state: { last: string | null; stop: boolean },
+) {
+  if (state.stop || !generated || current === generated) {
+    if (current === generated) state.last = generated;
+    return false;
+  }
+  if ((state.last === null && current) || (state.last !== null && current !== state.last)) {
+    state.stop = true;
+    return false;
+  }
+  state.last = generated;
+  return true;
+}
 function stepForField(name: string) {
   if (
     (
@@ -168,7 +186,7 @@ export function VehicleEditor({
   backLabel = "Back to inventory",
   submitDisabled = false,
   uploadDependencies,
-  showFeatured = true,
+  showFeatured = false,
 }: {
   vehicle: Vehicle | null;
   onBack?: () => void;
@@ -181,6 +199,7 @@ export function VehicleEditor({
   uploadDependencies?: Partial<UploadDependencies>;
   showFeatured?: boolean;
 }) {
+  const { t } = useI18n();
   const [section, setSection] = useState(0),
     [saved, setSaved] = useState(vehicle),
     [busy, setBusy] = useState(false),
@@ -241,6 +260,70 @@ export function VehicleEditor({
   const {
     formState: { isDirty },
   } = form;
+  const showroom = useResource<{ currency: VehicleInput["currency"] }>(
+    vehicle ? null : "settings",
+    client,
+  );
+  const titleAuto = useRef({ last: null as string | null, stop: false });
+  const seoAuto = useRef({ last: null as string | null, stop: false });
+  const locationAuto = useRef({ last: null as string | null, stop: false });
+  const currencyAuto = useRef("USD");
+  const year = form.watch("year");
+  const make = form.watch("make");
+  const model = form.watch("model");
+  const trim = form.watch("trim");
+  const listingTitle = form.watch("title");
+  const dealerId = form.watch("dealerId");
+  useEffect(() => {
+    if (vehicle) return;
+    const yearText =
+      typeof year === "number" && Number.isFinite(year) && year > 0
+        ? String(year)
+        : "";
+    const generated = [yearText, make, model, trim]
+      .map((part) => (typeof part === "string" ? part.trim() : ""))
+      .filter(Boolean)
+      .join(" ");
+    const current = (form.getValues("title") ?? "").trim();
+    if (!acceptAuto(current, generated, titleAuto.current)) return;
+    form.setValue("title", generated, {
+      shouldDirty: true,
+      shouldValidate: generated.length >= 3,
+    });
+  }, [vehicle, year, make, model, trim, form]);
+  useEffect(() => {
+    if (vehicle) return;
+    const generated = (listingTitle ?? "").trim().slice(0, 70);
+    const current = (form.getValues("seoTitle") ?? "").trim();
+    if (!acceptAuto(current, generated, seoAuto.current)) return;
+    form.setValue("seoTitle", generated, { shouldDirty: true });
+  }, [vehicle, listingTitle, form]);
+  useEffect(() => {
+    if (vehicle || lockedDealer) return;
+    const choices = (dealers.data?.items ?? []).filter(
+      (item) => item.approvalState === "approved" && !item.demo,
+    );
+    if (choices.length !== 1) return;
+    if (form.getValues("dealerId")) return;
+    form.setValue("dealerId", choices[0]._id, { shouldValidate: true });
+  }, [vehicle, lockedDealer, dealers.data, form]);
+  useEffect(() => {
+    if (vehicle) return;
+    const dealer = dealers.data?.items.find((item) => item._id === dealerId);
+    const generated = dealer?.location?.trim() ?? "";
+    const current = (form.getValues("location") ?? "").trim();
+    if (!acceptAuto(current, generated, locationAuto.current)) return;
+    form.setValue("location", generated, { shouldDirty: true });
+  }, [vehicle, dealerId, dealers.data, form]);
+  useEffect(() => {
+    if (vehicle) return;
+    const next = showroom.data?.currency;
+    if (!next) return;
+    const current = form.getValues("currency");
+    if (current !== currencyAuto.current) return;
+    currencyAuto.current = next;
+    if (current !== next) form.setValue("currency", next);
+  }, [vehicle, showroom.data, form]);
   useEffect(() => {
     const fn = (e: BeforeUnloadEvent) => {
       if (isDirty || uploads.busy) {
@@ -289,7 +372,7 @@ export function VehicleEditor({
   }
   async function save(input: VehicleInput, publish = false) {
     if (uploads.busy) {
-      toast.error("Wait for media uploads to finish before saving.");
+      toast.error(t("Wait for media uploads to finish before saving."));
       return;
     }
     setBusy(true);
@@ -329,10 +412,12 @@ export function VehicleEditor({
         });
         setSaved(result);
       }
-      toast.success(publish ? "Vehicle published" : "Vehicle saved");
+      toast.success(
+        publish ? t("Vehicle published") : t("Vehicle saved"),
+      );
       setConfirm("");
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(t((e as Error).message));
     } finally {
       setBusy(false);
     }
@@ -347,10 +432,10 @@ export function VehicleEditor({
         status,
       });
       setSaved(result);
-      toast.success(`Vehicle ${status}`);
+      toast.success(t("Vehicle {status}", { status }));
       setConfirm("");
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(t((e as Error).message));
     } finally {
       setBusy(false);
     }
@@ -361,14 +446,20 @@ export function VehicleEditor({
         {onBack ? (
           <Button variant="ghost" onClick={back}>
             <ArrowLeft size={16} />
-            {backLabel}
+            {t(backLabel)}
           </Button>
         ) : (
           <span />
         )}
         <div className="flex gap-2 items-center">
           <Badge status={saved?.status}>
-            {saved?.demo ? "Demo vehicle" : (saved?.status ?? "New draft")}
+            {saved?.demo
+              ? t("Demo vehicle")
+              : t(
+                  saved
+                    ? (statusLabel[saved.status] ?? saved.status)
+                    : "New draft",
+                )}
           </Badge>
           <Button
             variant="outline"
@@ -377,7 +468,7 @@ export function VehicleEditor({
             pending={busy}
           >
             <Save size={16} />
-            Save changes
+            {t("Save changes")}
           </Button>
           <Button
             onClick={() => setConfirm("published")}
@@ -390,13 +481,13 @@ export function VehicleEditor({
             }
           >
             <Globe size={16} />
-            Publish
+            {t("Publish")}
           </Button>
         </div>
       </div>
       <div className="grid lg:grid-cols-[210px_1fr] gap-6">
         <nav
-          aria-label="Vehicle editor sections"
+          aria-label={t("Vehicle editor sections")}
           className="surface p-3 h-fit flex lg:flex-col flex-wrap gap-1"
         >
           {sections.map((s, i) => (
@@ -415,7 +506,7 @@ export function VehicleEditor({
               <span className="text-xs opacity-60">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              {s}
+              {t(s)}
             </button>
           ))}
         </nav>
@@ -429,11 +520,13 @@ export function VehicleEditor({
             void form.handleSubmit((i) => save(i), revealInvalid)(event);
           }}
         >
-          <h2 className="text-xl font-semibold">{sections[section]}</h2>
+          <h2 className="text-xl font-semibold">
+            {t(sections[section] ?? "")}
+          </h2>
           <p className="hint mt-1 mb-7">
             {section === 0
-              ? "Start with the facts that make this vehicle easy to find."
-              : "Keep details accurate so buyers know what to expect."}
+              ? t("Start with the facts that make this vehicle easy to find.")
+              : t("Keep details accurate so buyers know what to expect.")}
           </p>
           <VehicleSections
             section={section}
@@ -453,11 +546,11 @@ export function VehicleEditor({
               disabled={section === 0}
               onClick={() => setSection((s) => s - 1)}
             >
-              Previous
+              {t("Previous")}
             </Button>
             {section < sections.length - 1 ? (
               <Button type="button" onClick={() => void goToSection(section + 1)}>
-                Continue
+                {t("Continue")}
               </Button>
             ) : (
               <Button
@@ -465,7 +558,7 @@ export function VehicleEditor({
                 disabled={busy || uploads.busy || submitDisabled}
                 pending={busy}
               >
-                Save changes
+                {t("Save changes")}
               </Button>
             )}
           </div>
@@ -480,21 +573,27 @@ export function VehicleEditor({
         <DialogContent>
           <DialogTitle className="section-heading">
             {confirm === "leave"
-              ? "Discard unsaved changes?"
+              ? t("Discard unsaved changes?")
               : confirm === "published"
-                ? "Publish this vehicle?"
-                : `Mark this vehicle ${confirm}?`}
+                ? t("Publish this vehicle?")
+                : t("Mark this vehicle {status}?", { status: confirm })}
           </DialogTitle>
           <DialogDescription className="hint my-4">
             {confirm === "leave"
-              ? "Changes since your last save will be lost and pending uploads will be cancelled."
+              ? t(
+                  "Changes since your last save will be lost and pending uploads will be cancelled.",
+                )
               : confirm === "published"
-                ? "Your changes will be saved and this listing will become visible to site visitors."
-                : "This changes the availability of this listing on your storefront."}
+                ? t(
+                    "Your changes will be saved and this listing will become visible to site visitors.",
+                  )
+                : t(
+                    "This changes the availability of this listing on your storefront.",
+                  )}
           </DialogDescription>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setConfirm("")}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               disabled={busy}
@@ -510,7 +609,7 @@ export function VehicleEditor({
                     : void statusAction(confirm)
               }
             >
-              Confirm
+              {t("Confirm")}
             </Button>
           </div>
         </DialogContent>

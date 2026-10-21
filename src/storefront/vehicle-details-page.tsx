@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { cacheTtl, cachedApi } from "../shared/client";
+import { localizeDefault } from "../shared/i18n";
+import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
 import { defaultTheme, type Theme } from "../shared/schemas";
 import { demoVehicles } from "../shared/demo";
 import { VehicleDetail } from "./vehicle-detail";
@@ -23,7 +25,14 @@ export type VehicleDetailsPageProps = {
   radius?: number;
   widgetStyle?: WidgetStyle;
 };
-export function VehicleDetailsPage({
+export function VehicleDetailsPage(props: VehicleDetailsPageProps) {
+  return (
+    <LocaleProvider>
+      <VehicleDetailsView {...props} />
+    </LocaleProvider>
+  );
+}
+function VehicleDetailsView({
   slug,
   backLabel = "Back",
   designMode = false,
@@ -31,6 +40,8 @@ export function VehicleDetailsPage({
   radius,
   widgetStyle = {},
 }: VehicleDetailsPageProps) {
+  const { t, language } = useI18n();
+  const back = localizeDefault(language, backLabel, "Back");
   const [theme, setTheme] = useState<Theme>(defaultTheme);
   const [navigationError, setNavigationError] = useState("");
   function browseInventory() {
@@ -53,6 +64,7 @@ export function VehicleDetailsPage({
   return (
     <div
       className="autohaus"
+      {...localeProps(language)}
       data-color-roles={textSections
         .filter(([key]) => widgetStyle[`${key}-color`])
         .map(([key]) => key)
@@ -72,14 +84,15 @@ export function VehicleDetailsPage({
     >
       {navigationError && (
         <Alert variant="destructive" role="alert">
-          {navigationError}
+          {t(navigationError)}
         </Alert>
       )}
       {designMode ? (
         <>
           <Alert>
-            Editor preview · sample vehicle. On your live site this shows the
-            vehicle a visitor clicked in the marketplace.
+            {t(
+              "Editor preview · sample vehicle. On your live site this shows the vehicle a visitor clicked in the marketplace.",
+            )}
           </Alert>
           {sample && (
             <VehicleDetail
@@ -98,8 +111,8 @@ export function VehicleDetailsPage({
             variant="outline"
             className="w-10 px-0"
             onClick={browseInventory}
-            aria-label={backLabel}
-            title={backLabel}
+            aria-label={back}
+            title={back}
           >
             <ArrowLeft aria-hidden="true" className="size-5" />
           </Button>
@@ -108,11 +121,12 @@ export function VehicleDetailsPage({
       ) : (
         <div className="grid justify-items-center gap-4 py-12 text-center">
           <p className="text-muted-foreground">
-            No vehicle selected. Choose a car from the inventory to see its
-            details.
+            {t(
+              "No vehicle selected. Choose a car from the inventory to see its details.",
+            )}
           </p>
           <Button variant="outline" onClick={browseInventory}>
-            Browse inventory
+            {t("Browse inventory")}
           </Button>
         </div>
       )}

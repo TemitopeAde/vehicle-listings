@@ -1,4 +1,5 @@
 import { Accordion } from "@wix/design-system";
+import { useI18n } from "../../../../shared/i18n-react";
 import {
   filterTextSections,
   listingTextSections,
@@ -45,13 +46,14 @@ function ElementFields({
   );
 }
 export function IndividualFilterStyles(props: Props) {
+  const { t } = useI18n();
   return (
     <Accordion
       skin="light"
       hideShadow
       contentPadding="none"
       items={filterTextSections.map(({ label, sections }) => ({
-        title: label,
+        title: t(label),
         children: sections.map((section) => (
           <ElementFields key={section[0]} section={section} {...props} />
         )),
@@ -60,13 +62,14 @@ export function IndividualFilterStyles(props: Props) {
   );
 }
 export function IndividualListingStyles(props: Props) {
+  const { t } = useI18n();
   return (
     <Accordion
       skin="light"
       hideShadow
       contentPadding="none"
       items={listingTextSections.map((section) => ({
-        title: section[1],
+        title: t(section[1]),
         children: <ElementFields section={section} {...props} />,
       }))}
     />

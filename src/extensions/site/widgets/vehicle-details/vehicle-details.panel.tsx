@@ -16,6 +16,7 @@ import {
   textSections,
 } from "../../../../storefront/widget-style";
 import { ColorField, FontField } from "../vehicle-marketplace/style-fields";
+import { LocaleProvider, useI18n } from "../../../../shared/i18n-react";
 
 const defaults: Record<string, string> = {
   radius: "12",
@@ -23,6 +24,15 @@ const defaults: Record<string, string> = {
 };
 
 export default function Panel() {
+  return (
+    <LocaleProvider>
+      <PanelContent />
+    </LocaleProvider>
+  );
+}
+
+function PanelContent() {
+  const { t } = useI18n();
   const [props, setProps] = useState(defaults);
   const current = useRef(defaults);
   const queue = useRef(Promise.resolve());
@@ -83,11 +93,11 @@ export default function Panel() {
   return (
     <WixDesignSystemProvider>
       <SidePanel width="100%" height="100vh">
-        <SidePanel.Header title="Vehicle details" />
+        <SidePanel.Header title={t("Vehicle details")} />
         <SidePanel.Content>
-          {error && <SectionHelper skin="danger">{error}</SectionHelper>}
+          {error && <SectionHelper skin="danger">{t(error)}</SectionHelper>}
           {!loaded ? (
-            <SectionHelper>Loading widget settings…</SectionHelper>
+            <SectionHelper>{t("Loading widget settings…")}</SectionHelper>
           ) : (
             <Accordion
               skin="light"
@@ -95,11 +105,11 @@ export default function Panel() {
               contentPadding="none"
               items={[
                 {
-                  title: "Layout",
+                  title: t("Layout"),
                   initiallyOpen: true,
                   children: (
                     <SidePanel.Field>
-                      <FormField id="radius" label="Corner radius">
+                      <FormField id="radius" label={t("Corner radius")}>
                         <Input
                           id="radius"
                           type="number"
@@ -122,7 +132,7 @@ export default function Panel() {
                   ),
                 },
                 {
-                  title: "Colors",
+                  title: t("Colors"),
                   children: (
                     <>
                       {surfaceSettings.map(([key, label, fallback]) => (
@@ -139,7 +149,7 @@ export default function Panel() {
                   ),
                 },
                 ...textSections.map(([key, label, size]) => ({
-                  title: label,
+                  title: t(label),
                   children: (
                     <>
                       <FontField

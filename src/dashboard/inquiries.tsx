@@ -8,7 +8,23 @@ import { useResource } from "./hooks";
 import { Button, cn } from "./components/ui/button";
 import { Badge, LoadState, Empty } from "./components/common";
 import { InquiryEmail } from "./inquiry-email";
+import { statusLabel } from "../shared/i18n";
+import { useI18n } from "../shared/i18n-react";
+
+const inquiryKind: Record<string, string> = {
+  inquiry: "General inquiry",
+  "test-drive": "Test drive",
+  "trade-in": "Trade-in",
+};
+
+function inquiryStatus(status: string) {
+  return (
+    statusLabel[status] ?? status.charAt(0).toUpperCase() + status.slice(1)
+  );
+}
+
 export function Inquiries() {
+  const { t } = useI18n();
   const [status, setStatus] = useState(""),
     [selected, setSelected] = useState<string | null>(null),
     [cursor, setCursor] = useState(0),
@@ -27,10 +43,10 @@ export function Inquiries() {
     if (notesSave) setSavingNotes(true);
     try {
       await api("inquiries", { id: inquiry._id, payload }, "PATCH");
-      toast.success("Inquiry updated");
+      toast.success(t("Inquiry updated"));
       await resource.reload();
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(t((e as Error).message));
     } finally {
       setBusy(false);
       setSavingNotes(false);
@@ -40,9 +56,9 @@ export function Inquiries() {
     <div className="space-y-5">
       <div className="flex justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="section-heading">Conversations start here</h2>
+          <h2 className="section-heading">{t("Conversations start here")}</h2>
           <p className="hint mt-1">
-            Follow up with interested buyers and keep every lead moving.
+            {t("Follow up with interested buyers and keep every lead moving.")}
           </p>
         </div>
         <Button
@@ -64,7 +80,7 @@ export function Inquiries() {
           }
         >
           <Download size={16} />
-          Export page
+          {t("Export page")}
         </Button>
       </div>
       <div className="flex gap-2 flex-wrap">
@@ -79,7 +95,7 @@ export function Inquiries() {
               setSelected(null);
             }}
           >
-            {s ? s[0]?.toUpperCase() + s.slice(1) : "All inquiries"}
+            {s ? t(inquiryStatus(s)) : t("All inquiries")}
           </Button>
         ))}
       </div>
@@ -106,11 +122,11 @@ export function Inquiries() {
             >
               <div className="flex justify-between">
                 <p className="font-semibold text-sm">{i.name}</p>
-                <Badge status={i.status}>{i.status}</Badge>
+                <Badge status={i.status}>{t(inquiryStatus(i.status))}</Badge>
               </div>
               <p className="hint text-xs mt-2 line-clamp-2">{i.message}</p>
               <p className="text-xs text-muted-foreground mt-3">
-                {i.createdAt.slice(0, 10)} · {i.kind}
+                {i.createdAt.slice(0, 10)} · {t(inquiryKind[i.kind] ?? i.kind)}
               </p>
             </button>
           ))}
@@ -121,7 +137,7 @@ export function Inquiries() {
               disabled={cursor === 0}
               onClick={() => setCursor(Math.max(0, cursor - 50))}
             >
-              Previous
+              {t("Previous")}
             </Button>
             <Button
               size="sm"
@@ -129,7 +145,7 @@ export function Inquiries() {
               disabled={resource.data?.nextCursor == null}
               onClick={() => setCursor(resource.data?.nextCursor ?? 0)}
             >
-              Next
+              {t("Next")}
             </Button>
           </div>
         </section>
@@ -140,23 +156,27 @@ export function Inquiries() {
                 <h3 className="text-xl font-semibold">{inquiry.name}</h3>
                 <select
                   className="field w-auto"
-                  aria-label="Inquiry status"
+                  aria-label={t("Inquiry status")}
                   disabled={busy}
                   value={inquiry.status}
                   onChange={(e) => void update({ status: e.target.value })}
                 >
                   {["new", "contacted", "qualified", "closed"].map((s) => (
-                    <option key={s}>{s}</option>
+                    <option key={s} value={s}>
+                      {t(inquiryStatus(s))}
+                    </option>
                   ))}
                 </select>
               </div>
-              <p className="hint mt-2">Vehicle: {inquiry.vehicleId}</p>
+              <p className="hint mt-2">
+                {t("Vehicle: {id}", { id: inquiry.vehicleId })}
+              </p>
               <div className="flex flex-wrap gap-3 my-5">
                 {inquiry.phone && (
                   <Button asChild variant="outline">
                     <a href={`tel:${inquiry.phone.replace(/[^+\d]/g, "")}`}>
                       <Phone size={16} />
-                      Call buyer
+                      {t("Call buyer")}
                     </a>
                   </Button>
                 )}
@@ -170,16 +190,17 @@ export function Inquiries() {
                 {inquiry.message}
               </p>
               <p className="text-xs text-muted-foreground mt-3">
-                Buyer consent recorded ·{" "}
-                {inquiry.createdAt.slice(0, 16).replace("T", " ")} UTC
+                {t("Buyer consent recorded · {when} UTC", {
+                  when: inquiry.createdAt.slice(0, 16).replace("T", " "),
+                })}
               </p>
               <label className="label mt-7" htmlFor="inquiry-notes">
-                Team notes
+                {t("Team notes")}
               </label>
               <textarea
                 id="inquiry-notes"
                 className="field h-32"
-                placeholder="Add follow-up details…"
+                placeholder={t("Add follow-up details…")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -189,14 +210,14 @@ export function Inquiries() {
                 pending={savingNotes}
                 onClick={() => void update({ notes }, true)}
               >
-                Save notes
+                {t("Save notes")}
               </Button>
             </>
           ) : (
             <div className="flex items-center justify-center min-h-72 flex-col gap-3">
               <MessageSquare className="text-muted-foreground" size={32} />
               <p className="hint">
-                Select an inquiry to view the conversation.
+                {t("Select an inquiry to view the conversation.")}
               </p>
             </div>
           )}

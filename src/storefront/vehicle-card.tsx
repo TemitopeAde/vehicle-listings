@@ -5,8 +5,9 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react";
+import { conditionLabel, statusLabel } from "../shared/i18n";
+import { useI18n } from "../shared/i18n-react";
 import type { Vehicle } from "../shared/schemas";
-import { money } from "../shared/utils";
 import { isTrailer } from "../shared/vehicle-options";
 import { CardGallery } from "./vehicle-gallery";
 import { cn } from "./ui/utils";
@@ -20,21 +21,10 @@ import {
 } from "./ui/card";
 
 function isCardControl(target: EventTarget | null) {
-  const node = target as (Element & { parentElement?: Element | null }) | null;
-  const element =
-    node && "closest" in node
-      ? node
-      : node && "parentElement" in node
-        ? node.parentElement
-        : null;
+  const element = target instanceof Element ? target : null;
   return Boolean(element?.closest("button, a, input, select, textarea, label"));
 }
 
-const conditionLabel = {
-  used: "Used",
-  new: "New",
-  certified: "Certified",
-} as const;
 export function VehicleCard({
   vehicle: v,
   badge,
@@ -50,6 +40,7 @@ export function VehicleCard({
   /** Opens the vehicle details, including when the card itself is clicked. */
   onOpen?: () => void;
 }) {
+  const { t, money, number } = useI18n();
   const elementStyle = useElementStyle();
   const press = useRef<{ x: number; y: number } | null>(null);
   const openedFromPress = useRef(false);
@@ -82,14 +73,16 @@ export function VehicleCard({
       openedFromPress.current = false;
     });
   }
-  const condition = conditionLabel[v.condition];
+  const conditionText = conditionLabel[v.condition] ?? v.condition;
+  const condition = t(conditionText);
   const status =
-    badge && badge.toLowerCase() !== v.condition && badge !== condition
-      ? badge
+    badge && badge.toLowerCase() !== v.condition && badge !== conditionText
+      ? t(statusLabel[badge] ?? badge)
       : "";
   const extraBadge = v.badges.find(
     (item) =>
-      item.toLowerCase() !== v.condition && item.toLowerCase() !== condition.toLowerCase(),
+      item.toLowerCase() !== v.condition &&
+      item.toLowerCase() !== conditionText.toLowerCase(),
   );
   const pricedDown = v.originalPrice !== undefined && v.originalPrice > v.price;
   const hasPhoto = v.media.length > 0;
@@ -122,10 +115,10 @@ export function VehicleCard({
         </p>
         <p className="shrink-0 text-sm text-muted-foreground">
           {isTrailer(v.category) ? (
-            <span {...elementStyle("vehicle-mileage")}>{v.bodyStyle}</span>
+            <span {...elementStyle("vehicle-mileage")}>{t(v.bodyStyle)}</span>
           ) : (
             <span {...elementStyle("vehicle-mileage")}>
-              {v.mileage.toLocaleString("en")} {v.mileageUnit}
+              {number(v.mileage)} {v.mileageUnit}
             </span>
           )}
         </p>
@@ -158,13 +151,15 @@ export function VehicleCard({
             <>
               {v.axles > 0 && (
                 <span {...elementStyle("vehicle-transmission")}>
-                  {v.axles} axles
+                  {t("{count} axles", { count: number(v.axles) })}
                 </span>
               )}
               {v.bodyLength > 0 && (
                 <>
                   {v.axles > 0 && " · "}
-                  <span {...elementStyle("vehicle-fuel")}>{v.bodyLength} m</span>
+                  <span {...elementStyle("vehicle-fuel")}>
+                    {t("{length} m", { length: number(v.bodyLength) })}
+                  </span>
                 </>
               )}
               {(v.axles > 0 || v.bodyLength > 0) && v.location && " · "}
@@ -172,10 +167,10 @@ export function VehicleCard({
           ) : (
             <span className="sf-hide-sm">
               <span {...elementStyle("vehicle-transmission")}>
-                {v.transmission}
+                {t(v.transmission)}
               </span>
               {" · "}
-              <span {...elementStyle("vehicle-fuel")}>{v.fuel}</span>
+              <span {...elementStyle("vehicle-fuel")}>{t(v.fuel)}</span>
               {v.location && " · "}
             </span>
           )}

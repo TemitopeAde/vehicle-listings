@@ -48,7 +48,9 @@ test("dealer can create, publish and receive a consented vehicle inquiry", async
     );
   await page.getByRole("button", { name: "Add", exact: true }).click();
   await page.getByRole("button", { name: "06 Seller" }).click();
-  await page.getByLabel("Dealership", { exact: true }).selectOption(dealer._id);
+  const dealership = page.getByLabel("Dealership", { exact: true });
+  if (await dealership.isVisible())
+    await dealership.selectOption(dealer._id);
   await page.getByLabel("Vehicle location").fill("Los Angeles, CA");
   await page.getByRole("button", { name: "07 Description & SEO" }).click();
   await page

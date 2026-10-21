@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { currencySchema } from "./currencies";
+import { languageSchema } from "./languages";
 import { isWixMediaUrl, mediaLimits } from "./media";
 import { isSamplePhotoPath } from "./sample-photos";
 import { phoneCodes, phoneDial } from "./phone-codes";
@@ -324,6 +325,7 @@ export const themeSchema = z
     fontFamily: z.enum(["system-ui", "Georgia", "Trebuchet MS"]),
     detailBasePath: z.string().regex(/^\/[a-zA-Z0-9/_-]*$/),
     currency: currencySchema,
+    language: languageSchema,
   })
   .strict();
 export type Theme = z.infer<typeof themeSchema>;
@@ -335,4 +337,5 @@ export const defaultTheme: Theme = {
   fontFamily: "system-ui",
   detailBasePath: "/cars",
   currency: "USD",
+  language: "en",
 };

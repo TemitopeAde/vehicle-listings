@@ -21,7 +21,8 @@ import { useResource } from "./hooks";
 import { Button } from "./components/ui/button";
 import { LoadState, Badge } from "./components/common";
 import type { Vehicle } from "../shared/schemas";
-import { money } from "../shared/utils";
+import { statusLabel } from "../shared/i18n";
+import { useI18n } from "../shared/i18n-react";
 export type Analytics = {
   counts: { status: string; count: number }[];
   trend: { date: string; views: number; clicks: number; leads: number }[];
@@ -45,6 +46,7 @@ export function Overview({
   navigate: (s: string) => void;
   edit: (v: Vehicle | null) => void;
 }) {
+  const { t, money, number } = useI18n();
   const stats = useResource<Analytics>("analytics"),
     vehicles = useResource<{ items: Vehicle[]; total: number }>(
       "vehicles?limit=4",
@@ -58,18 +60,20 @@ export function Overview({
       <div className="rounded-xl border border-green-200 bg-[#edf4ef] p-6 flex flex-wrap items-center justify-between gap-5">
         <div>
           <p className="text-xs uppercase tracking-[.16em] text-primary font-semibold">
-            Your showroom, connected
+            {t("Your showroom, connected")}
           </p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-            A good day to find someone’s next car.
+            {t("A good day to find someone’s next car.")}
           </h2>
           <p className="hint mt-2">
-            Keep your inventory current and turn interest into conversations.
+            {t(
+              "Keep your inventory current and turn interest into conversations.",
+            )}
           </p>
         </div>
         <Button onClick={() => edit(null)}>
           <Plus size={17} />
-          Add a vehicle
+          {t("Add a vehicle")}
         </Button>
       </div>
       <LoadState {...stats} retry={() => void stats.reload()} />
@@ -79,38 +83,38 @@ export function Overview({
             {[
               {
                 label: "Active listings",
-                value: active,
+                value: number(active),
                 icon: CarFront,
                 note: "Published and reserved vehicles",
               },
               {
                 label: "Vehicle views",
-                value: stats.data.views,
+                value: number(stats.data.views),
                 icon: Eye,
                 note: "Unique daily views · last 14 days",
               },
               {
                 label: "New inquiries",
-                value: stats.data.leads,
+                value: number(stats.data.leads),
                 icon: MessageSquare,
                 note: "Buyer inquiries · last 14 days",
               },
               {
                 label: "Lead conversion",
-                value: `${stats.data.conversion}%`,
+                value: `${number(stats.data.conversion)}%`,
                 icon: Users,
                 note: "Inquiries ÷ vehicle views",
               },
             ].map((c) => (
               <div key={c.label} className="surface p-5">
                 <div className="flex justify-between items-center">
-                  <p className="hint">{c.label}</p>
+                  <p className="hint">{t(c.label)}</p>
                   <c.icon size={18} className="text-primary" />
                 </div>
                 <p className="text-3xl mt-3 font-semibold tracking-tight">
                   {c.value}
                 </p>
-                <p className="text-xs text-muted-foreground mt-3">{c.note}</p>
+                <p className="text-xs text-muted-foreground mt-3">{t(c.note)}</p>
               </div>
             ))}
           </div>
@@ -118,22 +122,30 @@ export function Overview({
             <section className="surface p-6 min-w-0">
               <div className="flex justify-between mb-6">
                 <div>
-                  <h3 className="section-heading">Showroom activity</h3>
-                  <p className="hint mt-1">Vehicle views and buyer inquiries</p>
+                  <h3 className="section-heading">{t("Showroom activity")}</h3>
+                  <p className="hint mt-1">
+                    {t("Vehicle views and buyer inquiries")}
+                  </p>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => navigate("Analytics")}
                 >
-                  View report
+                  {t("View report")}
                   <ArrowUpRight size={14} />
                 </Button>
               </div>
               <div
                 className="h-64"
                 role="img"
-                aria-label={`${stats.data.views} vehicle views and ${stats.data.leads} inquiries in the last 14 days`}
+                aria-label={t(
+                  "{views} vehicle views and {leads} inquiries in the last 14 days",
+                  {
+                    views: number(stats.data.views),
+                    leads: number(stats.data.leads),
+                  },
+                )}
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={stats.data.trend}>
@@ -178,6 +190,7 @@ export function Overview({
                     <Tooltip />
                     <Area
                       type="monotone"
+                      name={t("views")}
                       dataKey="views"
                       stroke="#196947"
                       fill="url(#viewsFill)"
@@ -185,6 +198,7 @@ export function Overview({
                     />
                     <Area
                       type="monotone"
+                      name={t("leads")}
                       dataKey="leads"
                       stroke="#c08a32"
                       fill="transparent"
@@ -195,9 +209,11 @@ export function Overview({
               </div>
             </section>
             <section className="surface p-6">
-              <h3 className="section-heading">Getting your showroom ready</h3>
+              <h3 className="section-heading">
+                {t("Getting your showroom ready")}
+              </h3>
               <p className="hint mt-1 mb-5">
-                A few steps before your first buyer arrives.
+                {t("A few steps before your first buyer arrives.")}
               </p>
               {[
                 ["01", "Set up your dealership", "Dealers"],
@@ -212,7 +228,7 @@ export function Overview({
                   <span className="rounded-full h-8 w-8 flex items-center justify-center bg-muted text-xs text-primary">
                     {n}
                   </span>
-                  <span className="flex-1">{title}</span>
+                  <span className="flex-1">{t(title ?? "")}</span>
                   <ArrowRight size={16} />
                 </button>
               ))}
@@ -223,15 +239,15 @@ export function Overview({
       <section className="surface overflow-hidden">
         <div className="p-5 flex justify-between items-center">
           <div>
-            <h3 className="section-heading">Recently added</h3>
-            <p className="hint">The latest additions to your inventory</p>
+            <h3 className="section-heading">{t("Recently added")}</h3>
+            <p className="hint">{t("The latest additions to your inventory")}</p>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate("Vehicles")}
           >
-            All vehicles
+            {t("All vehicles")}
             <ArrowRight size={15} />
           </Button>
         </div>
@@ -253,10 +269,12 @@ export function Overview({
                 <p className="text-sm font-semibold">
                   {v.make} {v.model}
                 </p>
-                <Badge status={v.status}>{v.demo ? "Demo" : v.status}</Badge>
+                <Badge status={v.status}>
+                  {v.demo ? t("Demo") : t(statusLabel[v.status] ?? v.status)}
+                </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {v.year} · {v.mileage.toLocaleString("en")} {v.mileageUnit}
+                {v.year} · {number(v.mileage)} {t(v.mileageUnit)}
               </p>
               <p className="font-semibold text-sm mt-3">
                 {money(v.price, v.currency)}

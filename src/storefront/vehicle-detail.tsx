@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api, cacheTtl, cachedApi } from "../shared/client";
-import { money, payment, vehicleDetailsUrl } from "../shared/utils";
+import { conditionLabel, statusLabel } from "../shared/i18n";
+import { useI18n } from "../shared/i18n-react";
+import { payment, vehicleDetailsUrl } from "../shared/utils";
 import { siteNavigation } from "../shared/site-navigation";
 import type { Vehicle } from "../shared/schemas";
 import {
@@ -71,6 +73,7 @@ export function VehicleDetail({
   /** Editor preview: show `initialVehicle` without calling the API. */
   preview?: boolean;
 }) {
+  const { t, money, number } = useI18n();
   const [vehicle, setVehicle] = useState<Vehicle | null>(
       initialVehicle ?? null,
     ),
@@ -167,27 +170,38 @@ export function VehicleDetail({
   if (error)
     return (
       <Alert variant="destructive" role="alert">
-        {error}
+        {t(error)}
       </Alert>
     );
   if (!vehicle) return null;
-  const notSpecified = (value: string | number) => value || "Not specified";
+  const notSpecified = (value: string | number) =>
+    value || t("Not specified");
+  const weight = (value: number) =>
+    value
+      ? t("{weight} kg", { weight: number(value) })
+      : t("Not specified");
   const trailer = isTrailer(vehicle.category);
   const specs: [string, string | number][] = [
-    ["Category", categoryLabels[vehicle.category]],
-    ["Year", vehicle.year],
+    ["Category", t(categoryLabels[vehicle.category])],
+    ["Year", String(vehicle.year)],
     ...(trailer
       ? []
       : ([
           [
             "Mileage",
-            `${vehicle.mileage.toLocaleString("en")} ${vehicle.mileageUnit}`,
+            `${number(vehicle.mileage)} ${vehicle.mileageUnit}`,
           ],
-          ["Transmission", vehicle.transmission],
-          ["Fuel", vehicle.fuel],
+          ["Transmission", t(vehicle.transmission)],
+          ["Fuel", t(vehicle.fuel)],
         ] as [string, string][])),
-    [vehicle.category === "car" ? "Body" : "Body type", vehicle.bodyStyle],
-    ["Condition", vehicle.condition],
+    [
+      vehicle.category === "car" ? "Body" : "Body type",
+      t(vehicle.bodyStyle),
+    ],
+    [
+      "Condition",
+      t(conditionLabel[vehicle.condition] ?? vehicle.condition),
+    ],
     ...(trailer
       ? []
       : ([
@@ -200,21 +214,13 @@ export function VehicleDetail({
     ...(isCommercial(vehicle.category)
       ? ([
           ["Axles", notSpecified(vehicle.axles)],
-          [
-            "Gross weight",
-            vehicle.grossWeight
-              ? `${vehicle.grossWeight.toLocaleString("en")} kg`
-              : "Not specified",
-          ],
-          [
-            "Payload",
-            vehicle.payload
-              ? `${vehicle.payload.toLocaleString("en")} kg`
-              : "Not specified",
-          ],
+          ["Gross weight", weight(vehicle.grossWeight)],
+          ["Payload", weight(vehicle.payload)],
           [
             "Body length",
-            vehicle.bodyLength ? `${vehicle.bodyLength} m` : "Not specified",
+            vehicle.bodyLength
+              ? t("{length} m", { length: number(vehicle.bodyLength) })
+              : t("Not specified"),
           ],
         ] as [string, string | number][])
       : []),
@@ -230,15 +236,17 @@ export function VehicleDetail({
     <div className="mt-6 grid gap-8">
       {navigationError && (
         <Alert variant="destructive" role="alert">
-          {navigationError}
+          {t(navigationError)}
         </Alert>
       )}
       <header className="sf-detail-header flex flex-wrap items-end justify-between gap-5">
         <div className="grid gap-2">
           <Badge>
-            {vehicle.status === "published"
-              ? vehicle.condition
-              : vehicle.status}
+            {t(
+              vehicle.status === "published"
+                ? (conditionLabel[vehicle.condition] ?? vehicle.condition)
+                : (statusLabel[vehicle.status] ?? vehicle.status),
+            )}
           </Badge>
           <h2 className="sf-title text-3xl font-semibold tracking-tight">
             {vehicle.title}
@@ -253,7 +261,7 @@ export function VehicleDetail({
             {vehicle.negotiable && (
               <small className="text-sm font-normal text-muted-foreground">
                 {" "}
-                · Negotiable
+                · {t("Negotiable")}
               </small>
             )}
           </p>
@@ -275,8 +283,8 @@ export function VehicleDetail({
             title={vehicle.title}
           />
           {vehicle.videos.length > 0 && (
-            <section className="grid gap-4" aria-label="Vehicle videos">
-              <h3 className="text-lg font-semibold">Videos</h3>
+            <section className="grid gap-4" aria-label={t("Vehicle videos")}>
+              <h3 className="text-lg font-semibold">{t("Videos")}</h3>
               {vehicle.videos.map((video, index) => (
                 <figure key={video.fileId ?? video.url} className="grid gap-2">
                   <video
@@ -285,7 +293,10 @@ export function VehicleDetail({
                     controls
                     playsInline
                     preload="metadata"
-                    aria-label={video.title || `Vehicle video ${index + 1}`}
+                    aria-label={
+                      video.title ||
+                      t("Vehicle video {index}", { index: number(index + 1) })
+                    }
                     className="aspect-video w-full rounded-lg bg-black"
                   />
                   {video.title && (
@@ -298,25 +309,29 @@ export function VehicleDetail({
             </section>
           )}
           <section className="grid gap-4">
-            <h3 className="text-lg font-semibold">Vehicle details</h3>
+            <h3 className="text-lg font-semibold">{t("Vehicle details")}</h3>
             <dl className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,150px),1fr))] gap-5">
               {specs.map(([label, value]) => (
                 <div key={label} className="border-b pb-3">
                   <dt className="mb-1 text-xs text-muted-foreground">
-                    {label}
+                    {t(label)}
                   </dt>
-                  <dd className="capitalize">{value}</dd>
+                  <dd className="capitalize">
+                    {typeof value === "number" ? number(value) : value}
+                  </dd>
                 </div>
               ))}
             </dl>
           </section>
           <section className="grid gap-3">
-            <h3 className="text-lg font-semibold">About this vehicle</h3>
+            <h3 className="text-lg font-semibold">{t("About this vehicle")}</h3>
             <VehicleDescription value={vehicle.description} />
           </section>
           {vehicle.features.length > 0 && (
             <section className="grid gap-3">
-              <h3 className="text-lg font-semibold">Features & equipment</h3>
+              <h3 className="text-lg font-semibold">
+                {t("Features & equipment")}
+              </h3>
               <ul className="flex flex-wrap gap-2">
                 {vehicle.features.map((f) => (
                   <li key={f}>
@@ -335,16 +350,17 @@ export function VehicleDetail({
           )}
           <details className="rounded-lg border p-5">
             <summary className="font-medium">
-              Illustrative payment estimator
+              {t("Illustrative payment estimator")}
             </summary>
             <div className="mt-4 grid gap-4">
               <p className="text-sm text-muted-foreground">
-                This calculator is an estimate, not a lender offer. Fees and
-                taxes are excluded.
+                {t(
+                  "This calculator is an estimate, not a lender offer. Fees and taxes are excluded.",
+                )}
               </p>
               <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
                 <Label>
-                  Deposit
+                  {t("Deposit")}
                   <Input
                     type="number"
                     min="0"
@@ -357,7 +373,7 @@ export function VehicleDetail({
                   />
                 </Label>
                 <Label>
-                  Annual interest (%)
+                  {t("Annual interest (%)")}
                   <Input
                     type="number"
                     min="0"
@@ -368,7 +384,7 @@ export function VehicleDetail({
                   />
                 </Label>
                 <Label>
-                  Months
+                  {t("Months")}
                   <NativeSelect
                     value={months}
                     onChange={(e) => setMonths(Number(e.target.value))}
@@ -380,16 +396,17 @@ export function VehicleDetail({
                 </Label>
               </div>
               <p className="text-xl font-semibold">
-                {money(
-                  payment(
-                    vehicle.price,
-                    clamp(deposit, vehicle.price),
-                    clamp(rate, 100),
-                    months,
+                {t("{amount} / month", {
+                  amount: money(
+                    payment(
+                      vehicle.price,
+                      clamp(deposit, vehicle.price),
+                      clamp(rate, 100),
+                      months,
+                    ),
+                    vehicle.currency,
                   ),
-                  vehicle.currency,
-                )}{" "}
-                / month
+                })}
               </p>
             </div>
           </details>
@@ -403,7 +420,7 @@ export function VehicleDetail({
       </div>
       {related.length > 0 && (
         <section className="grid min-w-0 gap-4">
-          <h3 className="text-lg font-semibold">You may also like</h3>
+          <h3 className="text-lg font-semibold">{t("You may also like")}</h3>
           {/* One swipeable row on narrow widgets instead of a long stack of cards. */}
           <div className="sf-related grid auto-rows-fr gap-5">
             {related.map((v) => (
@@ -413,7 +430,7 @@ export function VehicleDetail({
                 onOpen={() => openRelated(v)}
               >
                 <Button variant="outline" onClick={() => openRelated(v)}>
-                  View vehicle
+                  {t("View vehicle")}
                 </Button>
               </VehicleCard>
             ))}

@@ -1,5 +1,7 @@
 import type { VehicleForm } from "./vehicle-form-types";
 import { currencyOptions } from "../../shared/currencies";
+import { conditionLabel } from "../../shared/i18n";
+import { useI18n } from "../../shared/i18n-react";
 import { Checkbox } from "./ui/checkbox";
 import type { Vehicle, VehicleInput, Dealer } from "../../shared/schemas";
 import { Button, cn } from "./ui/button";
@@ -42,6 +44,7 @@ export function VehicleSections({
   lockDealer?: boolean;
   showFeatured?: boolean;
 }) {
+  const { t } = useI18n();
   const makes = useResource<{ makes: string[] }>(
     "vehicles?makes=1",
     client,
@@ -94,12 +97,17 @@ export function VehicleSections({
       return;
     }
     const lorry = chosen === "lorry";
-    if (watch("fuel") === "None") setValue("fuel", "", opts);
+    if (watch("fuel") === "None")
+      setValue("fuel", "" as unknown as VehicleInput["fuel"], opts);
     if (
       watch("transmission") === "None" ||
       (!lorry && watch("transmission") === "Automated manual")
     )
-      setValue("transmission", "", opts);
+      setValue(
+        "transmission",
+        "" as unknown as VehicleInput["transmission"],
+        opts,
+      );
     if (watch("doors") === 0) setValue("doors", lorry ? 2 : 4, opts);
     if (watch("seats") === 0) setValue("seats", lorry ? 2 : 5, opts);
   }
@@ -113,7 +121,14 @@ export function VehicleSections({
       form={form}
       name={name}
       label={label}
-      values={values}
+      values={
+        name === "condition"
+          ? values.map((value) => ({
+              value,
+              label: conditionLabel[value] ?? value,
+            }))
+          : values
+      }
       numeric={numeric}
     />
   );
@@ -142,6 +157,12 @@ export function VehicleSections({
       />
     );
   }
+  const selectedDealerId = watch("dealerId");
+  const dealerChoices = (dealers.data?.items ?? []).filter(
+    (dealer) =>
+      (dealer.approvalState === "approved" && !dealer.demo) ||
+      dealer._id === selectedDealerId,
+  );
   const colors = [
     "Black",
     "White",
@@ -167,7 +188,7 @@ export function VehicleSections({
           </div>
           <div className="sm:col-span-2">
             <label className="label" htmlFor="v-category">
-              Vehicle category
+              {t("Vehicle category")}
             </label>
             <select
               id="v-category"
@@ -176,16 +197,18 @@ export function VehicleSections({
               aria-invalid={Boolean(errors.category)}
               onChange={(e) => changeCategory(e.target.value)}
             >
-              <option value="">{selectPlaceholder("Vehicle category")}</option>
+              <option value="">
+                {t(selectPlaceholder("Vehicle category"))}
+              </option>
               {vehicleCategories.map((c) => (
                 <option key={c} value={c}>
-                  {categoryLabels[c]}
+                  {t(categoryLabels[c])}
                 </option>
               ))}
             </select>
             {errors.category && (
               <p className="text-xs text-red-700 mt-1">
-                {String(errors.category.message)}
+                {t(String(errors.category.message))}
               </p>
             )}
           </div>
@@ -204,7 +227,7 @@ export function VehicleSections({
           {field("trim", "Trim")}
           <div>
             <label className="label" htmlFor="v-year">
-              Model year *
+              {t("Model year *")}
             </label>
             <select
               id="v-year"
@@ -213,7 +236,7 @@ export function VehicleSections({
                 setValueAs: (v) => (v === "" ? Number.NaN : Number(v)),
               })}
             >
-              <option value="">{selectPlaceholder("Model year")}</option>
+              <option value="">{t(selectPlaceholder("Model year"))}</option>
               {[...new Set([...modelYears(), watch("year")])]
                 .filter((y) => Number.isFinite(y) && y > 0)
                 .sort((a, b) => b - a)
@@ -225,7 +248,7 @@ export function VehicleSections({
             </select>
             {errors.year && (
               <p className="text-xs text-red-700 mt-1">
-                {String(errors.year.message)}
+                {t(String(errors.year.message))}
               </p>
             )}
           </div>
@@ -247,7 +270,7 @@ export function VehicleSections({
           {field("originalPrice", "Original price (optional)", "number")}
           <label className="flex items-center gap-2">
             <Checkbox {...register("negotiable")} />
-            Price is negotiable
+            {t("Price is negotiable")}
           </label>
           <div className="sm:col-span-2">
             {field("taxDisclaimer", "Tax / pricing disclaimer")}
@@ -332,28 +355,28 @@ export function VehicleSections({
       {section === 4 && <VehicleMedia form={form} uploads={uploads} />}
       {section === 5 && (
         <div className="grid sm:grid-cols-2 gap-5">
-          {lockDealer ? (
+          {lockDealer || dealerChoices.length < 2 ? (
             <input type="hidden" {...register("dealerId")} />
           ) : (
             <div>
               <label className="label" htmlFor="dealer-id">
-                Dealership
+                {t("Dealership")}
               </label>
               <select
                 id="dealer-id"
                 className="field"
                 {...register("dealerId")}
               >
-                <option value="">{selectPlaceholder("Dealership")}</option>
-                {dealers.data?.items.map((d) => (
+                <option value="">{t(selectPlaceholder("Dealership"))}</option>
+                {dealerChoices.map((d) => (
                   <option key={d._id} value={d._id}>
-                    {d.businessName} ({d.approvalState})
+                    {d.businessName}
                   </option>
                 ))}
               </select>
               {dealers.error && (
                 <p role="alert" className="text-sm text-red-700 mt-2">
-                  {dealers.error}
+                  {t(dealers.error)}
                 </p>
               )}
             </div>
@@ -375,23 +398,25 @@ export function VehicleSections({
           {field("seoTitle", "SEO title (up to 70 characters)")}
           {field("seoDescription", "SEO description (up to 170 characters)")}
           <p className="hint">
-            The URL stays stable after a title change:{" "}
-            {saved
-              ? vehicleDetailsUrl(saved.slug)
-              : "Assigned when you first save"}
+            {t("The URL stays stable after a title change: {url}", {
+              url: saved
+                ? vehicleDetailsUrl(saved.slug)
+                : t("Assigned when you first save"),
+            })}
           </p>
         </div>
       )}
       {section === 7 && (
         <div className="space-y-5">
           <p className="hint">
-            Publishing needs an approved dealership, a photo, a price, and a
-            description.
+            {t(
+              "Publishing needs an approved dealership, a photo, a price, and a description.",
+            )}
           </p>
           {showFeatured && (
             <label className="flex items-center gap-3">
               <Checkbox {...register("featured")} />
-              Feature this vehicle
+              {t("Feature this vehicle")}
             </label>
           )}
           {saved && (
@@ -405,7 +430,9 @@ export function VehicleSections({
                     variant={s === "deleted" ? "destructive" : "outline"}
                     onClick={() => setConfirm(s)}
                   >
-                    {s === "draft" ? "Restore as draft" : `Mark ${s}`}
+                    {s === "draft"
+                      ? t("Restore as draft")
+                      : t("Mark {status}", { status: s })}
                   </Button>
                 ))}
             </div>

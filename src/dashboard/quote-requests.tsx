@@ -10,20 +10,22 @@ import {
   quoteTimelineLabels,
   type QuoteRequest,
 } from "../shared/quote-requests";
-import { csvCell, money } from "../shared/utils";
+import { csvCell } from "../shared/utils";
+import { useI18n } from "../shared/i18n-react";
 import { useResource } from "./hooks";
 import { Button, cn } from "./components/ui/button";
 import { Badge, LoadState, Empty } from "./components/common";
 import { EmailComposer } from "./inquiry-email";
 
 const emailStatusText: Record<QuoteRequest["ownerEmailStatus"], string> = {
-  pending: "not yet queued",
-  queued: "queued with Wix",
-  failed: "could not be queued",
-  "no-recipient": "no site email to send to",
+  pending: "Not yet queued",
+  queued: "Queued with Wix",
+  failed: "Could not be queued",
+  "no-recipient": "No site email to send to",
 };
 
 export function QuoteRequests() {
+  const { t, money } = useI18n();
   const [status, setStatus] = useState(""),
     [selected, setSelected] = useState<string | null>(null),
     [cursor, setCursor] = useState(0),
@@ -50,10 +52,10 @@ export function QuoteRequests() {
     setBusy(true);
     try {
       await api("quote-requests", { id: quote._id, payload }, "PATCH");
-      toast.success(message);
+      toast.success(t(message));
       await resource.reload();
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(t((e as Error).message));
     } finally {
       setBusy(false);
     }
@@ -61,7 +63,7 @@ export function QuoteRequests() {
   async function saveQuote() {
     const price = quotedPrice.trim() === "" ? null : Number(quotedPrice);
     if (price !== null && (!Number.isFinite(price) || price < 0)) {
-      toast.error("Enter the quoted price as a positive number.");
+      toast.error(t("Enter the quoted price as a positive number."));
       return;
     }
     setSavingQuote(true);
@@ -86,16 +88,20 @@ export function QuoteRequests() {
         r.confirmationEmailStatus === "failed"
       )
         toast.error(
-          "Some emails could not be queued. Check Wix email permissions and sending quota.",
+          t(
+            "Some emails could not be queued. Check Wix email permissions and sending quota.",
+          ),
         );
       else if (r.contactStatus === "failed")
         toast.error(
-          "The requester could not be added to Wix contacts. Check the app's Manage Contacts permission.",
+          t(
+            "The requester could not be added to Wix contacts. Check the app's Manage Contacts permission.",
+          ),
         );
-      else toast.success("Follow-up complete");
+      else toast.success(t("Follow-up complete"));
       await resource.reload();
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(t((e as Error).message));
     } finally {
       setBusy(false);
       setRetrying(false);
@@ -105,9 +111,9 @@ export function QuoteRequests() {
     <div className="space-y-5">
       <div className="flex justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="section-heading">Turn interest into offers</h2>
+          <h2 className="section-heading">{t("Turn interest into offers")}</h2>
           <p className="hint mt-1">
-            Price each request, email the buyer and track it to a sale.
+            {t("Price each request, email the buyer and track it to a sale.")}
           </p>
         </div>
         <Button
@@ -155,7 +161,7 @@ export function QuoteRequests() {
           }
         >
           <Download size={16} />
-          Export page
+          {t("Export page")}
         </Button>
       </div>
       <div className="flex gap-2 flex-wrap">
@@ -171,8 +177,8 @@ export function QuoteRequests() {
             }}
           >
             {s
-              ? quoteStatusLabels[s as QuoteRequest["status"]]
-              : "All requests"}
+              ? t(quoteStatusLabels[s as QuoteRequest["status"]])
+              : t("All requests")}
           </Button>
         ))}
       </div>
@@ -196,16 +202,20 @@ export function QuoteRequests() {
             >
               <div className="flex justify-between gap-2">
                 <p className="font-semibold text-sm">{quoteRequesterName(q)}</p>
-                <Badge status={q.status}>{quoteStatusLabels[q.status]}</Badge>
+                <Badge status={q.status}>
+                  {t(quoteStatusLabels[q.status])}
+                </Badge>
               </div>
               <p className="hint text-xs mt-2 line-clamp-1">
                 {q.vehicleTitle}
-                {q.quantity > 1 ? ` × ${q.quantity}` : ""}
+                {q.quantity > 1
+                  ? t(" × {count}", { count: q.quantity })
+                  : ""}
               </p>
               <p className="text-xs text-muted-foreground mt-3">
                 {q.createdAt.slice(0, 10)} ·{" "}
-                {quotePaymentLabels[q.paymentMethod]} ·{" "}
-                {quoteTimelineLabels[q.timeline]}
+                {t(quotePaymentLabels[q.paymentMethod])} ·{" "}
+                {t(quoteTimelineLabels[q.timeline])}
               </p>
             </button>
           ))}
@@ -216,7 +226,7 @@ export function QuoteRequests() {
               disabled={cursor === 0}
               onClick={() => setCursor(Math.max(0, cursor - 50))}
             >
-              Previous
+              {t("Previous")}
             </Button>
             <Button
               size="sm"
@@ -224,7 +234,7 @@ export function QuoteRequests() {
               disabled={resource.data?.nextCursor == null}
               onClick={() => setCursor(resource.data?.nextCursor ?? 0)}
             >
-              Next
+              {t("Next")}
             </Button>
           </div>
         </section>
@@ -240,7 +250,7 @@ export function QuoteRequests() {
                 </div>
                 <select
                   className="field w-auto"
-                  aria-label="Quote request status"
+                  aria-label={t("Quote request status")}
                   disabled={busy}
                   value={quote.status}
                   onChange={(e) =>
@@ -249,7 +259,7 @@ export function QuoteRequests() {
                 >
                   {quoteStatuses.map((s) => (
                     <option key={s} value={s}>
-                      {quoteStatusLabels[s]}
+                      {t(quoteStatusLabels[s])}
                     </option>
                   ))}
                 </select>
@@ -268,9 +278,12 @@ export function QuoteRequests() {
                         : String(quote.listedPrice),
                     ],
                     ["Quantity", String(quote.quantity)],
-                    ["Payment", quotePaymentLabels[quote.paymentMethod]],
-                    ["Timeline", quoteTimelineLabels[quote.timeline]],
-                    ["Trade-in", quote.tradeIn ? quote.tradeInDetails : "No"],
+                    ["Payment", t(quotePaymentLabels[quote.paymentMethod])],
+                    ["Timeline", t(quoteTimelineLabels[quote.timeline])],
+                    [
+                      "Trade-in",
+                      quote.tradeIn ? quote.tradeInDetails : t("No"),
+                    ],
                     ["Email", quote.email],
                     ["Phone", quote.phone],
                     [
@@ -283,12 +296,12 @@ export function QuoteRequests() {
                         quote.country,
                       ]
                         .filter(Boolean)
-                        .join(", ") || "Not provided",
+                        .join(", ") || t("Not provided"),
                     ],
                   ] as const
                 ).map(([label, value]) => (
                   <div key={label}>
-                    <dt className="text-xs text-muted-foreground">{label}</dt>
+                    <dt className="text-xs text-muted-foreground">{t(label)}</dt>
                     <dd className="mt-0.5 break-words">{value}</dd>
                   </div>
                 ))}
@@ -300,12 +313,12 @@ export function QuoteRequests() {
                   aria-expanded={composing}
                 >
                   <Mail size={16} />
-                  {composing ? "Close email composer" : "Email requester"}
+                  {composing ? t("Close email composer") : t("Email requester")}
                 </Button>
                 <Button asChild variant="outline">
                   <a href={`tel:${quote.phone.replace(/[^+\d]/g, "")}`}>
                     <Phone size={16} />
-                    Call requester
+                    {t("Call requester")}
                   </a>
                 </Button>
               </div>
@@ -319,19 +332,24 @@ export function QuoteRequests() {
                       name: quoteRequesterName(quote),
                       email: quote.email,
                     }}
-                    defaultSubject={`Your quote for ${quote.vehicleTitle}`.slice(
-                      0,
-                      150,
-                    )}
+                    defaultSubject={t("Your quote for {title}", {
+                      title: quote.vehicleTitle,
+                    }).slice(0, 150)}
                   />
                 </div>
               )}
               <div className="flex items-center flex-wrap gap-3 my-5">
                 <span className="hint">
-                  Owner notification: {emailStatusText[quote.ownerEmailStatus]}{" "}
-                  · Buyer confirmation:{" "}
-                  {emailStatusText[quote.confirmationEmailStatus]} · Wix
-                  contact: {quote.contactId ? "added" : "not added yet"}
+                  {t(
+                    "Owner notification: {owner} · Buyer confirmation: {buyer} · Wix contact: {contact}",
+                    {
+                      owner: t(emailStatusText[quote.ownerEmailStatus]),
+                      buyer: t(emailStatusText[quote.confirmationEmailStatus]),
+                      contact: quote.contactId
+                        ? t("added")
+                        : t("not added yet"),
+                    },
+                  )}
                 </span>
                 {(quote.ownerEmailStatus === "failed" ||
                   quote.ownerEmailStatus === "pending" ||
@@ -345,7 +363,7 @@ export function QuoteRequests() {
                     pending={retrying}
                     onClick={() => void retryEmails()}
                   >
-                    Retry follow-up
+                    {t("Retry follow-up")}
                   </Button>
                 )}
               </div>
@@ -355,27 +373,32 @@ export function QuoteRequests() {
                 </p>
               )}
               <p className="text-xs text-muted-foreground mt-3">
-                Buyer consent recorded ·{" "}
-                {quote.createdAt.slice(0, 16).replace("T", " ")} UTC
+                {t("Buyer consent recorded · {when} UTC", {
+                  when: quote.createdAt.slice(0, 16).replace("T", " "),
+                })}
               </p>
               <label className="label mt-7" htmlFor="quote-price">
-                Quoted price{quote.currency ? ` (${quote.currency})` : ""}
+                {quote.currency
+                  ? t("Quoted price ({currency})", {
+                      currency: quote.currency,
+                    })
+                  : t("Quoted price")}
               </label>
               <input
                 id="quote-price"
                 className="field max-w-xs"
                 inputMode="decimal"
-                placeholder="Price you offered"
+                placeholder={t("Price you offered")}
                 value={quotedPrice}
                 onChange={(e) => setQuotedPrice(e.target.value)}
               />
               <label className="label mt-5" htmlFor="quote-notes">
-                Team notes
+                {t("Team notes")}
               </label>
               <textarea
                 id="quote-notes"
                 className="field h-32"
-                placeholder="Add follow-up details…"
+                placeholder={t("Add follow-up details…")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -385,13 +408,15 @@ export function QuoteRequests() {
                 pending={savingQuote}
                 onClick={() => void saveQuote()}
               >
-                Save quote details
+                {t("Save quote details")}
               </Button>
             </>
           ) : (
             <div className="flex items-center justify-center min-h-72 flex-col gap-3">
               <FileText className="text-muted-foreground" size={32} />
-              <p className="hint">Select a quote request to see its details.</p>
+              <p className="hint">
+                {t("Select a quote request to see its details.")}
+              </p>
             </div>
           )}
         </section>

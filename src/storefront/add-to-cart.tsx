@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../shared/client";
+import { useI18n } from "../shared/i18n-react";
 import type { Vehicle } from "../shared/schemas";
 import { Button } from "./ui/button";
 import { Alert } from "./ui/card";
@@ -29,6 +30,7 @@ export function AddToCart({
   preview?: boolean;
   className?: string;
 }) {
+  const { t } = useI18n();
   const [state, setState] = useState<"idle" | "adding" | "added">("idle"),
     [error, setError] = useState("");
   // The editor shows draft sample vehicles; keep the button visible there so it can be placed.
@@ -52,7 +54,7 @@ export function AddToCart({
     <div className={cn("grid gap-2", className)}>
       {state === "added" ? (
         <Button variant="outline" onClick={() => void showCart().catch(() => {})}>
-          In your cart · View cart
+          {t("In your cart · View cart")}
         </Button>
       ) : (
         <Button
@@ -60,12 +62,12 @@ export function AddToCart({
           disabled={preview || state === "adding"}
           pending={state === "adding"}
         >
-          Add to cart
+          {t("Add to cart")}
         </Button>
       )}
       {error && (
         <Alert variant="destructive" role="alert">
-          {error}
+          {t(error)}
         </Alert>
       )}
     </div>

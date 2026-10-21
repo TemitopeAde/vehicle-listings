@@ -8,8 +8,16 @@ import {
   SectionHelper,
 } from '@wix/design-system';
 import '@wix/design-system/styles.global.css';
+import { LocaleProvider, useI18n } from '../../../../shared/i18n-react';
 
-const Panel: FC = () => {
+const Panel: FC = () => (
+  <LocaleProvider>
+    <PanelContent />
+  </LocaleProvider>
+);
+
+const PanelContent: FC = () => {
+  const { t } = useI18n();
   const [displayName, setDisplayName] = useState<string>('');
 
   useEffect(() => {
@@ -29,19 +37,19 @@ const Panel: FC = () => {
       <SidePanel width="300" height="100vh">
         <SidePanel.Content noPadding stretchVertically>
           <SidePanel.Field>
-            <FormField label="Heading">
+            <FormField label={t("Heading")}>
               <Input
                 type="text"
                 value={displayName}
                 onChange={handleDisplayNameChange}
-                aria-label="Heading"
+                aria-label={t("Heading")}
               />
             </FormField>
           </SidePanel.Field>
         </SidePanel.Content>
         <SidePanel.Footer noPadding>
           <SectionHelper fullWidth appearance="success" border="topBottom">
-            Dealers log in here and apply. Approve them in the app dashboard before they can add vehicles.
+            {t("Dealers log in here and apply. Approve them in the app dashboard before they can add vehicles.")}
           </SectionHelper>
         </SidePanel.Footer>
       </SidePanel>

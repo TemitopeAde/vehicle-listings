@@ -7,6 +7,7 @@ import { api } from "./api";
 import { useResource } from "./hooks";
 import { Button } from "./components/ui/button";
 import { LoadState } from "./components/common";
+import { useI18n } from "../shared/i18n-react";
 
 const modules = {
   toolbar: [
@@ -24,6 +25,7 @@ export function InquiryEmail({
   inquiry: Inquiry;
   reload: () => Promise<void>;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [retrying, setRetrying] = useState(false);
   async function retryConfirmation() {
@@ -38,13 +40,15 @@ export function InquiryEmail({
         throw new Error(
           "Confirmation could not be queued. Check Wix email permissions and sending quota.",
         );
-      toast.success("Confirmation email queued");
+      toast.success(t("Confirmation email queued"));
       await reload();
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Could not queue confirmation.",
+        t(
+          error instanceof Error
+            ? error.message
+            : "Could not queue confirmation.",
+        ),
       );
     } finally {
       setRetrying(false);
@@ -58,15 +62,18 @@ export function InquiryEmail({
           onClick={() => setOpen(!open)}
           aria-expanded={open}
         >
-          {open ? "Close email composer" : "Email buyer"}
+          {open ? t("Close email composer") : t("Email buyer")}
         </Button>
         <span className="hint">
-          Confirmation:{" "}
-          {inquiry.confirmationEmailStatus === "queued"
-            ? "queued with Wix"
-            : inquiry.confirmationEmailStatus === "failed"
-              ? "could not be queued"
-              : "not yet queued"}
+          {t("Confirmation: {status}", {
+            status: t(
+              inquiry.confirmationEmailStatus === "queued"
+                ? "queued with Wix"
+                : inquiry.confirmationEmailStatus === "failed"
+                  ? "could not be queued"
+                  : "not yet queued",
+            ),
+          })}
         </span>
         {inquiry.confirmationEmailStatus !== "queued" && (
           <Button
@@ -75,7 +82,7 @@ export function InquiryEmail({
             disabled={retrying}
             onClick={() => void retryConfirmation()}
           >
-            Retry confirmation
+            {t("Retry confirmation")}
           </Button>
         )}
       </div>
@@ -87,7 +94,7 @@ export function InquiryEmail({
             name: inquiry.name,
             email: inquiry.email,
           }}
-          defaultSubject="Your vehicle inquiry"
+          defaultSubject={t("Your vehicle inquiry")}
         />
       )}
     </div>
@@ -104,6 +111,7 @@ export function EmailComposer({
   recipient: { id: string; name: string; email: string };
   defaultSubject: string;
 }) {
+  const { t } = useI18n();
   // Branding is the same for every email, so it is always read from the inquiry endpoint.
   const branding = useResource<{
     siteName: string;
@@ -141,7 +149,7 @@ export function EmailComposer({
     const root = editorRef.current?.getEditor().root;
     if (root) {
       root.setAttribute("role", "textbox");
-      root.setAttribute("aria-label", "Email message");
+      root.setAttribute("aria-label", t("Email message"));
       root.setAttribute("aria-multiline", "true");
       root.setAttribute("aria-required", "true");
     }
@@ -153,16 +161,18 @@ export function EmailComposer({
           .replace(" ql-active", "");
         button.setAttribute(
           "aria-label",
-          format === "list"
-            ? `${button.getAttribute("value") === "ordered" ? "Numbered" : "Bulleted"} list`
-            : format === "clean"
-              ? "Clear formatting"
-              : format[0]?.toUpperCase() + format.slice(1),
+          t(
+            format === "list"
+              ? `${button.getAttribute("value") === "ordered" ? "Numbered" : "Bulleted"} list`
+              : format === "clean"
+                ? "Clear formatting"
+                : format[0]?.toUpperCase() + format.slice(1),
+          ),
         );
         if (button instanceof HTMLButtonElement)
           button.disabled = busy || queued;
       });
-  }, [Editor, busy, queued]);
+  }, [Editor, busy, queued, t]);
   async function send() {
     if (busy || queued) return;
     setBusy(true);
@@ -174,10 +184,12 @@ export function EmailComposer({
         idempotencyKey: key,
       });
       setQueued(true);
-      toast.success("Email queued with Wix");
+      toast.success(t("Email queued with Wix"));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Could not queue the email.",
+        t(
+          error instanceof Error ? error.message : "Could not queue the email.",
+        ),
       );
     } finally {
       setBusy(false);
@@ -193,10 +205,12 @@ export function EmailComposer({
     >
       <LoadState {...branding} retry={() => void branding.reload()} />
       <p className="text-sm">
-        To: {recipient.name} &lt;{recipient.email}&gt;
+        {t("To: {recipient}", {
+          recipient: `${recipient.name} <${recipient.email}>`,
+        })}
       </p>
       <label className="label" htmlFor="email-subject">
-        Subject
+        {t("Subject")}
       </label>
       <input
         id="email-subject"
@@ -210,8 +224,8 @@ export function EmailComposer({
           setKey(crypto.randomUUID());
         }}
       />
-      <p className="label">Message</p>
-      {editorError && <p role="alert">{editorError}</p>}
+      <p className="label">{t("Message")}</p>
+      {editorError && <p role="alert">{t(editorError)}</p>}
       {Editor ? (
         <div ref={editorContainer} className="[&_.ql-editor]:min-h-48">
           <Editor
@@ -229,20 +243,27 @@ export function EmailComposer({
           />
         </div>
       ) : (
-        !editorError && <p role="status">Loading email editor…</p>
+        !editorError && (
+          <p role="status">{t("Loading email editor…")}</p>
+        )
       )}
       {branding.data && (
         <p className="hint">
-          {branding.data.siteName} is automatically included in the subject and
-          email.{" "}
-          {branding.data.replyTo && `Replies go to ${branding.data.replyTo}.`}
+          {t(
+            "{siteName} is automatically included in the subject and email.",
+            { siteName: branding.data.siteName },
+          )}{" "}
+          {branding.data.replyTo &&
+            t("Replies go to {email}.", { email: branding.data.replyTo })}
         </p>
       )}
       {branding.data && !branding.data.enabled && (
-        <p className="hint">Email sending is unavailable in the local demo.</p>
+        <p className="hint">
+          {t("Email sending is unavailable in the local demo.")}
+        </p>
       )}
       {queued ? (
-        <p role="status">Email queued with Wix.</p>
+        <p role="status">{t("Email queued with Wix.")}</p>
       ) : (
         <Button
           type="submit"
@@ -255,7 +276,7 @@ export function EmailComposer({
             !branding.data?.enabled
           }
         >
-          Send email
+          {t("Send email")}
         </Button>
       )}
     </form>

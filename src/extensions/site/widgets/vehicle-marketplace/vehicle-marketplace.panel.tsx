@@ -25,10 +25,20 @@ import {
   IndividualListingStyles,
 } from "./element-style-fields";
 import { filterSettings } from "../../../../storefront/filter-visibility";
+import { LocaleProvider, useI18n } from "../../../../shared/i18n-react";
 
 const textKeys = ["display-name", "description"];
 
 export default function Panel() {
+  return (
+    <LocaleProvider>
+      <PanelContent />
+    </LocaleProvider>
+  );
+}
+
+function PanelContent() {
+  const { t } = useI18n();
   const [props, setProps] = useState(panelDefaults);
   const current = useRef(panelDefaults);
   const queue = useRef(Promise.resolve());
@@ -130,12 +140,12 @@ export default function Panel() {
   return (
     <WixDesignSystemProvider>
       <SidePanel width="100%" height="100vh">
-        <SidePanel.Header title="Vehicle marketplace" />
+        <SidePanel.Header title={t("Vehicle marketplace")} />
         <Tabs
           activeId={tab}
           items={[
-            { id: "content", title: "Content" },
-            { id: "style", title: "Style" },
+            { id: "content", title: t("Content") },
+            { id: "style", title: t("Style") },
           ]}
           onClick={(item) => setTab(String(item.id))}
           type="uniformFull"
@@ -143,9 +153,9 @@ export default function Panel() {
           minWidth={0}
         />
         <SidePanel.Content>
-          {error && <SectionHelper skin="danger">{error}</SectionHelper>}
+          {error && <SectionHelper skin="danger">{t(error)}</SectionHelper>}
           {!loaded ? (
-            <SectionHelper>Loading widget settings…</SectionHelper>
+            <SectionHelper>{t("Loading widget settings…")}</SectionHelper>
           ) : tab === "content" ? (
             <Accordion
               key="content"
@@ -154,12 +164,12 @@ export default function Panel() {
               contentPadding="none"
               items={[
                 {
-                  title: "Heading",
+                  title: t("Heading"),
                   initiallyOpen: true,
                   children: (
                     <>
-                      {text("display-name", "Heading")}
-                      {text("description", "Description")}
+                      {text("display-name", t("Heading"))}
+                      {text("description", t("Description"))}
                       <SidePanel.Field>
                         <Button
                           size="small"
@@ -173,14 +183,14 @@ export default function Panel() {
                             )
                           }
                         >
-                          Reset to default
+                          {t("Reset to default")}
                         </Button>
                       </SidePanel.Field>
                     </>
                   ),
                 },
                 {
-                  title: "Filters",
+                  title: t("Filters"),
                   children: filterSettings.map(([, label, key]) => (
                     <SidePanel.Field key={key}>
                       <Checkbox
@@ -189,23 +199,23 @@ export default function Panel() {
                           set(key, String(event.target.checked))
                         }
                       >
-                        {label}
+                        {t(label)}
                       </Checkbox>
                     </SidePanel.Field>
                   )),
                 },
                 {
-                  title: "Inventory",
+                  title: t("Inventory"),
                   children: (
                     <>
                       <SidePanel.Field>
-                        <FormField label="Pagination">
+                        <FormField label={t("Pagination")}>
                           <Dropdown
-                            ariaLabel="Pagination"
+                            ariaLabel={t("Pagination")}
                             selectedId={props.pagination}
                             options={[
-                              { id: "pages", value: "Numbered pages" },
-                              { id: "infinite", value: "Infinite scroll" },
+                              { id: "pages", value: t("Numbered pages") },
+                              { id: "infinite", value: t("Infinite scroll") },
                             ]}
                             onSelect={(option) =>
                               set("pagination", String(option.id))
@@ -216,8 +226,8 @@ export default function Panel() {
                       {number(
                         "item-limit",
                         props.pagination === "infinite"
-                          ? "Vehicles per load"
-                          : "Vehicles per page",
+                          ? t("Vehicles per load")
+                          : t("Vehicles per page"),
                         1,
                         100,
                       )}
@@ -228,7 +238,7 @@ export default function Panel() {
                             set("featured-only", String(event.target.checked))
                           }
                         >
-                          Featured vehicles only
+                          {t("Featured vehicles only")}
                         </Checkbox>
                       </SidePanel.Field>
                     </>
@@ -244,19 +254,19 @@ export default function Panel() {
               contentPadding="none"
               items={[
                 {
-                  title: "Layout",
+                  title: t("Layout"),
                   children: (
                     <>
-                      {number("columns", "Columns", 1, 4)}
-                      {number("radius", "Corner radius", 0, 32)}
+                      {number("columns", t("Columns"), 1, 4)}
+                      {number("radius", t("Corner radius"), 0, 32)}
                       <SidePanel.Field>
-                        <FormField label="Layout">
+                        <FormField label={t("Layout")}>
                           <Dropdown
-                            ariaLabel="Layout"
+                            ariaLabel={t("Layout")}
                             selectedId={props.layout}
                             options={[
-                              { id: "grid", value: "Grid" },
-                              { id: "list", value: "List" },
+                              { id: "grid", value: t("Grid") },
+                              { id: "list", value: t("List") },
                             ]}
                             onSelect={(option) =>
                               set("layout", String(option.id))
@@ -268,7 +278,7 @@ export default function Panel() {
                   ),
                 },
                 {
-                  title: "Colors",
+                  title: t("Colors"),
                   children: (
                     <>
                       {surfaceSettings.map(([key, label, fallback]) => (
@@ -285,7 +295,7 @@ export default function Panel() {
                   ),
                 },
                 ...textSections.map(([key, label, size]) => ({
-                  title: label,
+                  title: t(label),
                   initiallyOpen: key === "body",
                   children: (
                     <>
@@ -307,13 +317,13 @@ export default function Panel() {
                   ),
                 })),
                 {
-                  title: "Individual filters",
+                  title: t("Individual filters"),
                   children: (
                     <IndividualFilterStyles settings={props} onChange={set} />
                   ),
                 },
                 {
-                  title: "Individual listing elements",
+                  title: t("Individual listing elements"),
                   children: (
                     <IndividualListingStyles settings={props} onChange={set} />
                   ),

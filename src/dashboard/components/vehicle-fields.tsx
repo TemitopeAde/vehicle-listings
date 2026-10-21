@@ -1,4 +1,5 @@
 import type { VehicleInput } from "../../shared/schemas";
+import { useI18n } from "../../shared/i18n-react";
 import type { VehicleForm } from "./vehicle-form-types";
 import { cn } from "./ui/button";
 
@@ -21,6 +22,7 @@ export function VehicleField({
   required?: boolean;
   step?: string;
 }) {
+  const { t } = useI18n();
   const {
     register,
     formState: { errors },
@@ -28,7 +30,7 @@ export function VehicleField({
   return (
     <div>
       <label className="label" htmlFor={`v-${name}`}>
-        {label}
+        {t(label)}
         {required ? " *" : ""}
       </label>
       <input
@@ -45,7 +47,7 @@ export function VehicleField({
       />
       {errors[name] && (
         <p className="text-xs text-red-700 mt-1">
-          {String(errors[name]?.message)}
+          {t(String(errors[name]?.message))}
         </p>
       )}
     </div>
@@ -64,6 +66,7 @@ export function VehicleSelect({
   values: readonly (string | { value: string; label: string })[];
   numeric?: boolean;
 }) {
+  const { t } = useI18n();
   const {
     register,
     formState: { errors },
@@ -71,7 +74,7 @@ export function VehicleSelect({
   return (
     <div>
       <label className="label" htmlFor={`v-${name}`}>
-        {label}
+        {t(label)}
       </label>
       <select
         id={`v-${name}`}
@@ -88,19 +91,20 @@ export function VehicleSelect({
               : true,
         })}
       >
-        <option value="">{selectPlaceholder(label)}</option>
+        <option value="">{t(selectPlaceholder(label))}</option>
         {values.map((option) => {
           const value = typeof option === "string" ? option : option.value;
+          const optionLabel = typeof option === "string" ? option : option.label;
           return (
             <option key={value} value={value}>
-              {typeof option === "string" ? option : option.label}
+              {t(optionLabel)}
             </option>
           );
         })}
       </select>
       {errors[name] && (
         <p className="text-xs text-red-700 mt-1">
-          {String(errors[name]?.message)}
+          {t(String(errors[name]?.message))}
         </p>
       )}
     </div>

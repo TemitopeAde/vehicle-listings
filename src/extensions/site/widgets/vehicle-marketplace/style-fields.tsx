@@ -6,6 +6,7 @@ import {
   FormField,
   SidePanel,
 } from "@wix/design-system";
+import { useI18n } from "../../../../shared/i18n-react";
 import { readFont } from "../../../../storefront/widget-style";
 import { fontFamilyName } from "../../../../storefront/font-family";
 
@@ -23,15 +24,16 @@ export function ColorField({
   resetLabel = "Use default color",
   onChange,
 }: FieldProps & { fallback: string; resetLabel?: string }) {
+  const { t } = useI18n();
   return (
     <SidePanel.Field>
-      <FormField label={label}>
+      <FormField label={t(label)}>
         <Box gap="SP2" verticalAlign="middle">
           <Box width={36} height={36}>
             <FillPreview
               dataHook={name}
               size="small"
-              aria-label={`Choose ${label.toLowerCase()}`}
+              aria-label={t(`Choose ${label.toLowerCase()}`)}
               fill={value || fallback}
               onClick={() => {
                 void inputs
@@ -50,7 +52,7 @@ export function ColorField({
               priority="tertiary"
               onClick={() => onChange(name, "")}
             >
-              {resetLabel}
+              {t(resetLabel)}
             </Button>
           )}
         </Box>
@@ -67,6 +69,7 @@ export function FontField({
   resetLabel = "Use general font",
   onChange,
 }: FieldProps & { size: string; fallbackValue?: string; resetLabel?: string }) {
+  const { t } = useI18n();
   const font = readFont(value) ??
     readFont(fallbackValue) ?? {
       font: `normal normal 400 ${size}/1.5 system-ui`,
@@ -74,7 +77,7 @@ export function FontField({
     };
   return (
     <SidePanel.Field>
-      <FormField label={`${label} font`}>
+      <FormField label={t(`${label} font`)}>
         <Button
           dataHook={name}
           size="small"
@@ -99,8 +102,8 @@ export function FontField({
           {value
             ? fontFamilyName(font.font)
             : fallbackValue
-              ? `${fontFamilyName(font.font)} (shared)`
-              : "Choose font"}
+              ? t("{name} (shared)", { name: fontFamilyName(font.font) })
+              : t("Choose font")}
         </Button>
         {value && (
           <Button
@@ -108,7 +111,7 @@ export function FontField({
             priority="tertiary"
             onClick={() => onChange(name, "")}
           >
-            {resetLabel}
+            {t(resetLabel)}
           </Button>
         )}
       </FormField>

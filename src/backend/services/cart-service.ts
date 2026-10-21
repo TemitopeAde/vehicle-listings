@@ -1,8 +1,10 @@
 import { currentCartV2 } from "@wix/ecom";
 import wixConfig from "../../../wix.config.json";
+import { localeFor, translate, type Language } from "../../shared/i18n";
 import type { Vehicle } from "../../shared/schemas";
 import type { Context } from "../context";
 import { AppError } from "../errors";
+import { getSettings } from "./settings-service";
 import { getVehicle } from "./vehicle-service";
 
 /** Identifies this app's vehicles among the cart's line items. */
@@ -46,7 +48,7 @@ export function assertPurchasable(vehicle: Vehicle) {
     );
 }
 
-export function vehicleCartItem(vehicle: Vehicle) {
+export function vehicleCartItem(vehicle: Vehicle, language: Language = "en") {
   const photo = vehicle.media[0]?.url;
   const detail = (name: string, value: string) => ({
     name: { original: name },
@@ -73,8 +75,11 @@ export function vehicleCartItem(vehicle: Vehicle) {
       },
       ...(photo?.startsWith("https://") ? { image: photo } : {}),
       descriptionLines: [
-        detail("Year", String(vehicle.year)),
-        detail("Mileage", `${vehicle.mileage.toLocaleString("en-US")} ${vehicle.mileageUnit}`),
+        detail(translate(language, "Year"), String(vehicle.year)),
+        detail(
+          translate(language, "Mileage"),
+          `${vehicle.mileage.toLocaleString(localeFor(language))} ${vehicle.mileageUnit}`,
+        ),
         ...(vehicle.vin ? [detail("VIN", vehicle.vin)] : []),
       ],
     },
@@ -94,6 +99,12 @@ export async function addVehicleToCart(ctx: Context, vehicleId: string) {
     );
   const vehicle = await getVehicle(ctx, vehicleId, true, false, "_id");
   assertPurchasable(vehicle);
+  let language: Language = "en";
+  try {
+    language = (await getSettings(ctx)).language;
+  } catch (error) {
+    console.error("Could not read the showroom language", error);
+  }
   // No cart yet is the usual case for a first purchase, so a failed read means "empty".
   const existing = await currentCartV2
     .getCurrentCart()
@@ -102,7 +113,9 @@ export async function addVehicleToCart(ctx: Context, vehicleId: string) {
   if (vehicleLineItemIds(existing, vehicle._id).length)
     return { added: false, alreadyInCart: true };
   const { cart } = await currentCartV2
-    .addLineItemsToCurrentCart({ customItems: [vehicleCartItem(vehicle)] })
+    .addLineItemsToCurrentCart({
+      customItems: [vehicleCartItem(vehicle, language)],
+    })
     .catch((error: unknown) => {
       console.error("Could not add vehicle to cart", error);
       throw new AppError(

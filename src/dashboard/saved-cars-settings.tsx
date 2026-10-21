@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Checkbox } from "./components/ui/checkbox";
 import { toast } from "sonner";
 import { embeddedScripts } from "@wix/app-management";
+import { useI18n } from "../shared/i18n-react";
 import { Button } from "./components/ui/button";
 // Extension ID from src/extensions/site/embedded-scripts/saved-cars/saved-cars.extension.ts
 const componentId = "a98020c4-3999-4b6d-96f1-01fa817d4011";
@@ -25,6 +26,7 @@ export function SavedCarsSettings({
 }: {
   scripts?: Scripts;
 }) {
+  const { t } = useI18n();
   const [form, setForm] = useState(defaults),
     [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
@@ -56,7 +58,9 @@ export function SavedCarsSettings({
   }, [scripts]);
   async function save(embed = false) {
     if (!/^#[0-9a-f]{6}$/i.test(form.accent))
-      return toast.error("Use a 6-digit hex color, for example #196947.");
+      return toast.error(
+        t("Use a 6-digit hex color, for example #196947."),
+      );
     setBusy(true);
     setPending(embed ? "embed" : "settings");
     try {
@@ -76,14 +80,14 @@ export function SavedCarsSettings({
       setForm((current) => ({ ...current, enabled }));
       toast.success(
         embed
-          ? "Saved cars script embedded"
+          ? t("Saved cars script embedded")
           : enabled
-            ? "Saved cars button is live"
-            : "Saved cars button hidden",
+            ? t("Saved cars button is live")
+            : t("Saved cars button hidden"),
       );
     } catch (e) {
       console.error(e);
-      toast.error("Could not update the saved cars button.");
+      toast.error(t("Could not update the saved cars button."));
     } finally {
       setBusy(false);
       setPending(null);
@@ -91,19 +95,22 @@ export function SavedCarsSettings({
   }
   return (
     <section className="surface p-6">
-      <h3 className="section-heading">Saved cars button</h3>
+      <h3 className="section-heading">{t("Saved cars button")}</h3>
       <p className="hint mt-2 mb-5">
-        A floating button in the bottom-left corner of every site page. It lists
-        the signed-in member’s saved cars, which they can access on any device.
+        {t(
+          "A floating button in the bottom-left corner of every site page. It lists the signed-in member’s saved cars, which they can access on any device.",
+        )}
       </p>
       <p role="status" className="hint mb-5">
         {loading
-          ? "Checking script installation…"
+          ? t("Checking script installation…")
           : embedded
             ? installedEnabled
-              ? "Script embedded and enabled on your site."
-              : "Script embedded and disabled on your site."
-            : "Click Embed script to install or refresh the saved cars script on your site."}
+              ? t("Script embedded and enabled on your site.")
+              : t("Script embedded and disabled on your site.")
+            : t(
+                "Click Embed script to install or refresh the saved cars script on your site.",
+              )}
       </p>
       <label className="flex items-center gap-2 text-sm mb-5">
         <Checkbox
@@ -111,12 +118,12 @@ export function SavedCarsSettings({
           disabled={loading || busy}
           onChange={(e) => setForm({ ...form, enabled: e.target.checked })}
         />
-        Show the saved cars button on my site
+        {t("Show the saved cars button on my site")}
       </label>
       <div className="grid sm:grid-cols-2 gap-5">
         <div>
           <label className="label" htmlFor="saved-label">
-            Button label
+            {t("Button label")}
           </label>
           <input
             id="saved-label"
@@ -129,12 +136,12 @@ export function SavedCarsSettings({
         </div>
         <div>
           <label className="label" htmlFor="saved-accent">
-            Accent color
+            {t("Accent color")}
           </label>
           <div className="flex gap-2">
             <input
               type="color"
-              aria-label="Pick accent color"
+              aria-label={t("Pick accent color")}
               className="h-10 w-12 rounded-md border bg-white p-1"
               value={
                 /^#[0-9a-f]{6}$/i.test(form.accent)
@@ -160,7 +167,7 @@ export function SavedCarsSettings({
           pending={pending === "embed"}
           onClick={() => void save(true)}
         >
-          {embedded ? "Re-embed script" : "Embed script"}
+          {embedded ? t("Re-embed script") : t("Embed script")}
         </Button>
         {embedded && (
           <Button
@@ -169,7 +176,7 @@ export function SavedCarsSettings({
             pending={pending === "settings"}
             onClick={() => void save()}
           >
-            Save button settings
+            {t("Save button settings")}
           </Button>
         )}
       </div>

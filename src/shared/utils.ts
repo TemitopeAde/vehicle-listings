@@ -11,8 +11,8 @@ export const vehicleDetailsPath = "/vehicles-detail";
 export function vehicleDetailsUrl(slug: string, page = vehicleDetailsPath) {
   return `${page}?slug=${encodeURIComponent(slug)}`;
 }
-export function money(value: number, currency = "USD") {
-  return new Intl.NumberFormat("en-US", {
+export function money(value: number, currency = "USD", locale = "en-US") {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,

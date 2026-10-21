@@ -20,8 +20,9 @@ import {
   vehicleCategories,
   type VehicleCategory,
 } from "../shared/vehicle-options";
+import { conditionLabel } from "../shared/i18n";
+import { useI18n } from "../shared/i18n-react";
 import { type FilterKey, type FilterVisibility } from "./filter-visibility";
-import { money } from "../shared/utils";
 export type ExtraFilters = {
   category: string;
   model: string;
@@ -281,6 +282,7 @@ export function SearchFilters({
   extraFilters: ExtraFilters;
   setExtraFilters: Dispatch<SetStateAction<ExtraFilters>>;
 }) {
+  const { t, money, number } = useI18n();
   const elementStyle = useElementStyle();
   const sidebarId = useId();
   // Narrow widgets keep search visible and tuck the rest behind a toggle.
@@ -326,7 +328,7 @@ export function SearchFilters({
   }
   const price = (visible("minPrice") || visible("maxPrice")) && (
     <FilterSection
-      title="Price"
+      title={t("Price")}
       active={Boolean(extraFilters.minPrice || maxPrice)}
     >
       <RangeSlider
@@ -335,8 +337,8 @@ export function SearchFilters({
         showMax={visible("maxPrice")}
         minValue={extraFilters.minPrice}
         maxValue={maxPrice}
-        minLabel="Min. price"
-        maxLabel="Max. price"
+        minLabel={t("Min. price")}
+        maxLabel={t("Max. price")}
         minLabelProps={elementStyle("filter-min-price-label")}
         maxLabelProps={elementStyle("filter-max-price-label")}
         minInputProps={elementStyle("filter-min-price-input")}
@@ -351,7 +353,7 @@ export function SearchFilters({
   );
   const mileage = visible("maxMileage") && (
     <FilterSection
-      title="Mileage"
+      title={t("Mileage")}
       active={Boolean(extraFilters.minMileage || extraFilters.maxMileage)}
     >
       <RangeSlider
@@ -360,14 +362,14 @@ export function SearchFilters({
         showMax
         minValue={extraFilters.minMileage}
         maxValue={extraFilters.maxMileage}
-        minLabel="Min. mileage"
-        maxLabel="Max. mileage"
+        minLabel={t("Min. mileage")}
+        maxLabel={t("Max. mileage")}
         minLabelProps={{}}
         maxLabelProps={elementStyle("filter-max-mileage-label")}
         minInputProps={{}}
         maxInputProps={elementStyle("filter-max-mileage-input")}
         format={(value, open) =>
-          `${value.toLocaleString("en-US")}${open && value >= mileageScale.max ? "+" : ""}`
+          `${number(value)}${open && value >= mileageScale.max ? "+" : ""}`
         }
         onMin={(next) => setExtraFilters((f) => ({ ...f, minMileage: next }))}
         onMax={(next) => setExtraFilters((f) => ({ ...f, maxMileage: next }))}
@@ -377,39 +379,39 @@ export function SearchFilters({
   const condition = visible("condition") && (
     <FilterSection
       title={
-        <span {...elementStyle("filter-condition-label")}>New / Used</span>
+        <span {...elementStyle("filter-condition-label")}>{t("New / Used")}</span>
       }
       active={Boolean(extraFilters.condition)}
     >
       <OptionChecks
-        label="Condition"
+        label={t("Condition")}
         inputProps={elementStyle("filter-condition-input")}
         value={extraFilters.condition}
         onChange={(next) =>
           setExtraFilters((f) => ({ ...f, condition: next }))
         }
         options={[
-          { value: "used", label: "Used" },
-          { value: "new", label: "New" },
-          { value: "certified", label: "Certified" },
+          { value: "used", label: t(conditionLabel.used) },
+          { value: "new", label: t(conditionLabel.new) },
+          { value: "certified", label: t(conditionLabel.certified) },
         ]}
       />
     </FilterSection>
   );
   const year = (visible("minYear") || visible("maxYear")) && (
     <FilterSection
-      title="Year"
+      title={t("Year")}
       active={Boolean(minYear || extraFilters.maxYear)}
     >
       {visible("minYear") && (
         <Label>
-          <span {...elementStyle("filter-min-year-label")}>Min. year</span>
+          <span {...elementStyle("filter-min-year-label")}>{t("Min. year")}</span>
           <NativeSelect
             {...elementStyle("filter-min-year-input")}
             value={minYear}
             onChange={update(setMinYear)}
           >
-            <option value="">Any year</option>
+            <option value="">{t("Any year")}</option>
             {years.map((y) => (
               <option key={y}>{y}</option>
             ))}
@@ -418,13 +420,13 @@ export function SearchFilters({
       )}
       {visible("maxYear") && (
         <Label>
-          <span {...elementStyle("filter-max-year-label")}>Max. year</span>
+          <span {...elementStyle("filter-max-year-label")}>{t("Max. year")}</span>
           <NativeSelect
             {...elementStyle("filter-max-year-input")}
             value={extraFilters.maxYear}
             onChange={updateExtra("maxYear")}
           >
-            <option value="">Any year</option>
+            <option value="">{t("Any year")}</option>
             {years.map((y) => (
               <option key={y}>{y}</option>
             ))}
@@ -435,37 +437,37 @@ export function SearchFilters({
   );
   const makeField = visible("make") && (
     <FilterSection
-      title={<span {...elementStyle("filter-make-label")}>Make</span>}
+      title={<span {...elementStyle("filter-make-label")}>{t("Make")}</span>}
       active={Boolean(make)}
     >
       <Label>
         <NativeSelect
           {...elementStyle("filter-make-input")}
-          aria-label="Make"
+          aria-label={t("Make")}
           value={make}
           onChange={update(setMake)}
         >
-          <option value="">All makes</option>
+          <option value="">{t("All makes")}</option>
           {makeOptions([...availableMakes, make], category).map((m) => (
             <option key={m}>{m}</option>
           ))}
         </NativeSelect>
         {makesError && (
           <span role="alert" className="text-xs font-normal">
-            {makesError}
+            {t(makesError)}
           </span>
         )}
       </Label>
     </FilterSection>
   );
   const model = visible("model") && (
-    <FilterSection title="Model" active={Boolean(extraFilters.model)}>
+    <FilterSection title={t("Model")} active={Boolean(extraFilters.model)}>
       <Label>
-        <span {...elementStyle("filter-model-label")}>Model</span>
+        <span {...elementStyle("filter-model-label")}>{t("Model")}</span>
         <Input
           {...elementStyle("filter-model-input")}
           value={extraFilters.model}
-          placeholder="Any model"
+          placeholder={t("Any model")}
           onChange={updateExtra("model")}
         />
       </Label>
@@ -473,11 +475,13 @@ export function SearchFilters({
   );
   const categoryField = visible("category") && (
     <FilterSection
-      title={<span {...elementStyle("filter-category-label")}>Category</span>}
+      title={
+        <span {...elementStyle("filter-category-label")}>{t("Category")}</span>
+      }
       active={Boolean(category)}
     >
       <OptionChecks
-        label="Category"
+        label={t("Category")}
         inputProps={elementStyle("filter-category-input")}
         value={category}
         onChange={(next) => {
@@ -486,20 +490,23 @@ export function SearchFilters({
         }}
         options={vehicleCategories.map((c) => ({
           value: c,
-          label: categoryLabels[c],
+          label: t(categoryLabels[c]),
         }))}
       />
     </FilterSection>
   );
-  const bodyChoices = bodies.map((style) => ({ value: style, label: style }));
+  const bodyChoices = bodies.map((style) => ({
+    value: style,
+    label: t(style),
+  }));
   const bodyField = visible("bodyStyle") && (
     <FilterSection
-      title={<span {...elementStyle("filter-body-label")}>Body</span>}
+      title={<span {...elementStyle("filter-body-label")}>{t("Body")}</span>}
       active={Boolean(body)}
     >
       {bodyChoices.length <= checkboxOptionLimit ? (
         <OptionChecks
-          label="Body"
+          label={t("Body")}
           inputProps={elementStyle("filter-body-input")}
           value={body}
           onChange={setBody}
@@ -509,13 +516,15 @@ export function SearchFilters({
         <Label>
           <NativeSelect
             {...elementStyle("filter-body-input")}
-            aria-label="Body"
+            aria-label={t("Body")}
             value={body}
             onChange={update(setBody)}
           >
-            <option value="">All body types</option>
+            <option value="">{t("All body types")}</option>
             {bodies.map((m) => (
-              <option key={m}>{m}</option>
+              <option key={m} value={m}>
+                {t(m)}
+              </option>
             ))}
           </NativeSelect>
         </Label>
@@ -523,15 +532,15 @@ export function SearchFilters({
     </FilterSection>
   );
   const fuelOptions = ["Petrol", "Diesel", "Hybrid", "Electric", "CNG"].map(
-    (fuelName) => ({ value: fuelName, label: fuelName }),
+    (fuelName) => ({ value: fuelName, label: t(fuelName) }),
   );
   const fuelField = visible("fuel") && (
     <FilterSection
-      title={<span {...elementStyle("filter-fuel-label")}>Fuel</span>}
+      title={<span {...elementStyle("filter-fuel-label")}>{t("Fuel")}</span>}
       active={Boolean(fuel)}
     >
       <OptionChecks
-        label="Fuel"
+        label={t("Fuel")}
         inputProps={elementStyle("filter-fuel-input")}
         value={fuel}
         onChange={setFuel}
@@ -543,13 +552,13 @@ export function SearchFilters({
     <FilterSection
       title={
         <span {...elementStyle("filter-transmission-label")}>
-          Transmission
+          {t("Transmission")}
         </span>
       }
       active={Boolean(extraFilters.transmission)}
     >
       <OptionChecks
-        label="Transmission"
+        label={t("Transmission")}
         inputProps={elementStyle("filter-transmission-input")}
         value={extraFilters.transmission}
         onChange={(next) =>
@@ -557,19 +566,22 @@ export function SearchFilters({
         }
         options={["Automatic", "Manual", "Automated manual"].map((name) => ({
           value: name,
-          label: name,
+          label: t(name),
         }))}
       />
     </FilterSection>
   );
   const location = visible("location") && (
-    <FilterSection title="Location" active={Boolean(extraFilters.location)}>
+    <FilterSection
+      title={t("Location")}
+      active={Boolean(extraFilters.location)}
+    >
       <Label>
-        <span {...elementStyle("filter-location-label")}>Location</span>
+        <span {...elementStyle("filter-location-label")}>{t("Location")}</span>
         <Input
           {...elementStyle("filter-location-input")}
           value={extraFilters.location}
-          placeholder="City or region"
+          placeholder={t("City or region")}
           onChange={updateExtra("location")}
         />
       </Label>
@@ -592,11 +604,11 @@ export function SearchFilters({
     <div className="grid content-start gap-3" data-filters-open={open}>
       {hasSearch && (
         <Label>
-          <span {...elementStyle("filter-search-label")}>Search</span>
+          <span {...elementStyle("filter-search-label")}>{t("Search")}</span>
           <Input
             {...elementStyle("filter-search-input")}
             value={search}
-            placeholder="Make, model or keyword"
+            placeholder={t("Make, model or keyword")}
             onChange={update(setSearch)}
           />
         </Label>
@@ -611,8 +623,8 @@ export function SearchFilters({
             aria-controls={sidebarId}
             onClick={() => setOpen((value) => !value)}
           >
-            {open ? "Hide filters" : "Filters"}
-            {activeCount > 0 ? ` (${activeCount})` : ""}
+            {open ? t("Hide filters") : t("Filters")}
+            {activeCount > 0 ? ` (${number(activeCount)})` : ""}
           </Button>
           <aside id={sidebarId} className="sf-sidebar sf-collapsible">
             <div className="mb-1 flex items-center justify-between gap-2">
@@ -620,7 +632,7 @@ export function SearchFilters({
                 {...elementStyle("more-filters")}
                 className="text-base font-semibold"
               >
-                Filters
+                {t("Filters")}
               </h2>
               {activeCount > 0 && (
                 <Button
@@ -630,15 +642,15 @@ export function SearchFilters({
                   className="h-8 px-2"
                   onClick={clear}
                 >
-                  Clear
+                  {t("Clear")}
                 </Button>
               )}
             </div>
             {basics.length > 0 && (
-              <Group title="Basics">{basics}</Group>
+              <Group title={t("Basics")}>{basics}</Group>
             )}
             {details.length > 0 && (
-              <Group title="Vehicle details">{details}</Group>
+              <Group title={t("Vehicle details")}>{details}</Group>
             )}
           </aside>
         </>

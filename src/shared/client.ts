@@ -45,7 +45,7 @@ export async function api<T>(
 }
 /** How long a public storefront read is reused before the API is asked again. */
 export const cacheTtl = {
-  settings: 10 * 60_000,
+  settings: 60_000,
   makes: 10 * 60_000,
   listings: 2 * 60_000,
   vehicle: 5 * 60_000,

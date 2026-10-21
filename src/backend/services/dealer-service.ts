@@ -10,6 +10,10 @@ import type { Context } from "../context";
 import { AppError } from "../errors";
 import { saveRow, getRow, queryRows, removeRow } from "../repositories/repository";
 import { audit } from "./audit-service";
+import {
+  notifyDealerApproved,
+  notifyOwnerOfDealerApplication,
+} from "./dealer-email-service";
 import { setStatus } from "./vehicle-service";
 export async function listDealers(ctx: Context, search = "", cursor = 0) {
   const result = await queryRows(ctx, "dealers", {
@@ -61,6 +65,11 @@ export async function saveDealer(ctx: Context, raw: unknown, id?: string) {
   await saveRow(ctx, "dealers", dealer, !id);
   if (id && dealer.approvalState !== "approved")
     await archivePublicVehicles(ctx, id);
+  if (
+    dealer.approvalState === "approved" &&
+    existing?.approvalState !== "approved"
+  )
+    await notifyDealerApproved(ctx, dealer);
   await audit(ctx, "dealer", dealer._id, id ? "update" : "create");
   return dealer;
 }
@@ -160,6 +169,7 @@ export async function applyDealer(ctx: Context, raw: unknown) {
     updatedAt: now,
   });
   await saveRow(ctx, "dealers", dealer, true, true);
+  await notifyOwnerOfDealerApplication(ctx, dealer);
   await audit(ctx, "dealer", dealer._id, "apply", true);
   return {
     _id: dealer._id,

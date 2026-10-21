@@ -1,3 +1,13 @@
+import { cachedApi, cacheTtl } from "../../../../shared/client";
+import {
+  isLanguage,
+  localeFor,
+  localizeDefault,
+  translate,
+  type Language,
+  type Vars,
+} from "../../../../shared/i18n";
+import type { Theme } from "../../../../shared/schemas";
 import { money } from "../../../../shared/utils";
 import {
   onSavedCarsChange,
@@ -33,7 +43,19 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-function initSavedCars() {
+async function loadLanguage(): Promise<Language> {
+  try {
+    const theme = await cachedApi<Theme>("settings", cacheTtl.settings);
+    if (isLanguage(theme.language)) return theme.language;
+  } catch (error) {
+    console.error("Could not load saved cars language", error);
+  }
+  return "en";
+}
+
+async function initSavedCars() {
+  const language = await loadLanguage();
+  const t = (key: string, vars?: Vars) => translate(language, key, vars);
   const host = document.createElement("div");
   host.id = "autohaus-saved-cars";
   const root = host.attachShadow({ mode: "open" });
@@ -44,7 +66,7 @@ function initSavedCars() {
     "--accent",
     accent && /^#[0-9a-f]{6}$/i.test(accent) ? accent : "#196947",
   );
-  const heading = label?.trim() || "Saved cars";
+  const heading = localizeDefault(language, label, "Saved cars");
 
   const panel = el("section", "panel");
   panel.id = "autohaus-saved-panel";
@@ -57,14 +79,14 @@ function initSavedCars() {
   titles.append(title, sub);
   const closeBtn = el("button", "icon-btn");
   closeBtn.type = "button";
-  closeBtn.setAttribute("aria-label", "Close saved cars");
+  closeBtn.setAttribute("aria-label", t("Close saved cars"));
   closeBtn.innerHTML = close;
   head.append(titles, closeBtn);
   const list = el("ul", "list");
   const foot = el("div", "foot");
-  const clear = el("button", "clear", "Clear all");
+  const clear = el("button", "clear", t("Clear all"));
   clear.type = "button";
-  const retry = el("button", "clear", "Try again");
+  const retry = el("button", "clear", t("Try again"));
   retry.type = "button";
   foot.append(clear, retry);
   panel.append(head, list, foot);
@@ -99,13 +121,16 @@ function initSavedCars() {
     text.style.minWidth = "0";
     text.append(
       el("p", "name", car.title),
-      el("p", "price", money(car.price, car.currency)),
+      el("p", "price", money(car.price, car.currency, localeFor(language))),
     );
     link.append(thumb, text);
     link.addEventListener("click", () => setOpen(false));
     const remove = el("button", "icon-btn");
     remove.type = "button";
-    remove.setAttribute("aria-label", `Remove ${car.title} from saved cars`);
+    remove.setAttribute(
+      "aria-label",
+      t("Remove {title} from saved cars", { title: car.title }),
+    );
     remove.innerHTML = close;
     remove.disabled = savedCarsState().loading;
     remove.addEventListener("click", () => {
@@ -125,12 +150,21 @@ function initSavedCars() {
     count.textContent = String(cars.length);
     launcher.setAttribute(
       "aria-label",
-      `${heading}: ${cars.length} ${cars.length === 1 ? "car" : "cars"}`,
+      t(cars.length === 1 ? "{heading}: {count} car" : "{heading}: {count} cars", {
+        heading,
+        count: cars.length,
+      }),
     );
     sub.textContent = state.loading
-      ? "Syncing your saved cars…"
-      : state.error ||
-        `${cars.length} ${cars.length === 1 ? "car" : "cars"} saved to your account`;
+      ? t("Syncing your saved cars…")
+      : state.error
+        ? t(state.error)
+        : t(
+            cars.length === 1
+              ? "{count} car saved to your account"
+              : "{count} cars saved to your account",
+            { count: cars.length },
+          );
     sub.setAttribute("role", state.error ? "alert" : "status");
     retry.hidden = !state.error;
     clear.disabled = state.loading || !cars.length;

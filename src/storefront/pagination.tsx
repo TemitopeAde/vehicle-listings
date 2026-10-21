@@ -1,4 +1,5 @@
 import { useElementStyle } from "./element-style";
+import { useI18n } from "../shared/i18n-react";
 import { pageWindow } from "../shared/utils";
 import { Button } from "./ui/button";
 import { cn } from "./ui/utils";
@@ -14,11 +15,12 @@ export function Pagination({
   disabled?: boolean;
   onChange: (page: number) => void;
 }) {
+  const { t } = useI18n();
   const elementStyle = useElementStyle();
   if (pages <= 1) return null;
   return (
     <nav
-      aria-label="Inventory pages"
+      aria-label={t("Inventory pages")}
       className="mt-6 flex flex-wrap items-center justify-center gap-1"
     >
       <Button
@@ -28,7 +30,7 @@ export function Pagination({
         disabled={disabled || page === 1}
         onClick={() => onChange(page - 1)}
       >
-        Previous
+        {t("Previous")}
       </Button>
       {pageWindow(page, pages).map((n, i) =>
         n === null ? (
@@ -47,7 +49,7 @@ export function Pagination({
             size="sm"
             className={cn("min-w-9 px-2", n === page && "pointer-events-none")}
             disabled={disabled}
-            aria-label={`Page ${n}`}
+            aria-label={t("Page {page}", { page: n })}
             aria-current={n === page ? "page" : undefined}
             onClick={() => onChange(n)}
           >
@@ -62,7 +64,7 @@ export function Pagination({
         disabled={disabled || page === pages}
         onClick={() => onChange(page + 1)}
       >
-        Next
+        {t("Next")}
       </Button>
     </nav>
   );

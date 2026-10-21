@@ -12,6 +12,7 @@ import {
   type QuoteRequestFormInput,
   type QuoteRequestFormValues,
 } from "../shared/quote-requests";
+import { useI18n } from "../shared/i18n-react";
 import { Button } from "./ui/button";
 import { Alert } from "./ui/card";
 import { Checkbox, Input, Label, NativeSelect, Textarea } from "./ui/input";
@@ -52,6 +53,7 @@ function Field({
 }
 
 export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
+  const { t } = useI18n();
   const [result, setResult] = useState<SubmitResult | null>(null),
     [formError, setFormError] = useState("");
   const key = useRef("");
@@ -108,23 +110,29 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
   if (result)
     return (
       <Alert role="status">
-        Thank you. Your quote request for {vehicle.title} has been received.{" "}
+        {t("Thank you. Your quote request for {title} has been received.", {
+          title: vehicle.title,
+        })}{" "}
         {result.confirmationEmailStatus === "queued"
-          ? `A confirmation is on its way to ${getValues("email")}.`
-          : "The dealership will reply using your contact details."}
+          ? t("A confirmation is on its way to {email}.", {
+              email: getValues("email"),
+            })
+          : t("The dealership will reply using your contact details.")}
       </Alert>
     );
-  const message = (name: keyof QuoteRequestFormInput) =>
-    errors[name]?.message as string | undefined;
+  const message = (name: keyof QuoteRequestFormInput) => {
+    const text = errors[name]?.message as string | undefined;
+    return text ? t(text) : undefined;
+  };
   return (
     // Validation is done by the zod schema the API also uses, not the browser.
     <form noValidate onSubmit={handleSubmit(submit)} className="grid gap-4">
-      <h4 className="font-semibold">Request a quote</h4>
+      <h4 className="font-semibold">{t("Request a quote")}</h4>
       <p className="text-xs text-muted-foreground">
-        Fields marked * are required.
+        {t("Fields marked * are required.")}
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="First name *" error={message("firstName")}>
+        <Field label={t("First name *")} error={message("firstName")}>
           {(a) => (
             <Input
               {...a}
@@ -133,7 +141,7 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
             />
           )}
         </Field>
-        <Field label="Last name *" error={message("lastName")}>
+        <Field label={t("Last name *")} error={message("lastName")}>
           {(a) => (
             <Input
               {...a}
@@ -143,7 +151,7 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
           )}
         </Field>
       </div>
-      <Field label="Email *" error={message("email")}>
+      <Field label={t("Email *")} error={message("email")}>
         {(a) => (
           <Input
             {...a}
@@ -153,7 +161,7 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
           />
         )}
       </Field>
-      <Field label="Phone *" error={message("phone")}>
+      <Field label={t("Phone *")} error={message("phone")}>
         {(a) => (
           <Input
             {...a}
@@ -163,13 +171,13 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
           />
         )}
       </Field>
-      <Field label="Company" error={message("company")}>
+      <Field label={t("Company")} error={message("company")}>
         {(a) => (
           <Input {...a} {...register("company")} autoComplete="organization" />
         )}
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Quantity *" error={message("quantity")}>
+        <Field label={t("Quantity *")} error={message("quantity")}>
           {(a) => (
             <Input
               {...a}
@@ -179,26 +187,29 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
             />
           )}
         </Field>
-        <Field label="Payment *" error={message("paymentMethod")}>
+        <Field label={t("Payment *")} error={message("paymentMethod")}>
           {(a) => (
             <NativeSelect {...a} {...register("paymentMethod")}>
-              <option value="">Select payment</option>
-              {quotePaymentMethods.map((m) => (
-                <option key={m} value={m}>
-                  {quotePaymentLabels[m]}
+              <option value="">{t("Select payment")}</option>
+              {quotePaymentMethods.map((method) => (
+                <option key={method} value={method}>
+                  {t(quotePaymentLabels[method])}
                 </option>
               ))}
             </NativeSelect>
           )}
         </Field>
       </div>
-      <Field label="When do you plan to buy? *" error={message("timeline")}>
+      <Field
+        label={t("When do you plan to buy? *")}
+        error={message("timeline")}
+      >
         {(a) => (
           <NativeSelect {...a} {...register("timeline")}>
-            <option value="">Select when you plan to buy</option>
-            {quoteTimelines.map((t) => (
-              <option key={t} value={t}>
-                {quoteTimelineLabels[t]}
+            <option value="">{t("Select when you plan to buy")}</option>
+            {quoteTimelines.map((timeline) => (
+              <option key={timeline} value={timeline}>
+                {t(quoteTimelineLabels[timeline])}
               </option>
             ))}
           </NativeSelect>
@@ -206,10 +217,10 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
       </Field>
       <details className="grid gap-4">
         <summary className="cursor-pointer text-sm font-medium">
-          Billing address (optional)
+          {t("Billing address (optional)")}
         </summary>
         <div className="mt-3 grid gap-4">
-          <Field label="Street address" error={message("addressLine")}>
+          <Field label={t("Street address")} error={message("addressLine")}>
             {(a) => (
               <Input
                 {...a}
@@ -219,7 +230,7 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
             )}
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="City" error={message("city")}>
+            <Field label={t("City")} error={message("city")}>
               {(a) => (
                 <Input
                   {...a}
@@ -228,7 +239,7 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
                 />
               )}
             </Field>
-            <Field label="State or region" error={message("subdivision")}>
+            <Field label={t("State or region")} error={message("subdivision")}>
               {(a) => (
                 <Input
                   {...a}
@@ -237,7 +248,7 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
                 />
               )}
             </Field>
-            <Field label="Postal code" error={message("postalCode")}>
+            <Field label={t("Postal code")} error={message("postalCode")}>
               {(a) => (
                 <Input
                   {...a}
@@ -246,7 +257,7 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
                 />
               )}
             </Field>
-            <Field label="Country" error={message("country")}>
+            <Field label={t("Country")} error={message("country")}>
               {(a) => (
                 <Input
                   {...a}
@@ -259,27 +270,33 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
         </div>
       </details>
       <label className="flex items-center gap-2.5 text-sm">
-        <Checkbox {...register("tradeIn")} />I have a vehicle to trade in
+        <Checkbox {...register("tradeIn")} />
+        {t("I have a vehicle to trade in")}
       </label>
       {tradeIn && (
-        <Field label="Trade-in details *" error={message("tradeInDetails")}>
+        <Field
+          label={t("Trade-in details *")}
+          error={message("tradeInDetails")}
+        >
           {(a) => (
             <Textarea
               {...a}
               {...register("tradeInDetails")}
               rows={2}
-              placeholder="Year, make, model and mileage"
+              placeholder={t("Year, make, model and mileage")}
             />
           )}
         </Field>
       )}
-      <Field label="Message" error={message("message")}>
+      <Field label={t("Message")} error={message("message")}>
         {(a) => (
           <Textarea
             {...a}
             {...register("message")}
             rows={3}
-            placeholder="Options, delivery or anything else the quote should cover"
+            placeholder={t(
+              "Options, delivery or anything else the quote should cover",
+            )}
           />
         )}
       </Field>
@@ -298,22 +315,23 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
             aria-invalid={Boolean(errors.consent)}
             aria-describedby={errors.consent ? consentErrorId : undefined}
           />
-          I agree that the dealership may store my details and contact me about
-          this quote. *
+          {t(
+            "I agree that the dealership may store my details and contact me about this quote. *",
+          )}
         </label>
-        {errors.consent && (
+        {errors.consent?.message && (
           <span id={consentErrorId} className="text-xs text-destructive">
-            {errors.consent.message}
+            {t(errors.consent.message)}
           </span>
         )}
       </div>
       {formError && (
         <Alert variant="destructive" role="alert">
-          {formError}
+          {t(formError)}
         </Alert>
       )}
       <Button disabled={isSubmitting} pending={isSubmitting}>
-        Request quote
+        {t("Request quote")}
       </Button>
     </form>
   );

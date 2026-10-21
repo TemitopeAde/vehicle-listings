@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as Primitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+import { useI18n } from "../../../shared/i18n-react";
 import { cn } from "./button";
 export const Dialog = Primitive.Root;
 export const DialogTrigger = Primitive.Trigger;
@@ -10,7 +11,9 @@ export const DialogClose = Primitive.Close;
 export const DialogContent = React.forwardRef<
   React.ElementRef<typeof Primitive.Content>,
   React.ComponentPropsWithoutRef<typeof Primitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => {
+  const { t } = useI18n();
+  return (
   <Primitive.Portal>
     <Primitive.Overlay className="fixed inset-0 z-50 bg-black/40" />
     <Primitive.Content
@@ -23,12 +26,13 @@ export const DialogContent = React.forwardRef<
     >
       {children}
       <Primitive.Close
-        className="absolute right-4 top-4 rounded-sm p-1"
-        aria-label="Close dialog"
+        className="absolute end-4 top-4 rounded-sm p-1"
+        aria-label={t("Close dialog")}
       >
         <X size={18} />
       </Primitive.Close>
     </Primitive.Content>
   </Primitive.Portal>
-));
+  );
+});
 DialogContent.displayName = "DialogContent";

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { api, download } from "./api";
 import { csvColumns } from "../shared/csv";
 import type { VehicleInput } from "../shared/schemas";
+import { useI18n } from "../shared/i18n-react";
 import { Button } from "./components/ui/button";
 import {
   Dialog,
@@ -18,6 +19,7 @@ type Preview = {
   invalid: number;
 };
 export function Imports() {
+  const { t } = useI18n();
   const [csv, setCsv] = useState(""),
     [name, setName] = useState(""),
     [preview, setPreview] = useState<Preview | null>(null),
@@ -40,13 +42,15 @@ export function Imports() {
         });
         setResult(r);
         setConfirm(false);
-        toast.success(`${r?.imported ?? 0} rows imported as drafts`);
+        toast.success(
+          t("{count} rows imported as drafts", { count: r?.imported ?? 0 }),
+        );
       } else
         setPreview(
           await api<Preview>("imports", { csv, mapping, execute: false }),
         );
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(t((e as Error).message));
     } finally {
       setBusy(false);
     }
@@ -55,9 +59,11 @@ export function Imports() {
     <div className="space-y-6">
       <div className="flex justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="section-heading">Bring your inventory along</h2>
+          <h2 className="section-heading">{t("Bring your inventory along")}</h2>
           <p className="hint mt-1">
-            Preview every row before importing. New vehicles are always drafts.
+            {t(
+              "Preview every row before importing. New vehicles are always drafts.",
+            )}
           </p>
         </div>
         <Button
@@ -70,7 +76,7 @@ export function Imports() {
           }
         >
           <Download size={16} />
-          CSV template
+          {t("CSV template")}
         </Button>
       </div>
       <section className="surface p-7">
@@ -79,8 +85,12 @@ export function Imports() {
           className="flex flex-col items-center justify-center cursor-pointer border-2 border-dashed rounded-xl p-12 gap-3 bg-muted/40"
         >
           <FileSpreadsheet size={35} className="text-primary" />
-          <span className="font-semibold">{name || "Choose a CSV file"}</span>
-          <span className="hint">Up to 1,000 rows · maximum 2 MB</span>
+          <span className="font-semibold">
+            {name || t("Choose a CSV file")}
+          </span>
+          <span className="hint">
+            {t("Up to 1,000 rows · maximum 2 MB")}
+          </span>
           <input
             id="csv-upload"
             type="file"
@@ -90,7 +100,7 @@ export function Imports() {
               const file = e.target.files?.[0];
               if (!file) return;
               if (file.size > 2000000) {
-                toast.error("Choose a file smaller than 2 MB");
+                toast.error(t("Choose a file smaller than 2 MB"));
                 return;
               }
               setCsv(await file.text());
@@ -108,29 +118,31 @@ export function Imports() {
           onClick={() => void validate()}
         >
           <Upload size={16} />
-          Preview import
+          {t("Preview import")}
         </Button>
       </section>
       {preview && (
         <section className="surface p-6">
           <div className="flex justify-between gap-3 flex-wrap mb-5">
             <div>
-              <h3 className="section-heading">Import preview</h3>
+              <h3 className="section-heading">{t("Import preview")}</h3>
               <p className="hint">
-                {preview.valid} valid rows · {preview.invalid} rows need
-                attention
+                {t("{valid} valid rows · {invalid} rows need attention", {
+                  valid: preview.valid,
+                  invalid: preview.invalid,
+                })}
               </p>
             </div>
             <Button
               disabled={busy || !preview.valid}
               onClick={() => setConfirm(true)}
             >
-              Import {preview.valid} valid rows
+              {t("Import {count} valid rows", { count: preview.valid })}
             </Button>
           </div>
           <details className="mb-5">
             <summary className="text-sm cursor-pointer font-medium">
-              Map CSV headers
+              {t("Map CSV headers")}
             </summary>
             <div className="grid sm:grid-cols-2 gap-3 mt-4">
               {preview.headers.map((h) => (
@@ -159,31 +171,31 @@ export function Imports() {
               disabled={busy}
               onClick={() => void validate()}
             >
-              Revalidate mapping
+              {t("Revalidate mapping")}
             </Button>
           </details>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left border-b">
-                  <th className="py-3">CSV row</th>
-                  <th>Vehicle</th>
-                  <th>Validation</th>
+                  <th className="py-3">{t("CSV row")}</th>
+                  <th>{t("Vehicle")}</th>
+                  <th>{t("Validation")}</th>
                 </tr>
               </thead>
               <tbody>
                 {preview.rows.slice(0, 100).map((r) => (
                   <tr className="border-b" key={r.row}>
                     <td className="py-3">{r.row}</td>
-                    <td>{r.data?.title ?? "—"}</td>
+                    <td>{r.data?.title ?? t("—")}</td>
                     <td
                       className={
                         r.errors.length ? "text-red-700" : "text-primary"
                       }
                     >
                       {r.errors.length
-                        ? r.errors.join("; ")
-                        : "Ready to import"}
+                        ? r.errors.map((error) => t(error)).join("; ")
+                        : t("Ready to import")}
                     </td>
                   </tr>
                 ))}
@@ -191,7 +203,9 @@ export function Imports() {
             </table>
           </div>
           <p className="hint mt-3">
-            Showing the first 100 rows. All rows are validated and processed.
+            {t(
+              "Showing the first 100 rows. All rows are validated and processed.",
+            )}
           </p>
         </section>
       )}
@@ -199,17 +213,22 @@ export function Imports() {
         <section className="surface p-6">
           <h3 className="section-heading flex items-center gap-2">
             <CheckCircle2 size={20} className="text-primary" />
-            Import finished
+            {t("Import finished")}
           </h3>
           <p className="hint mt-2">
-            {result.imported} imported · {result.failed} failed. Repeating this
-            import uses the same record IDs.
+            {t(
+              "{imported} imported · {failed} failed. Repeating this import uses the same record IDs.",
+              { imported: result.imported, failed: result.failed },
+            )}
           </p>
           {result.results
             .filter((r) => !r.success)
             .map((r) => (
               <p key={r.row} className="text-sm text-red-700 mt-3">
-                Row {r.row}: {r.errors.join("; ")}
+                {t("Row {row}: {errors}", {
+                  row: r.row,
+                  errors: r.errors.map((error) => t(error)).join("; "),
+                })}
               </p>
             ))}
         </section>
@@ -217,22 +236,23 @@ export function Imports() {
       <Dialog open={confirm} onOpenChange={setConfirm}>
         <DialogContent>
           <DialogTitle className="section-heading">
-            Import verified rows?
+            {t("Import verified rows?")}
           </DialogTitle>
           <DialogDescription className="hint my-4">
-            Valid rows become drafts. Invalid or duplicate rows are reported
-            individually. Your plan’s vehicle quota applies.
+            {t(
+              "Valid rows become drafts. Invalid or duplicate rows are reported individually. Your plan’s vehicle quota applies.",
+            )}
           </DialogDescription>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setConfirm(false)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               disabled={busy}
               pending={busy}
               onClick={() => void validate(true)}
             >
-              Confirm import
+              {t("Confirm import")}
             </Button>
           </div>
         </DialogContent>

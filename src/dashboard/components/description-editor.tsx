@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import { useI18n } from "../../shared/i18n-react";
 
 const modules = {
   toolbar: [
@@ -18,6 +19,7 @@ export function DescriptionEditor({
   value: string;
   onChange: (html: string, source: string) => void;
 }) {
+  const { t } = useI18n();
   const [Editor, setEditor] = useState<typeof ReactQuill | null>(null);
   const [editorError, setEditorError] = useState("");
   const editorRef = useRef<ReactQuill | null>(null);
@@ -54,20 +56,22 @@ export function DescriptionEditor({
           .replace(" ql-active", "");
         button.setAttribute(
           "aria-label",
-          format === "list"
-            ? `${button.getAttribute("value") === "ordered" ? "Numbered" : "Bulleted"} list`
-            : format === "clean"
-              ? "Clear formatting"
-              : format[0]?.toUpperCase() + format.slice(1),
+          t(
+            format === "list"
+              ? `${button.getAttribute("value") === "ordered" ? "Numbered" : "Bulleted"} list`
+              : format === "clean"
+                ? "Clear formatting"
+                : format[0]?.toUpperCase() + format.slice(1),
+          ),
         );
       });
-  }, [Editor, value]);
+  }, [Editor, value, t]);
   return (
     <div>
       <p className="label" id="description-label">
-        Description
+        {t("Description")}
       </p>
-      {editorError && <p role="alert">{editorError}</p>}
+      {editorError && <p role="alert">{t(editorError)}</p>}
       {Editor ? (
         <div
           ref={editorContainer}
@@ -79,7 +83,9 @@ export function DescriptionEditor({
             value={value}
             modules={modules}
             formats={formats}
-            placeholder="Describe condition, history and verified features. Avoid unverified claims."
+            placeholder={t(
+              "Describe condition, history and verified features. Avoid unverified claims.",
+            )}
             onChange={(html, _delta, source) => {
               onChange(html, source);
             }}
@@ -88,7 +94,7 @@ export function DescriptionEditor({
       ) : (
         !editorError && (
           <p role="status" className="hint">
-            Loading description editor…
+            {t("Loading description editor…")}
           </p>
         )
       )}

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { SearchX, RefreshCw } from "lucide-react";
+import { useI18n } from "../../shared/i18n-react";
 import { Button, cn } from "./ui/button";
 export function Badge({
   children,
@@ -34,11 +35,12 @@ export function Empty({
   description: string;
   action?: ReactNode;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center gap-3 py-16 text-center">
       <SearchX className="text-muted-foreground" size={32} />
-      <h3 className="font-semibold">{title}</h3>
-      <p className="hint max-w-md">{description}</p>
+      <h3 className="font-semibold">{t(title)}</h3>
+      <p className="hint max-w-md">{t(description)}</p>
       {action}
     </div>
   );
@@ -52,19 +54,20 @@ export function LoadState({
   error: string;
   retry: () => void;
 }) {
+  const { t } = useI18n();
   if (error)
     return (
       <div role="alert" className="surface p-6">
-        <p className="mb-3 text-red-700">{error}</p>
+        <p className="mb-3 text-red-700">{t(error)}</p>
         <Button variant="outline" onClick={retry}>
           <RefreshCw size={16} />
-          Try again
+          {t("Try again")}
         </Button>
       </div>
     );
   if (loading)
     return (
-      <div aria-label="Loading" className="space-y-4 py-6">
+      <div aria-label={t("Loading")} className="space-y-4 py-6">
         {[1, 2, 3].map((i) => (
           <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
         ))}

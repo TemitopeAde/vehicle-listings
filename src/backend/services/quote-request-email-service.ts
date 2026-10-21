@@ -8,11 +8,13 @@ import {
   quoteTimelineLabels,
   type QuoteRequest,
 } from "../../shared/quote-requests";
+import { translate, type Language } from "../../shared/i18n";
 import { money } from "../../shared/utils";
 import {
   brandedEmail,
   emailKey,
   escapeEmailText,
+  showroomLanguage,
 } from "./inquiry-email-content";
 import {
   emailDependencies,
@@ -40,8 +42,9 @@ async function loadRequest(
   return { row, request: quoteRequestSchema.parse(row) };
 }
 
-function summary(q: QuoteRequest) {
+function summary(q: QuoteRequest, language: Language) {
   const e = escapeEmailText;
+  const label = (text: string) => translate(language, text);
   const address = [
     q.addressLine,
     q.city,
@@ -60,9 +63,9 @@ function summary(q: QuoteRequest) {
         ][])
       : []),
     ["Quantity", String(q.quantity)],
-    ["Payment", quotePaymentLabels[q.paymentMethod]],
-    ["Timeline", quoteTimelineLabels[q.timeline]],
-    ["Trade-in", q.tradeIn ? q.tradeInDetails : "No"],
+    ["Payment", label(quotePaymentLabels[q.paymentMethod])],
+    ["Timeline", label(quoteTimelineLabels[q.timeline])],
+    ["Trade-in", q.tradeIn ? q.tradeInDetails : label("No")],
   ];
   const contact: [string, string][] = [
     ["Name", quoteRequesterName(q)],
@@ -72,7 +75,7 @@ function summary(q: QuoteRequest) {
     ...(address ? ([["Address", address]] as [string, string][]) : []),
   ];
   const list = (items: [string, string][]) =>
-    `<ul>${items.map(([k, v]) => `<li><strong>${e(k)}:</strong> ${e(v)}</li>`).join("")}</ul>`;
+    `<ul>${items.map(([k, v]) => `<li><strong>${e(label(k))}:</strong> ${e(v)}</li>`).join("")}</ul>`;
   return { request: list(rows), contact: list(contact) };
 }
 
@@ -85,6 +88,7 @@ export async function deliverQuoteEmail(
   key: string,
   automatic = false,
   deps: InquiryEmailDependencies = emailDependencies,
+  language?: Language,
 ) {
   if (!automatic && !ctx.manager)
     throw new AppError(
@@ -99,10 +103,13 @@ export async function deliverQuoteEmail(
       409,
     );
   const { request } = await loadRequest(ctx, id, deps);
-  const branding = await deps.branding(ctx);
+  const [branding, resolvedLanguage] = await Promise.all([
+    deps.branding(ctx),
+    language ? Promise.resolve(language) : showroomLanguage(ctx),
+  ]);
   return deps.send(
     {
-      ...brandedEmail(branding.siteName, subject, html),
+      ...brandedEmail(branding.siteName, subject, html, resolvedLanguage),
       toRecipients: [
         {
           emailAddress: request.email,
@@ -167,7 +174,8 @@ export async function confirmQuoteRequest(
   const { row, request } = await loadRequest(ctx, id, deps);
   if (row.confirmationEmailStatus === "queued") return "queued";
   if (ctx.demo) return "demo";
-  const details = summary(request);
+  const language = await showroomLanguage(ctx);
+  const details = summary(request, language);
   try {
     await deliverQuoteEmail(
       ctx,
@@ -177,6 +185,7 @@ export async function confirmQuoteRequest(
       "quote-confirmation",
       true,
       deps,
+      language,
     );
     await recordStatus(ctx, id, "confirmationEmailStatus", "queued", deps);
     return "queued";
@@ -203,7 +212,10 @@ export async function notifyQuoteOwner(
   if (row.ownerEmailStatus === "queued") return "queued";
   if (ctx.demo) return "demo";
   try {
-    const branding = await deps.branding(ctx);
+    const [branding, language] = await Promise.all([
+      deps.branding(ctx),
+      showroomLanguage(ctx),
+    ]);
     const dealer = request.dealerId
       ? await deps.getRow(ctx, "dealers", request.dealerId, true)
       : null;
@@ -219,11 +231,12 @@ export async function notifyQuoteOwner(
       await recordStatus(ctx, id, "ownerEmailStatus", "no-recipient", deps);
       return "no-recipient";
     }
-    const details = summary(request);
+    const details = summary(request, language);
     const draft = brandedEmail(
       branding.siteName,
       `New quote request: ${request.vehicleTitle || "vehicle"}`,
       `<p>${escapeEmailText(quoteRequesterName(request))} requested a quote.</p>${details.request}${details.contact}${request.message ? `<blockquote>${escapeEmailText(request.message)}</blockquote>` : ""}<p>Reply to this email to answer the requester, or manage the request under Quote requests in your dashboard.</p>`,
+      language,
     );
     await deps.send(
       {

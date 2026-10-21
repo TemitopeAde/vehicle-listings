@@ -23,6 +23,8 @@ import { Button } from "./ui/button";
 import { Alert } from "./ui/card";
 import { Label, NativeSelect } from "./ui/input";
 import { cn } from "./ui/utils";
+import { localizeDefault } from "../shared/i18n";
+import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
 import { vehicleDetailsUrl } from "../shared/utils";
 import {
   siteNavigation,
@@ -92,6 +94,13 @@ const badgeFor = (v: Vehicle) =>
   v.demo ? "Sample" : v.status === "published" ? v.condition : v.status;
 export function Marketplace(props: MarketplaceProps) {
   return (
+    <LocaleProvider>
+      <MarketplaceView {...props} />
+    </LocaleProvider>
+  );
+}
+function MarketplaceView(props: MarketplaceProps) {
+  return (
     <ElementStyleContext.Provider value={props.widgetStyle ?? {}}>
       <MarketplaceContent {...props} />
     </ElementStyleContext.Provider>
@@ -113,6 +122,7 @@ function MarketplaceContent({
   filterVisibility = {},
   detailsPage,
 }: MarketplaceProps) {
+  const { t, language, number } = useI18n();
   const toasterId = useId();
   const elementStyle = useElementStyle();
   const pageSize = Math.min(100, Math.max(1, Math.round(limit) || 12));
@@ -378,7 +388,7 @@ function MarketplaceContent({
         };
       });
       if (!next) {
-        toast.info("Please log in to like vehicles.", {
+        toast.info(t("Please log in to like vehicles."), {
           id: `${toasterId}-login-required`,
           toasterId,
         });
@@ -389,7 +399,7 @@ function MarketplaceContent({
     } catch (error) {
       console.error("Could not save vehicle", error);
       // Login was already confirmed above, so don't blame it here.
-      toast.error("Could not save this vehicle. Please try again.", {
+      toast.error(t("Could not save this vehicle. Please try again."), {
         toasterId,
       });
     }
@@ -444,17 +454,23 @@ function MarketplaceContent({
     style: storefrontRootStyle(resolved, widgetStyle),
   };
   return (
-    <div ref={rootRef} className="autohaus" {...scope}>
+    <div
+      ref={rootRef}
+      className="autohaus"
+      {...localeProps(language)}
+      {...scope}
+    >
       {navigationError && (
         <Alert variant="destructive" role="alert">
-          {navigationError}
+          {t(navigationError)}
         </Alert>
       )}
       <Toaster id={toasterId} position="bottom-right" richColors />
       {designMode && (
         <Alert className="mb-5">
-          Editor preview · sample inventory. On your live site, sample cars show
-          only until you publish your first vehicle.
+          {t(
+            "Editor preview · sample inventory. On your live site, sample cars show only until you publish your first vehicle.",
+          )}
         </Alert>
       )}
       {detail && !designMode ? (
@@ -464,8 +480,8 @@ function MarketplaceContent({
             variant="outline"
             className="w-10 px-0"
             onClick={() => open("")}
-            aria-label="Back"
-            title="Back"
+            aria-label={localizeDefault(language, "Back", "Back")}
+            title={localizeDefault(language, "Back", "Back")}
           >
             <ArrowLeft aria-hidden="true" className="size-5" />
           </Button>
@@ -500,14 +516,18 @@ function MarketplaceContent({
               data-sf="heading"
               className="sf-title text-3xl font-semibold tracking-tight"
             >
-              {title}
+              {localizeDefault(language, title, "Find your next chapter.")}
             </h2>
             {description && (
               <p
                 data-sf="description"
                 className="sf-hide-sm leading-relaxed text-muted-foreground"
               >
-                {description}
+                {localizeDefault(
+                  language,
+                  description,
+                  "A carefully managed collection of cars. Find the one that feels right.",
+                )}
               </p>
             )}
           </header>
@@ -535,7 +555,7 @@ function MarketplaceContent({
           {loading && !vehicles && (
             <VehicleGridSkeleton
               count={Math.min(pageSize, 6)}
-              label="Loading showroom"
+              label={t("Loading showroom")}
               style={gridStyle}
             />
           )}
@@ -549,8 +569,15 @@ function MarketplaceContent({
                   aria-live="polite"
                 >
                   {pagination === "infinite"
-                    ? `Showing ${cards.length.toLocaleString()} of ${total.toLocaleString()} vehicles`
-                    : `Showing ${(cursor + 1).toLocaleString()}–${(cursor + cards.length).toLocaleString()} of ${total.toLocaleString()} vehicles`}
+                    ? t("Showing {shown} of {total} vehicles", {
+                        shown: number(cards.length),
+                        total: number(total),
+                      })
+                    : t("Showing {start}–{end} of {total} vehicles", {
+                        start: number(cursor + 1),
+                        end: number(cursor + cards.length),
+                        total: number(total),
+                      })}
                 </p>
               ) : (
                 <span />
@@ -558,16 +585,16 @@ function MarketplaceContent({
               <div className="ml-auto flex flex-wrap items-end gap-2">
                 {filterVisibility.sort !== false && (
                   <Label className="w-44">
-                    <span {...elementStyle("filter-sort-label")}>Sort</span>
+                    <span {...elementStyle("filter-sort-label")}>{t("Sort")}</span>
                     <NativeSelect
                       {...elementStyle("filter-sort-input")}
                       value={sort}
                       onChange={(e) => setSort(e.target.value)}
                     >
-                      <option value="recent">Recently added</option>
-                      <option value="price-asc">Price: low to high</option>
-                      <option value="price-desc">Price: high to low</option>
-                      <option value="year-desc">Model year</option>
+                      <option value="recent">{t("Recently added")}</option>
+                      <option value="price-asc">{t("Price: low to high")}</option>
+                      <option value="price-desc">{t("Price: high to low")}</option>
+                      <option value="year-desc">{t("Model year")}</option>
                     </NativeSelect>
                   </Label>
                 )}
@@ -580,7 +607,9 @@ function MarketplaceContent({
                     {...elementStyle("compare-vehicles")}
                     onClick={() => setComparing(true)}
                   >
-                    Compare {comparison.length} vehicles
+                    {t("Compare {count} vehicles", {
+                      count: comparison.length,
+                    })}
                   </Button>
                 )}
               </div>
@@ -588,8 +617,9 @@ function MarketplaceContent({
           )}
           {!designMode && vehicles?.samples && cards.length > 0 && (
             <Alert className="mb-5">
-              Sample listings for preview. Real inventory replaces them once the
-              first vehicle is published.
+              {t(
+                "Sample listings for preview. Real inventory replaces them once the first vehicle is published.",
+              )}
             </Alert>
           )}
           {vehicles && !loading && !error && cards.length === 0 && (
@@ -597,7 +627,7 @@ function MarketplaceContent({
               {...elementStyle("empty-results")}
               className="py-12 text-center text-muted-foreground"
             >
-              No matching vehicles. Try adjusting your filters.
+              {t("No matching vehicles. Try adjusting your filters.")}
             </p>
           )}
           {vehicles && (
@@ -627,7 +657,10 @@ function MarketplaceContent({
                       disabled={designMode || savedBusy}
                       aria-busy={savedBusy}
                       aria-pressed={saved.includes(v._id)}
-                      aria-label={`${saved.includes(v._id) ? "Remove" : "Save"} ${v.title}`}
+                      aria-label={t(
+                        saved.includes(v._id) ? "Remove {title}" : "Save {title}",
+                        { title: v.title },
+                      )}
                       onClick={() => void save(v)}
                     >
                       <Heart
@@ -643,7 +676,7 @@ function MarketplaceContent({
                     {...elementStyle("view-vehicle")}
                     onClick={() => void viewVehicle(v)}
                   >
-                    View vehicle
+                    {t("View vehicle")}
                   </Button>
                   <div className="flex items-center gap-2">
                     <CompareToggle
@@ -657,8 +690,8 @@ function MarketplaceContent({
                       size="sm"
                       className="sf-hide-sm ml-auto h-10 w-10 px-0"
                       disabled={designMode}
-                      aria-label={`Quick view ${v.title}`}
-                      title="Quick view"
+                      aria-label={t("Quick view {title}", { title: v.title })}
+                      title={t("Quick view")}
                       onClick={(e) => {
                         quickViewTrigger.current = e.currentTarget;
                         setQuickView(v);
@@ -677,14 +710,14 @@ function MarketplaceContent({
               role="alert"
               className="mt-6 flex flex-wrap items-center justify-between gap-3"
             >
-              {error}
+              {t(error)}
               <Button
                 variant="outline"
                 size="sm"
                 {...elementStyle("retry")}
                 onClick={() => setAttempt((n) => n + 1)}
               >
-                Try again
+                {t("Try again")}
               </Button>
             </Alert>
           )}
@@ -707,7 +740,7 @@ function MarketplaceContent({
                   pending={showSpinner}
                   onClick={loadMore}
                 >
-                  Load more
+                  {t("Load more")}
                 </Button>
               </div>
             )

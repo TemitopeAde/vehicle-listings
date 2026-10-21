@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useI18n } from "../shared/i18n-react";
 import type { Vehicle } from "../shared/schemas";
 import {
   Carousel,
@@ -23,12 +24,16 @@ function Slides({
   imageClassName: string;
   lazy?: boolean;
 }) {
+  const { t, number } = useI18n();
   return (
     <CarouselContent>
       {media.map((m, i) => (
         <CarouselItem
           key={`${m.url}-${i}`}
-          aria-label={`Image ${i + 1} of ${media.length}`}
+          aria-label={t("Image {current} of {total}", {
+            current: number(i + 1),
+            total: number(media.length),
+          })}
         >
           <VehiclePhoto
             media={m}
@@ -52,6 +57,7 @@ export function CardGallery({
   title: string;
   className?: string;
 }) {
+  const { t } = useI18n();
   const first = media[0];
   if (!first) return null;
   if (media.length === 1)
@@ -64,7 +70,10 @@ export function CardGallery({
       />
     );
   return (
-    <Carousel aria-label={`${title} photos`} className={cn("group", className)}>
+    <Carousel
+      aria-label={t("{title} photos", { title })}
+      className={cn("group", className)}
+    >
       <Slides media={media} title={title} imageClassName="" lazy />
       <CarouselPrevious className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100" />
       <CarouselNext className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100" />
@@ -80,6 +89,7 @@ export function DetailGallery({
   media: Media;
   title: string;
 }) {
+  const { t, number } = useI18n();
   const [api, setApi] = useState<CarouselApi>(),
     [selected, setSelected] = useState(0);
   useEffect(() => {
@@ -104,7 +114,7 @@ export function DetailGallery({
   return (
     <div className="grid gap-3">
       <Carousel
-        aria-label={`${title} photos`}
+        aria-label={t("{title} photos", { title })}
         setApi={setApi}
         className="overflow-hidden rounded-lg"
       >
@@ -113,7 +123,7 @@ export function DetailGallery({
         <CarouselPrevious className="sf-hide-sm" />
         <CarouselNext className="sf-hide-sm" />
         <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white">
-          {selected + 1} / {media.length}
+          {number(selected + 1)} / {number(media.length)}
         </span>
       </Carousel>
       <div className="sf-hide-sm flex gap-2.5 overflow-x-auto pb-1">
@@ -126,7 +136,10 @@ export function DetailGallery({
             )}
             key={`${m.url}-${i}`}
             onClick={() => api?.scrollTo(i)}
-            aria-label={`View image ${i + 1}: ${m.alt || title}`}
+            aria-label={t("View image {index}: {name}", {
+              index: number(i + 1),
+              name: m.alt || title,
+            })}
             aria-pressed={selected === i}
           >
             <VehiclePhoto

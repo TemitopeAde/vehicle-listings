@@ -15,6 +15,8 @@ import {
   type DealerApplicationFormInput,
 } from "../shared/schemas";
 import { api } from "../shared/client";
+import { localeFor, localizeDefault, type Vars } from "../shared/i18n";
+import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
 import { Button } from "../dashboard/components/ui/button";
 import "../dashboard/styles.css";
 
@@ -35,10 +37,11 @@ async function readLoginEmail() {
 }
 
 function FieldError({ message }: { message?: string }) {
+  const { t } = useI18n();
   if (!message) return null;
   return (
     <p className="mt-1 text-xs text-destructive" role="alert">
-      {message}
+      {t(message)}
     </p>
   );
 }
@@ -56,6 +59,20 @@ export default function ApplyPage({
 }: {
   title?: string;
 }) {
+  return (
+    <LocaleProvider>
+      <ApplyPageInner title={title} />
+    </LocaleProvider>
+  );
+}
+
+function ApplyPageInner({
+  title = "Apply to sell vehicles",
+}: {
+  title?: string;
+}) {
+  const { t, language } = useI18n();
+  const heading = localizeDefault(language, title, "Apply to sell vehicles");
   const [submitted, setSubmitted] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState<string | null>(null);
@@ -138,7 +155,7 @@ export default function ApplyPage({
       await authentication.promptLogin({ mode: "login", modal: true });
       const value = await readLoginEmail();
       if (!value) {
-        toast.error("Log in before applying to sell vehicles.");
+        toast.error(t("Log in before applying to sell vehicles."));
         return;
       }
       setEmail(value);
@@ -146,14 +163,14 @@ export default function ApplyPage({
       setSessionError("");
     } catch (error) {
       console.error("Member login was not completed", error);
-      toast.error("Log in before applying to sell vehicles.");
+      toast.error(t("Log in before applying to sell vehicles."));
     } finally {
       setLoggingIn(false);
     }
   }
   async function submit(values: DealerApplicationFormInput) {
     if (!demo && !email) {
-      toast.error("Log in before applying to sell vehicles.");
+      toast.error(t("Log in before applying to sell vehicles."));
       return;
     }
     const parsed = dealerApplicationInput.safeParse({
@@ -165,7 +182,7 @@ export default function ApplyPage({
       website: values.website,
     });
     if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Check the application.");
+      toast.error(t(parsed.error.issues[0]?.message ?? "Check the application."));
       return;
     }
     setSending(true);
@@ -181,24 +198,26 @@ export default function ApplyPage({
       setName(result.businessName);
       setSubmitted(true);
     } catch (error) {
-      toast.error((error as Error).message);
+      toast.error(t((error as Error).message));
     } finally {
       setSending(false);
     }
   }
   return (
-    <div className="mx-auto max-w-xl px-5 py-12">
+    <div className="mx-auto max-w-xl px-5 py-12" {...localeProps(language)}>
       <Toaster richColors position="bottom-right" />
       <p className="text-xs uppercase tracking-[.15em] text-muted-foreground">
-        Dealership application
+        {t("Dealership application")}
       </p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight">{title}</h1>
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight">{heading}</h1>
       {submitted ? (
         <section className="surface mt-8 p-6">
-          <h2 className="section-heading">Application received</h2>
+          <h2 className="section-heading">{t("Application received")}</h2>
           <p className="hint mt-3">
-            {name} is pending approval. After the site owner approves it, open
-            Add a vehicle while logged in with this account.
+            {t(
+              "{name} is pending approval. After the site owner approves it, open Add a vehicle while logged in with this account.",
+              { name },
+            )}
           </p>
         </section>
       ) : email === null && !sessionError ? (
@@ -207,7 +226,7 @@ export default function ApplyPage({
             className="h-6 w-6 animate-spin text-muted-foreground motion-reduce:animate-none"
             aria-hidden="true"
           />
-          <span className="sr-only">Checking your account</span>
+          <span className="sr-only">{t("Checking your account")}</span>
         </div>
       ) : signedIn && application === undefined ? (
         <div className="mt-8 flex justify-center" role="status">
@@ -215,19 +234,24 @@ export default function ApplyPage({
             className="h-6 w-6 animate-spin text-muted-foreground motion-reduce:animate-none"
             aria-hidden="true"
           />
-          <span className="sr-only">Checking your application</span>
+          <span className="sr-only">{t("Checking your application")}</span>
         </div>
       ) : application ? (
         <section className="surface mt-8 p-6">
-          <h2 className="section-heading">Application already received</h2>
-          <p className="hint mt-3">{alreadyApplied(application.createdAt)}</p>
+          <h2 className="section-heading">{t("Application already received")}</h2>
+          <p className="hint mt-3">
+            {alreadyApplied(application.createdAt, t, language)}
+          </p>
         </section>
       ) : !signedIn ? (
         <section className="surface mt-8 space-y-4 p-6">
-          <h2 className="section-heading">Log in to apply</h2>
+          <h2 className="section-heading">{t("Log in to apply")}</h2>
           <p className="hint">
-            {sessionError ||
-              "A site member account is required. After you log in, your email is filled in and cannot be changed."}
+            {sessionError
+              ? t(sessionError)
+              : t(
+                  "A site member account is required. After you log in, your email is filled in and cannot be changed.",
+                )}
           </p>
           <Button
             type="button"
@@ -235,7 +259,7 @@ export default function ApplyPage({
             pending={loggingIn}
             onClick={() => void login()}
           >
-            Log in
+            {t("Log in")}
           </Button>
         </section>
       ) : (
@@ -243,12 +267,12 @@ export default function ApplyPage({
           className="surface mt-8 space-y-4 p-6"
           noValidate
           onSubmit={handleSubmit(submit, (formErrors) => {
-            toast.error(firstError(formErrors));
+            toast.error(t(firstError(formErrors)));
           })}
         >
           <div>
             <label className="label" htmlFor="businessName">
-              Business name *
+              {t("Business name *")}
             </label>
             <input
               id="businessName"
@@ -262,7 +286,7 @@ export default function ApplyPage({
           </div>
           <div>
             <label className="label" htmlFor="email">
-              Email *
+              {t("Email *")}
             </label>
             <input
               id="email"
@@ -279,18 +303,18 @@ export default function ApplyPage({
           </div>
           <div>
             <label className="label" htmlFor="phoneNumber">
-              Phone
+              {t("Phone")}
             </label>
             <div className="flex gap-2">
               <select
                 id="phoneCode"
                 className="field w-40 shrink-0"
-                aria-label="Country code"
+                aria-label={t("Country code")}
                 autoComplete="tel-country-code"
                 aria-invalid={Boolean(errors.phoneCode)}
                 {...register("phoneCode")}
               >
-                <option value="">Select code</option>
+                <option value="">{t("Select code")}</option>
                 {phoneCodes.map((code) => (
                   <option key={code.id} value={code.id}>
                     {code.dial} {code.name}
@@ -303,7 +327,7 @@ export default function ApplyPage({
                 type="text"
                 inputMode="tel"
                 autoComplete="tel-national"
-                placeholder="Phone number"
+                placeholder={t("Phone number")}
                 aria-invalid={Boolean(errors.phoneNumber)}
                 {...register("phoneNumber")}
               />
@@ -344,7 +368,7 @@ export default function ApplyPage({
             name="company"
           />
           <Button disabled={sending} pending={sending}>
-            Submit application
+            {t("Submit application")}
           </Button>
         </form>
       )}
@@ -358,15 +382,19 @@ type ExistingApplication = {
   createdAt: string;
 };
 
-function alreadyApplied(createdAt: string) {
+function alreadyApplied(
+  createdAt: string,
+  t: (key: string, vars?: Vars) => string,
+  language: ReturnType<typeof useI18n>["language"],
+) {
   const date = new Date(createdAt);
-  if (Number.isNaN(date.getTime())) return "You already applied.";
-  const formatted = new Intl.DateTimeFormat("en-US", {
+  if (Number.isNaN(date.getTime())) return t("You already applied.");
+  const formatted = new Intl.DateTimeFormat(localeFor(language), {
     month: "long",
     day: "numeric",
     year: "numeric",
   }).format(date);
-  return `You already applied on ${formatted}.`;
+  return t("You already applied on {date}.", { date: formatted });
 }
 
 function TextField({
@@ -384,10 +412,11 @@ function TextField({
   InputHTMLAttributes<HTMLInputElement>,
   "autoComplete" | "inputMode" | "placeholder"
 >) {
+  const { t } = useI18n();
   return (
     <div>
       <label className="label" htmlFor={id}>
-        {label}
+        {t(label)}
       </label>
       <input
         id={id}

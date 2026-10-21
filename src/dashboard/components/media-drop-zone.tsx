@@ -1,5 +1,6 @@
 import { useEffect, useState, type DragEvent } from "react";
 import { ImagePlus, UploadCloud, Video } from "lucide-react";
+import { useI18n } from "../../shared/i18n-react";
 import { cn } from "./ui/button";
 import {
   mediaLimits,
@@ -33,6 +34,7 @@ export function MediaDropZone({
   busy: boolean;
   onFiles: (files: File[]) => void;
 }) {
+  const { t } = useI18n();
   const [active, setActive] = useState(false);
   const full = count >= mediaLimits[kind];
   const disabled = busy || full;
@@ -89,7 +91,9 @@ export function MediaDropZone({
         className="sr-only"
         accept={mediaMimeTypes[kind].join(",")}
         disabled={disabled}
-        aria-label={kind === "image" ? "Upload photos" : "Upload videos"}
+        aria-label={
+          kind === "image" ? t("Upload photos") : t("Upload videos")
+        }
         aria-describedby={`${id}-hint`}
         onChange={(e) => {
           onFiles(Array.from(e.currentTarget.files ?? []));
@@ -106,25 +110,33 @@ export function MediaDropZone({
       </span>
       <span className="text-sm font-semibold">
         {full
-          ? `${kind === "image" ? "Photo" : "Video"} limit reached`
+          ? t(
+              kind === "image"
+                ? "Photo limit reached"
+                : "Video limit reached",
+            )
           : active
-            ? "Drop to upload"
-            : title}
+            ? t("Drop to upload")
+            : t(title)}
       </span>
       <span className="text-sm text-muted-foreground">
         {full ? (
-          "Remove one to add another."
+          t("Remove one to add another.")
         ) : (
           <>
-            or{" "}
+            {t("or")}{" "}
             <span className="font-medium text-primary underline">
-              browse your device
+              {t("browse your device")}
             </span>
           </>
         )}
       </span>
       <span id={`${id}-hint`} className="hint text-xs">
-        {hint} {count}/{mediaLimits[kind]} added.
+        {t(hint)}{" "}
+        {t("{count}/{limit} added.", {
+          count,
+          limit: mediaLimits[kind],
+        })}
       </span>
     </label>
   );

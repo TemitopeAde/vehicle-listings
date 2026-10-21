@@ -26,9 +26,11 @@ import { Badge, Empty, LoadState } from "./components/common";
 import { api, download } from "./api";
 import { exportCSV } from "../shared/csv";
 import { categoryLabels, vehicleCategories } from "../shared/vehicle-options";
-import { money } from "../shared/utils";
+import { statusLabel } from "../shared/i18n";
+import { useI18n } from "../shared/i18n-react";
 import type { Vehicle } from "../shared/schemas";
 export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
+  const { t, money, number } = useI18n();
   const [search, setSearch] = useState(""),
     [status, setStatus] = useState(""),
     [category, setCategory] = useState(""),
@@ -53,10 +55,10 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
         id,
         idempotencyKey: crypto.randomUUID(),
       });
-      toast.success("Vehicle duplicated as a draft");
+      toast.success(t("Vehicle duplicated as a draft"));
       await resource.reload();
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(t((e as Error).message));
     }
   }
   async function bulk() {
@@ -69,14 +71,20 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
       const failed = r.results.filter((r) => !r.success);
       if (failed.length)
         toast.error(
-          `${failed.length} could not be updated: ${failed[0]?.error}`,
+          t("{count} could not be updated: {error}", {
+            count: failed.length,
+            error: t(failed[0]?.error ?? ""),
+          }),
         );
-      else toast.success(`${selected.length} vehicles updated`);
+      else
+        toast.success(
+          t("{count} vehicles updated", { count: selected.length }),
+        );
       setSelected([]);
       setConfirm("");
       await resource.reload();
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(t((e as Error).message));
     } finally {
       setBusy(false);
     }
@@ -97,9 +105,9 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
         next = r.nextCursor;
       }
       download("vehicle-inventory.csv", exportCSV(all));
-      toast.success(`Exported ${all.length} vehicles`);
+      toast.success(t("Exported {count} vehicles", { count: all.length }));
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(t((e as Error).message));
     } finally {
       setBusy(false);
     }
@@ -113,9 +121,9 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
     <div className="space-y-5">
       <div className="flex flex-wrap justify-between gap-3">
         <div>
-          <h2 className="section-heading">Your inventory</h2>
+          <h2 className="section-heading">{t("Your inventory")}</h2>
           <p className="hint mt-1">
-            Manage every vehicle, from first draft to the final handshake.
+            {t("Manage every vehicle, from first draft to the final handshake.")}
           </p>
         </div>
         <div className="flex gap-2">
@@ -125,11 +133,11 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
             onClick={() => void exportAll()}
           >
             <Download size={16} />
-            Export
+            {t("Export")}
           </Button>
           <Button onClick={() => edit(null)}>
             <Plus size={16} />
-            Add vehicle
+            {t("Add vehicle")}
           </Button>
         </div>
       </div>
@@ -142,8 +150,8 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
             />
             <input
               className="field pl-9"
-              placeholder="Search by vehicle title…"
-              aria-label="Search vehicles"
+              placeholder={t("Search by vehicle title…")}
+              aria-label={t("Search vehicles")}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -154,7 +162,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
           </div>
           <select
             className="field w-auto"
-            aria-label="Filter by status"
+            aria-label={t("Filter by status")}
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
@@ -162,7 +170,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
               setSelected([]);
             }}
           >
-            <option value="">All statuses</option>
+            <option value="">{t("All statuses")}</option>
             {[
               "draft",
               "published",
@@ -172,14 +180,13 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
               "deleted",
             ].map((s) => (
               <option key={s} value={s}>
-                {s[0]?.toUpperCase()}
-                {s.slice(1)}
+                {t(statusLabel[s] ?? s)}
               </option>
             ))}
           </select>
           <select
             className="field w-auto"
-            aria-label="Filter by category"
+            aria-label={t("Filter by category")}
             value={category}
             onChange={(e) => {
               setCategory(e.target.value);
@@ -187,32 +194,32 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
               setSelected([]);
             }}
           >
-            <option value="">All categories</option>
+            <option value="">{t("All categories")}</option>
             {vehicleCategories.map((c) => (
               <option key={c} value={c}>
-                {categoryLabels[c]}
+                {t(categoryLabels[c])}
               </option>
             ))}
           </select>
           <select
             className="field w-auto"
-            aria-label="Sort vehicles"
+            aria-label={t("Sort vehicles")}
             value={sort}
             onChange={(e) => {
               setSort(e.target.value);
               setCursor(0);
             }}
           >
-            <option value="recent">Recently added</option>
-            <option value="price-asc">Price: low to high</option>
-            <option value="price-desc">Price: high to low</option>
-            <option value="year-desc">Newest model year</option>
+            <option value="recent">{t("Recently added")}</option>
+            <option value="price-asc">{t("Price: low to high")}</option>
+            <option value="price-desc">{t("Price: high to low")}</option>
+            <option value="year-desc">{t("Newest model year")}</option>
           </select>
           <div className="flex gap-1 border rounded-md p-1">
             <Button
               variant={grid ? "ghost" : "secondary"}
               size="sm"
-              aria-label="Table view"
+              aria-label={t("Table view")}
               onClick={() => setGrid(false)}
             >
               <List size={16} />
@@ -220,7 +227,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
             <Button
               variant={grid ? "secondary" : "ghost"}
               size="sm"
-              aria-label="Grid view"
+              aria-label={t("Grid view")}
               onClick={() => setGrid(true)}
             >
               <LayoutGrid size={16} />
@@ -230,14 +237,14 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
         {selected.length > 0 && (
           <div className="flex flex-wrap gap-3 items-center px-4 py-3 bg-green-50 border-b">
             <p className="text-sm font-medium mr-auto">
-              {selected.length} selected
+              {t("{count} selected", { count: selected.length })}
             </p>
             <Button
               size="sm"
               variant="outline"
               onClick={() => setConfirm("published")}
             >
-              Publish
+              {t("Publish")}
             </Button>
             <Button
               size="sm"
@@ -245,10 +252,10 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
               onClick={() => setConfirm("archived")}
             >
               <Archive size={14} />
-              Archive
+              {t("Archive")}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setSelected([])}>
-              Clear
+              {t("Clear")}
             </Button>
           </div>
         )}
@@ -261,7 +268,9 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
             <Empty
               title="No vehicles found"
               description="Try another search or add your first vehicle."
-              action={<Button onClick={() => edit(null)}>Add vehicle</Button>}
+              action={
+                <Button onClick={() => edit(null)}>{t("Add vehicle")}</Button>
+              }
             />
           ) : grid ? (
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5 p-5">
@@ -278,12 +287,14 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
                       <div className="flex justify-between gap-2">
                         <h3 className="font-semibold text-sm">{v.title}</h3>
                         <Badge status={v.status}>
-                          {v.demo ? "Demo" : v.status}
+                          {v.demo
+                            ? t("Demo")
+                            : t(statusLabel[v.status] ?? v.status)}
                         </Badge>
                       </div>
                       <p className="hint text-xs mt-2">
-                        {v.mileage.toLocaleString("en")} {v.mileageUnit} ·{" "}
-                        {v.fuel} · {v.transmission}
+                        {number(v.mileage)} {t(v.mileageUnit)} · {t(v.fuel)} ·{" "}
+                        {t(v.transmission)}
                       </p>
                       <p className="mt-3 font-semibold">
                         {money(v.price, v.currency)}
@@ -300,7 +311,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
                   <tr>
                     <th className="p-4">
                       <Checkbox
-                        aria-label="Select all vehicles on this page"
+                        aria-label={t("Select all vehicles on this page")}
                         indeterminate={
                           rows.some((v) => selected.includes(v._id)) &&
                           !rows.every((v) => selected.includes(v._id))
@@ -322,9 +333,9 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
                       "Price",
                       "Mileage",
                       "Actions",
-                    ].map((t) => (
-                      <th key={t} className="text-left p-4 font-medium">
-                        {t}
+                    ].map((heading) => (
+                      <th key={heading} className="text-left p-4 font-medium">
+                        {t(heading)}
                       </th>
                     ))}
                   </tr>
@@ -340,7 +351,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
                     >
                       <td className="p-4">
                         <Checkbox
-                          aria-label={`Select ${v.title}`}
+                          aria-label={t("Select {title}", { title: v.title })}
                           checked={selected.includes(v._id)}
                           onChange={() => toggle(v._id)}
                         />
@@ -363,27 +374,29 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
                               {v.make} {v.model}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              {v.year} · {v.bodyStyle}
-                              {v.demo ? " · Demo" : ""}
+                              {v.year} · {t(v.bodyStyle)}
+                              {v.demo ? t(" · Demo") : ""}
                             </span>
                           </span>
                         </button>
                       </td>
                       <td className="p-4">
-                        <Badge status={v.status}>{v.status}</Badge>
+                        <Badge status={v.status}>
+                          {t(statusLabel[v.status] ?? v.status)}
+                        </Badge>
                       </td>
                       <td className="p-4 font-medium whitespace-nowrap">
                         {money(v.price, v.currency)}
                       </td>
                       <td className="p-4 whitespace-nowrap">
-                        {v.mileage.toLocaleString("en")} {v.mileageUnit}
+                        {number(v.mileage)} {t(v.mileageUnit)}
                       </td>
                       <td className="p-4">
                         <div className="flex gap-1">
                           <Button
                             size="icon"
                             variant="ghost"
-                            aria-label={`Edit ${v.title}`}
+                            aria-label={t("Edit {title}", { title: v.title })}
                             onClick={() => edit(v)}
                           >
                             <Pencil size={15} />
@@ -391,7 +404,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
                           <Button
                             size="icon"
                             variant="ghost"
-                            aria-label={`Duplicate ${v.title}`}
+                            aria-label={t("Duplicate {title}", { title: v.title })}
                             onClick={() => void action(v._id, "duplicate")}
                           >
                             <Copy size={15} />
@@ -406,8 +419,11 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
           ))}
         <div className="border-t px-5 py-3 flex items-center justify-between text-xs text-muted-foreground">
           <span>
-            {resource.data?.total ?? 0} vehicles ·{" "}
-            {rows.length ? cursor + 1 : 0}–{cursor + rows.length} shown
+            {t("{total} vehicles · {from}–{to} shown", {
+              total: resource.data?.total ?? 0,
+              from: rows.length ? cursor + 1 : 0,
+              to: cursor + rows.length,
+            })}
           </span>
           <div className="flex gap-2">
             <Button
@@ -420,7 +436,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
               }}
             >
               <ChevronLeft size={14} />
-              Previous
+              {t("Previous")}
             </Button>
             <Button
               size="sm"
@@ -431,7 +447,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
                 setSelected([]);
               }}
             >
-              Next
+              {t("Next")}
               <ChevronRight size={14} />
             </Button>
           </div>
@@ -445,20 +461,28 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
       >
         <DialogContent>
           <DialogTitle className="section-heading">
-            {confirm === "published" ? "Publish" : "Archive"} {selected.length}{" "}
-            vehicles?
+            {t(
+              confirm === "published"
+                ? "Publish {count} vehicles?"
+                : "Archive {count} vehicles?",
+              { count: selected.length },
+            )}
           </DialogTitle>
           <DialogDescription className="hint mt-2 mb-6">
             {confirm === "published"
-              ? "Published listings are visible to visitors. Each vehicle must have a photo, description and approved dealership."
-              : "Archived listings will be hidden from your storefront. You can restore them as drafts."}
+              ? t(
+                  "Published listings are visible to visitors. Each vehicle must have a photo, description and approved dealership.",
+                )
+              : t(
+                  "Archived listings will be hidden from your storefront. You can restore them as drafts.",
+                )}
           </DialogDescription>
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => setConfirm("")}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button onClick={() => void bulk()} disabled={busy} pending={busy}>
-              Confirm
+              {t("Confirm")}
             </Button>
           </div>
         </DialogContent>

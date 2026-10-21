@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { cacheTtl, cachedApi } from "../shared/client";
+import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
 import type { Dealer } from "../shared/schemas";
 import { Button } from "./ui/button";
 import {
@@ -14,11 +15,19 @@ import {
 import { Input, Label } from "./ui/input";
 import { Skeleton } from "./ui/skeleton";
 type DealerPage = { items: Dealer[]; total: number; nextCursor: number | null };
-export function DealerDirectory({
+export function DealerDirectory(props: { onDealer: (id: string) => void }) {
+  return (
+    <LocaleProvider>
+      <DealerDirectoryView {...props} />
+    </LocaleProvider>
+  );
+}
+function DealerDirectoryView({
   onDealer,
 }: {
   onDealer: (id: string) => void;
 }) {
+  const { t, language, number } = useI18n();
   const [search, setSearch] = useState(""),
     [cursor, setCursor] = useState(0),
     [data, setData] = useState<DealerPage | null>(null),
@@ -40,12 +49,12 @@ export function DealerDirectory({
     };
   }, [search, cursor]);
   return (
-    <section className="mt-6 grid gap-6">
-      <h3 className="text-xl font-semibold">Meet our dealerships</h3>
+    <section className="mt-6 grid gap-6" {...localeProps(language)}>
+      <h3 className="text-xl font-semibold">{t("Meet our dealerships")}</h3>
       <Label className="max-w-sm">
-        Find a dealership
+        {t("Find a dealership")}
         <Input
-          placeholder="Search dealership name"
+          placeholder={t("Search dealership name")}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -59,7 +68,7 @@ export function DealerDirectory({
           role="status"
           aria-busy="true"
         >
-          <span className="sr-only">Loading dealerships…</span>
+          <span className="sr-only">{t("Loading dealerships…")}</span>
           {Array.from({ length: 3 }, (_, i) => (
             <Card key={i}>
               <CardHeader className="gap-2">
@@ -79,7 +88,7 @@ export function DealerDirectory({
       )}
       {error && (
         <Alert variant="destructive" role="alert">
-          {error}
+          {t(error)}
         </Alert>
       )}
       <div
@@ -101,12 +110,12 @@ export function DealerDirectory({
             )}
             <CardFooter>
               <Button onClick={() => onDealer(d._id)}>
-                Browse their vehicles
+                {t("Browse their vehicles")}
               </Button>
               {d.website && (
                 <Button variant="outline" asChild>
                   <a href={d.website} rel="noreferrer" target="_blank">
-                    Website
+                    {t("Website")}
                   </a>
                 </Button>
               )}
@@ -115,21 +124,23 @@ export function DealerDirectory({
         ))}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-        <span>{data?.total ?? 0} dealerships</span>
+        <span>
+          {t("{count} dealerships", { count: number(data?.total ?? 0) })}
+        </span>
         <div className="flex gap-2">
           <Button
             variant="outline"
             disabled={!cursor}
             onClick={() => setCursor(Math.max(0, cursor - 30))}
           >
-            Previous
+            {t("Previous")}
           </Button>
           <Button
             variant="outline"
             disabled={data?.nextCursor == null}
             onClick={() => setCursor(data?.nextCursor ?? 0)}
           >
-            Next
+            {t("Next")}
           </Button>
         </div>
       </div>
