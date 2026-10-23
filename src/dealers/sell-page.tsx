@@ -13,6 +13,8 @@ import { Badge } from "../dashboard/components/common";
 import { DealerInventory } from "./dealer-inventory";
 import "../dashboard/styles.css";
 
+type Stats = Record<string, { views: number; clicks: number }>;
+
 type Session = {
   _id: string;
   businessName: string;
@@ -67,6 +69,7 @@ function SellPageInner({
   const [loggingIn, setLoggingIn] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [stats, setStats] = useState<Stats>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<Vehicle | null | undefined>(undefined);
@@ -100,8 +103,10 @@ function SellPageInner({
         if (!active) return;
         setSession(next);
         if (next?.approvalState === "approved")
-          return api<{ items: Vehicle[] }>("vehicles?limit=50").then((page) => {
-            if (active) setVehicles(page.items);
+          return api<{ items: Vehicle[]; stats: Stats }>("vehicles?limit=50").then((page) => {
+            if (!active) return;
+            setVehicles(page.items);
+            setStats(page.stats);
           });
         setVehicles([]);
         setEditing(undefined);
@@ -141,6 +146,23 @@ function SellPageInner({
 
   const approved = session?.approvalState === "approved";
   const checking = (email === null && !sessionError) || (signedIn && loading);
+  useEffect(() => {
+    console.info("[Vehicle test data] Add Vehicle page state (debug v3)", {
+      signedIn,
+      checking,
+      loading,
+      hasSession: Boolean(session),
+      approvalState: session?.approvalState ?? null,
+      editorExpected: Boolean(
+        (approved && editing !== undefined) ||
+        (session?.approvalState === "pending" && !loading) ||
+        (signedIn && !checking && !session && !error),
+      ),
+      view: editing === undefined ? "inventory" : editing === null ? "new vehicle" : "existing vehicle",
+      hasSessionError: Boolean(sessionError),
+      hasError: Boolean(error),
+    });
+  }, [signedIn, checking, loading, session, approved, editing, sessionError, error]);
   return (
     <div className="mx-auto max-w-5xl px-5 py-12" {...localeProps(language)}>
       <Toaster richColors position="bottom-right" />
@@ -171,24 +193,27 @@ function SellPageInner({
           <span className="sr-only">{t("Checking your account")}</span>
         </div>
       ) : !signedIn ? (
-        <section className="surface mt-8 max-w-xl space-y-4 p-6">
-          <h2 className="section-heading">{t("Log in to add a vehicle")}</h2>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
           <p className="hint">
             {sessionError
               ? t(sessionError)
               : t(
-                  "Use the same site account you used to apply. After approval, your vehicles open here.",
+                  "Log in with the account you used to apply to add a vehicle.",
                 )}
           </p>
-          <Button
-            type="button"
-            disabled={loggingIn}
-            pending={loggingIn}
-            onClick={() => void login()}
-          >
-            {t("Log in")}
-          </Button>
-        </section>
+          {!sessionError && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={loggingIn}
+              pending={loggingIn}
+              onClick={() => void login()}
+            >
+              {t("Log in")}
+            </Button>
+          )}
+        </div>
       ) : null}
       {signedIn && error && !loading && (
         <div role="alert" className="surface mt-8 max-w-xl p-6">
@@ -223,6 +248,7 @@ function SellPageInner({
           businessName={session.businessName}
           location={session.location}
           vehicles={vehicles}
+          stats={stats}
           onAdd={() => setEditing(null)}
           onEdit={setEditing}
         />
@@ -253,14 +279,17 @@ function SellPageInner({
             uploadDependencies={dealerMediaUpload}
             onBack={() => {
               setEditing(undefined);
-              void api<{ items: Vehicle[] }>("vehicles?limit=50").then((page) =>
-                setVehicles(page.items),
+              void api<{ items: Vehicle[]; stats: Stats }>("vehicles?limit=50").then(
+                (page) => {
+                  setVehicles(page.items);
+                  setStats(page.stats);
+                },
               );
             }}
           />
         </div>
       )}
-      {signedIn && !checking && !session && !error && (
+      {!checking && !session && !error && (
         <div className="mt-8">
           <VehicleEditor
             vehicle={null}

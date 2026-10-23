@@ -3,8 +3,13 @@ import { toast } from "sonner";
 import { Check, Trash2, CarFront } from "lucide-react";
 import { api } from "./api";
 import { defaultTheme, type Theme } from "../shared/schemas";
+import {
+  plans,
+  planKeys,
+  type PlanDefinition,
+  type PlanKey,
+} from "../shared/plans";
 import { currencyOptions } from "../shared/currencies";
-import { languageOptions } from "../shared/i18n";
 import { useI18n } from "../shared/i18n-react";
 import { useResource } from "./hooks";
 import { SavedCarsSettings } from "./saved-cars-settings";
@@ -16,7 +21,7 @@ import {
   DialogDescription,
 } from "./components/ui/dialog";
 export function Settings() {
-  const { t, setLanguage } = useI18n();
+  const { t, language } = useI18n();
   const resource = useResource<Theme>("settings");
   const [theme, setTheme] = useState(defaultTheme),
     [confirm, setConfirm] = useState(false),
@@ -24,10 +29,8 @@ export function Settings() {
     [saving, setSaving] = useState(false);
   useEffect(() => {
     if (!resource.data) return;
-    const next = { ...defaultTheme, ...resource.data };
-    setTheme(next);
-    setLanguage(next.language);
-  }, [resource.data, setLanguage]);
+    setTheme({ ...defaultTheme, ...resource.data });
+  }, [resource.data]);
   async function demos(action: string) {
     setBusy(true);
     try {
@@ -49,35 +52,9 @@ export function Settings() {
       <section className="surface p-6">
         <h2 className="section-heading">{t("Showroom settings")}</h2>
         <p className="hint mt-1 mb-5">
-          {t("Language and default currency used across the showroom.")}
+          {t("Default currency for new listings.")}
         </p>
         <div className="grid sm:grid-cols-2 gap-5">
-          <div>
-            <label className="label" htmlFor="app-language">
-              {t("Language")}
-            </label>
-            <select
-              id="app-language"
-              className="field"
-              value={theme.language}
-              onChange={(e) => {
-                const language = e.target.value as Theme["language"];
-                setTheme({ ...theme, language });
-                setLanguage(language);
-              }}
-            >
-              {languageOptions.map(({ value, label }) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <p className="hint mt-2">
-              {t(
-                "This language is used in the dashboard, site widgets, and editor panels.",
-              )}
-            </p>
-          </div>
           <div>
             <label className="label" htmlFor="default-currency">
               {t("Default currency")}
@@ -108,9 +85,12 @@ export function Settings() {
           onClick={async () => {
             setSaving(true);
             try {
-              const saved = await api<Theme>("settings", theme, "PATCH");
+              const saved = await api<Theme>(
+                "settings",
+                { ...theme, language },
+                "PATCH",
+              );
               setTheme({ ...defaultTheme, ...saved });
-              setLanguage(saved.language);
               toast.success(t("Settings saved"));
             } catch (e) {
               toast.error(t((e as Error).message));
@@ -186,76 +166,88 @@ export function Settings() {
     </div>
   );
 }
+type PlansResponse = {
+  current: PlanKey;
+  plans: Array<PlanDefinition & { key: PlanKey }>;
+};
 export function Billing() {
   const { t } = useI18n();
+  const [data, setData] = useState<PlansResponse | null>(null),
+    [starting, setStarting] = useState<PlanKey | null>(null);
+  useEffect(() => {
+    api<PlansResponse>("plans")
+      .then(setData)
+      .catch((error: unknown) =>
+        toast.error(error instanceof Error ? error.message : String(error)),
+      );
+  }, []);
+  async function startTrial(plan: PlanKey) {
+    setStarting(plan);
+    try {
+      const { checkoutUrl } = await api<{ checkoutUrl: string }>(
+        "plans",
+        { plan },
+        "POST",
+      );
+      window.location.href = checkoutUrl;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
+      setStarting(null);
+    }
+  }
+  const current = data?.current ?? "basic";
   return (
     <div className="space-y-6">
       <div>
         <h2 className="section-heading">{t("Room to grow")}</h2>
         <p className="hint mt-1">
-          {t(
-            "Your current installation uses the Free plan. Paid billing is awaiting Wix entitlement integration.",
-          )}
+          {t("Your current installation uses the {plan} plan.", {
+            plan: t(plans[current].name),
+          })}
         </p>
       </div>
       <div className="grid md:grid-cols-3 gap-6">
-        {[
-          {
-            name: "Free",
-            price: "$0",
-            count: "10 vehicles",
-            features: [
-              "1 dealer workflow",
-              "Inventory & inquiry management",
-              "Site marketplace widget",
-            ],
-            current: true,
-          },
-          {
-            name: "Pro",
-            price: "Proposed $9.99 / month",
-            count: "100 vehicles",
-            features: [
-              "Advanced inventory",
-              "Import & export",
-              "Expanded analytics",
-            ],
-            current: false,
-          },
-          {
-            name: "Business",
-            price: "Proposed $19.99 / month",
-            count: "Higher inventory quota",
-            features: [
-              "Multiple dealerships",
-              "Seller self-service",
-              "AI writing allowance",
-            ],
-            current: false,
-          },
-        ].map((p) => (
-          <section key={p.name} className="surface p-7">
-            <span className="text-xs uppercase tracking-widest text-primary">
-              {p.current ? t("Your plan") : t("Planned")}
-            </span>
-            <h3 className="text-2xl font-semibold mt-4">{t(p.name)}</h3>
-            <p className="font-semibold mt-3">{t(p.price)}</p>
-            <p className="hint mt-1">{t(p.count)}</p>
-            <ul className="space-y-4 mt-7">
-              {p.features.map((f) => (
-                <li key={f} className="flex gap-3 text-sm">
-                  <Check size={16} className="text-primary" />
-                  {t(f)}
-                </li>
-              ))}
-            </ul>
-            <p className="hint text-xs mt-7">
-              {p.current
-                ? t("Active · no payment required")
-                : t("Pricing hypothesis. Not available for purchase yet.")}
-            </p>
-          </section>
-        ))}
+        {planKeys.map((key) => {
+          const p = plans[key],
+            isCurrent = key === current;
+          return (
+            <section key={key} className="surface p-7">
+              <span className="text-xs uppercase tracking-widest text-primary">
+                {isCurrent ? t("Your plan") : t("Planned")}
+              </span>
+              <h3 className="text-2xl font-semibold mt-4">{t(p.name)}</h3>
+              <p className="font-semibold mt-3">{t(p.price)}</p>
+              <p className="hint mt-1">
+                {p.vehicleLimit === null
+                  ? t("Unlimited vehicles")
+                  : t("{count} vehicles", { count: p.vehicleLimit })}
+              </p>
+              <ul className="space-y-4 mt-7">
+                {p.features.map((f) => (
+                  <li key={f} className="flex gap-3 text-sm">
+                    <Check size={16} className="text-primary" />
+                    {t(f)}
+                  </li>
+                ))}
+              </ul>
+              {key !== "basic" && !isCurrent && (
+                <Button
+                  className="w-full mt-7"
+                  disabled={starting !== null || !data}
+                  pending={starting === key}
+                  onClick={() => void startTrial(key)}
+                >
+                  {t("Start trial")}
+                </Button>
+              )}
+              <p className="hint text-xs mt-7">
+                {isCurrent
+                  ? t("Active · no payment required")
+                  : t("Trial opens Wix checkout. You are charged when it ends.")}
+              </p>
+            </section>
+          );
+        })}
       </div>
     </div>
   );

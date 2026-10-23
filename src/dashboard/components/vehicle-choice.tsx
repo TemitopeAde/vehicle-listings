@@ -26,7 +26,15 @@ export function VehicleChoice({
   );
   const customSelected =
     allowCustom && (custom || Boolean(value && !values.includes(value)));
-  const customLabel = `Custom ${label.replace(/ \*$/, "").toLowerCase()}`;
+  const customLabels: Record<string, string> = {
+    "Make *": "Custom make",
+    Drivetrain: "Custom drivetrain",
+    "Axle configuration": "Custom axle configuration",
+    "Exterior color": "Custom exterior color",
+    "Interior color": "Custom interior color",
+    "Emission class": "Custom emission class",
+  };
+  const customLabel = customLabels[label] ?? label;
   return (
     <div>
       <label className="label" htmlFor={`v-${name}`}>

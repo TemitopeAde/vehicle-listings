@@ -28,12 +28,14 @@ export function DealerInventory({
   businessName,
   location,
   vehicles,
+  stats,
   onAdd,
   onEdit,
 }: {
   businessName: string;
   location: string;
   vehicles: Vehicle[];
+  stats: Record<string, { views: number; clicks: number }>;
   onAdd: () => void;
   onEdit: (vehicle: Vehicle) => void;
 }) {
@@ -208,6 +210,10 @@ export function DealerInventory({
                     <span className="hidden text-right sm:block">
                       <span className="block font-semibold tabular-nums">
                         {money(vehicle.price, vehicle.currency)}
+                      </span>
+                      <span className="hint mt-0.5 block tabular-nums">
+                        {number(stats[vehicle._id]?.views ?? 0)} {t("views")} ·{" "}
+                        {number(stats[vehicle._id]?.clicks ?? 0)} {t("clicks")}
                       </span>
                     </span>
                     <Badge status={vehicle.status}>

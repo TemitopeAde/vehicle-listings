@@ -1,4 +1,5 @@
-import { messages, type MessageKey } from "./i18n-messages";
+import { messages, type MessageKey, type Translation } from "./i18n-messages";
+import { catalogs, type CatalogLanguage } from "./locales";
 
 export {
   direction,
@@ -20,10 +21,19 @@ function applyVars(template: string, vars?: Vars) {
   );
 }
 
+const bundled = new Set<string>(["es", "fr", "de", "pt", "ar"]);
+const bundledMessages: Readonly<Record<string, Translation>> = messages;
+
 /** Looks up interface copy. Unknown text, including vehicle titles, is returned unchanged. */
 export function translate(language: Language, key: string, vars?: Vars) {
-  const row = messages[key as MessageKey];
-  const template = language === "en" || !row ? key : (row[language] ?? key);
+  const row = Object.hasOwn(bundledMessages, key) ? bundledMessages[key] : undefined;
+  let template = key;
+  if (language !== "en" && row && bundled.has(language)) {
+    template = row[language as keyof Translation] || key;
+  } else if (language !== "en" && language in catalogs) {
+    const catalog = catalogs[language as CatalogLanguage];
+    template = Object.hasOwn(catalog, key) ? catalog[key] || key : key;
+  }
   return applyVars(template, vars);
 }
 

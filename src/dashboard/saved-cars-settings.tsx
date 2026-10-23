@@ -4,13 +4,13 @@ import { toast } from "sonner";
 import { embeddedScripts } from "@wix/app-management";
 import { useI18n } from "../shared/i18n-react";
 import { Button } from "./components/ui/button";
-// Extension ID from src/extensions/site/embedded-scripts/saved-cars/saved-cars.extension.ts
-const componentId = "a98020c4-3999-4b6d-96f1-01fa817d4011";
+import { savedCarsScript } from "../shared/saved-cars-script";
+const componentId = savedCarsScript.componentId;
 type Form = { enabled: boolean; label: string; accent: string };
 const defaults: Form = {
-  enabled: true,
-  label: "Saved cars",
-  accent: "#196947",
+  enabled: !savedCarsScript.properties.disabled,
+  label: savedCarsScript.properties.parameters.label,
+  accent: savedCarsScript.properties.parameters.accent,
 };
 export type Scripts = {
   getEmbeddedScript: (options: {

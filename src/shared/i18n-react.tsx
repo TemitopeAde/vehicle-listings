@@ -1,8 +1,10 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -62,6 +64,11 @@ export function LocaleProvider({
   fresh?: boolean;
 }) {
   const [language, setLanguage] = useState<Language>("en");
+  const chosen = useRef(false);
+  const chooseLanguage = useCallback((next: Language) => {
+    chosen.current = true;
+    setLanguage(next);
+  }, []);
   useEffect(() => {
     let active = true;
     const load = fresh
@@ -69,7 +76,8 @@ export function LocaleProvider({
       : cachedApi<Theme>("settings", cacheTtl.settings);
     load
       .then((theme) => {
-        if (active && isLanguage(theme.language)) setLanguage(theme.language);
+        if (active && !chosen.current && isLanguage(theme.language))
+          setLanguage(theme.language);
       })
       .catch(() => {});
     return () => {
@@ -77,8 +85,8 @@ export function LocaleProvider({
     };
   }, [fresh]);
   const value = useMemo(
-    () => createValue(language, setLanguage),
-    [language],
+    () => createValue(language, chooseLanguage),
+    [language, chooseLanguage],
   );
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }

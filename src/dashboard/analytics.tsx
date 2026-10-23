@@ -51,7 +51,9 @@ export function Analytics() {
               download(
                 "showroom-analytics.csv",
                 [
-                  ["Date", "Views", "Contacts", "Leads"].map(csvCell).join(","),
+                  ["Date", "Views", "Contacts", "Leads"]
+                    .map((heading) => csvCell(t(heading)))
+                    .join(","),
                   ...(resource.data?.trend ?? []).map((r) =>
                     [r.date, r.views, r.clicks, r.leads].map(csvCell).join(","),
                   ),

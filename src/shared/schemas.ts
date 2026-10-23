@@ -260,12 +260,22 @@ export type Dealer = z.infer<typeof dealerSchema>;
 export const inquiryInput = z
   .object({
     vehicleId: z.string().min(1),
-    name: z.string().trim().min(2).max(100),
-    email: z.string().email().max(150),
-    phone: text(40),
-    message: z.string().trim().min(10).max(3000),
-    consent: z.literal(true),
-    kind: z.enum(["inquiry", "test-drive", "trade-in"]).default("inquiry"),
+    name: z.string().trim()
+      .min(2, "Enter your name using at least 2 characters.")
+      .max(100, "Name must be 100 characters or fewer."),
+    email: z.string().trim()
+      .email("Enter a valid email address, like name@example.com.")
+      .max(150, "Email must be 150 characters or fewer."),
+    phone: z.string().trim().max(40, "Phone must be 40 characters or fewer.").default(""),
+    message: z.string().trim()
+      .min(10, "Enter a message using at least 10 characters.")
+      .max(3000, "Message must be 3000 characters or fewer."),
+    consent: z.literal(true, {
+      error: "Agree to be contacted about this vehicle.",
+    }),
+    kind: z.enum(["inquiry", "test-drive", "trade-in"], {
+      error: "Select request type",
+    }).default("inquiry"),
     preferredDate: text(40),
     honeypot: z.string().max(0).default(""),
     idempotencyKey: z.string().uuid(),

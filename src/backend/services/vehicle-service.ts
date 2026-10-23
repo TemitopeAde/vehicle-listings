@@ -16,6 +16,8 @@ import { transitions, slugify } from "../../shared/utils";
 import { descriptionText } from "../../shared/rich-text";
 import { cleanDescription } from "../listing-html";
 import { rankSimilar } from "../../shared/similarity";
+import { plans } from "../../shared/plans";
+import { currentPlanKey, vehicleLimit } from "./plan-service";
 import { demoVehicles } from "../../shared/demo";
 import type { Context } from "../context";
 import { AppError } from "../errors";
@@ -29,6 +31,7 @@ import {
   type Row,
 } from "../repositories/repository";
 import { audit } from "./audit-service";
+import { vehicleStats } from "./vehicle-stats-service";
 import {
   recordOpeningPrice,
   recordPriceChange,
@@ -153,11 +156,16 @@ export async function listVehicles(
       result = await queryRows(ctx, "vehicles", sampleQuery, true);
     }
   }
+  const items = result.rows.map((row) => vehicleSchema.parse(row));
   return {
-    items: result.rows.map((row) => vehicleSchema.parse(row)),
+    items,
     total: result.total,
     nextCursor: f.cursor + f.limit < result.total ? f.cursor + f.limit : null,
     samples,
+    // Views and clicks are for the dealer and admin dashboards only, never the public site.
+    ...(publicOnly
+      ? {}
+      : { stats: await vehicleStats(ctx, items.map((item) => item._id)) }),
   };
 }
 export async function listVehicleMakes(
@@ -319,8 +327,10 @@ export async function createVehicle(
       );
     return current;
   }
-  // Until billing entitlement integration is verified, every installation uses the Free quota.
+  const plan = await currentPlanKey(ctx);
+  const limit = vehicleLimit(plan);
   if (
+    limit !== null &&
     (await countRows(
       ctx,
       "vehicles",
@@ -328,11 +338,11 @@ export async function createVehicle(
         ne: { demo: true, status: "deleted" },
       },
       access.elevated,
-    )) >= 10
+    )) >= limit
   )
     throw new AppError(
       "QUOTA",
-      "The Free plan allows 10 vehicles. Remove an archived vehicle before adding more.",
+      `The ${plans[plan].name} plan allows ${limit} ${limit === 1 ? "vehicle" : "vehicles"}. Remove an archived vehicle or upgrade before adding more.`,
       409,
     );
   const stockId = assignedStockId(input.stockId, key);

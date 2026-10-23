@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useForm, type FieldErrors } from "react-hook-form";
+import { useForm, type DefaultValues, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -31,6 +31,7 @@ import type { UploadDependencies } from "./media-upload";
 import { isCommercial, isTrailer } from "../shared/vehicle-options";
 import { statusLabel } from "../shared/i18n";
 import { useI18n } from "../shared/i18n-react";
+import { createTestVehicle } from "./vehicle-test-data";
 const sections = [
   "Basics",
   "Pricing",
@@ -181,6 +182,7 @@ function stepForField(name: string) {
 export function VehicleEditor({
   vehicle,
   onBack,
+  leaveRequest,
   lockedDealer,
   client = api,
   backLabel = "Back to inventory",
@@ -189,7 +191,10 @@ export function VehicleEditor({
   showFeatured = false,
 }: {
   vehicle: Vehicle | null;
-  onBack?: () => void;
+  /** Receives the page to open next, so the workspace can leave the editor on that page. */
+  onBack?: (target?: string) => void;
+  /** Set by the workspace when a sidebar link is clicked, so unsaved changes are still confirmed. */
+  leaveRequest?: { page: string } | null;
   lockedDealer?: Pick<Dealer, "_id" | "businessName" | "approvalState" | "location">;
   client?: Client;
   backLabel?: string;
@@ -203,8 +208,28 @@ export function VehicleEditor({
   const [section, setSection] = useState(0),
     [saved, setSaved] = useState(vehicle),
     [busy, setBusy] = useState(false),
-    [confirm, setConfirm] = useState("");
+    [confirm, setConfirm] = useState(""),
+    [leaveTarget, setLeaveTarget] = useState<string | undefined>();
   const createKey = useRef("");
+  const testDataButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const button = testDataButton.current;
+    const bounds = button?.getBoundingClientRect();
+    console.info("[Vehicle test data] Editor state (debug v3)", {
+      development: import.meta.env.DEV,
+      editingExistingVehicle: Boolean(vehicle),
+      hasSavedVehicle: Boolean(saved),
+      buttonExpected: !saved,
+      buttonMounted: Boolean(button),
+      buttonDisabled: button?.disabled,
+      buttonDisplay: button ? window.getComputedStyle(button).display : null,
+      buttonVisibility: button ? window.getComputedStyle(button).visibility : null,
+      buttonBounds: bounds?.toJSON(),
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      submitDisabled,
+      dealerLocked: Boolean(lockedDealer),
+    });
+  }, [vehicle, saved, submitDisabled, lockedDealer]);
   const dealerList = useResource<{ items: Dealer[] }>(
     lockedDealer || submitDisabled ? null : "dealers",
     client,
@@ -224,9 +249,8 @@ export function VehicleEditor({
         error: "",
       }
     : dealerList;
-  const form = useForm<FormInput, unknown, VehicleInput>({
-    resolver: zodResolver(vehicleInput),
-    defaultValues: vehicle
+  const [defaultValues] = useState<DefaultValues<FormInput>>(() =>
+    vehicle
       ? vehicleInput.parse(
           Object.fromEntries(
             Object.keys(vehicleInput.shape).map((k) => [
@@ -255,6 +279,10 @@ export function VehicleEditor({
           dealerId: lockedDealer?._id ?? "",
           location: lockedDealer?.location ?? "",
         },
+  );
+  const form = useForm<FormInput, unknown, VehicleInput>({
+    resolver: zodResolver(vehicleInput),
+    defaultValues,
   });
   const uploads = useVehicleUploads(form, uploadDependencies);
   const {
@@ -338,6 +366,34 @@ export function VehicleEditor({
     const steps = Object.keys(errors).map(stepForField);
     if (steps.length) setSection(Math.min(...steps));
   }
+  function fillTestData() {
+    console.info("[Vehicle test data] Fill button clicked");
+    try {
+      const current = form.getValues();
+      const sample = createTestVehicle({
+        dealerId: lockedDealer?._id ?? current.dealerId ?? "",
+        location: lockedDealer?.location ?? current.location ?? "",
+        currency: current.currency ?? showroom.data?.currency ?? "USD",
+        media: current.media ?? [],
+        videos: current.videos ?? [],
+      });
+      titleAuto.current = { last: sample.title, stop: false };
+      seoAuto.current = { last: sample.seoTitle, stop: false };
+      locationAuto.current = { last: sample.location, stop: false };
+      form.reset(sample, { keepDefaultValues: true });
+      setSection(0);
+      console.info("[Vehicle test data] Form filled", {
+        titleMatches: form.getValues("title") === sample.title,
+        category: form.getValues("category"),
+        photoCount: form.getValues("media")?.length ?? 0,
+        dealerSelected: Boolean(form.getValues("dealerId")),
+      });
+      toast.success(t("Test data filled. Review before saving or publishing."));
+    } catch (error) {
+      console.error("[Vehicle test data] Failed to fill form", error);
+      toast.error(t("Could not fill test data. Check the browser console."));
+    }
+  }
   async function stepReady(step: number) {
     const category = String(form.getValues("category") ?? "");
     const names = requiredFields(step, category);
@@ -365,11 +421,17 @@ export function VehicleEditor({
     }
     setSection(next);
   }
-  function back() {
+  function back(target?: string) {
     if (!onBack) return;
-    if (isDirty || uploads.busy) setConfirm("leave");
-    else onBack();
+    if (isDirty || uploads.busy) {
+      setLeaveTarget(target);
+      setConfirm("leave");
+    } else onBack(target);
   }
+  useEffect(() => {
+    if (leaveRequest) back(leaveRequest.page);
+    // Runs once per click; `back` reads the latest form state on each render.
+  }, [leaveRequest]);
   async function save(input: VehicleInput, publish = false) {
     if (uploads.busy) {
       toast.error(t("Wait for media uploads to finish before saving."));
@@ -432,7 +494,9 @@ export function VehicleEditor({
         status,
       });
       setSaved(result);
-      toast.success(t("Vehicle {status}", { status }));
+      toast.success(
+        t("Vehicle {status}", { status: t(statusLabel[status] ?? status) }),
+      );
       setConfirm("");
     } catch (e) {
       toast.error(t((e as Error).message));
@@ -444,7 +508,7 @@ export function VehicleEditor({
     <div>
       <div className="flex justify-between flex-wrap items-center gap-3 mb-6">
         {onBack ? (
-          <Button variant="ghost" onClick={back}>
+          <Button variant="ghost" onClick={() => back()}>
             <ArrowLeft size={16} />
             {t(backLabel)}
           </Button>
@@ -452,6 +516,17 @@ export function VehicleEditor({
           <span />
         )}
         <div className="flex gap-2 items-center">
+          {!saved && (
+            <Button
+              ref={testDataButton}
+              type="button"
+              variant="outline"
+              onClick={fillTestData}
+              disabled={busy || uploads.busy}
+            >
+              {t("Fill test data")}
+            </Button>
+          )}
           <Badge status={saved?.status}>
             {saved?.demo
               ? t("Demo vehicle")
@@ -496,7 +571,7 @@ export function VehicleEditor({
               type="button"
               onClick={() => void goToSection(i)}
               className={cn(
-                "px-3 py-3 rounded-lg text-sm text-left flex gap-3 items-center",
+                "px-3 py-3 rounded-lg text-sm text-start flex gap-3 items-center cursor-pointer",
                 section === i
                   ? "bg-green-50 text-primary font-semibold"
                   : "text-muted-foreground hover:bg-muted",
@@ -576,7 +651,9 @@ export function VehicleEditor({
               ? t("Discard unsaved changes?")
               : confirm === "published"
                 ? t("Publish this vehicle?")
-                : t("Mark this vehicle {status}?", { status: confirm })}
+                : t("Mark this vehicle {status}?", {
+                    status: t(statusLabel[confirm] ?? confirm),
+                  })}
           </DialogTitle>
           <DialogDescription className="hint my-4">
             {confirm === "leave"
@@ -600,7 +677,7 @@ export function VehicleEditor({
               pending={busy}
               onClick={() =>
                 confirm === "leave"
-                  ? onBack?.()
+                  ? onBack?.(leaveTarget)
                   : confirm === "published"
                     ? void form.handleSubmit((i) => save(i, true), (errors) => {
                         setConfirm("");

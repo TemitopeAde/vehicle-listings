@@ -1,6 +1,6 @@
 import type { VehicleForm } from "./vehicle-form-types";
 import { currencyOptions } from "../../shared/currencies";
-import { conditionLabel } from "../../shared/i18n";
+import { conditionLabel, statusLabel } from "../../shared/i18n";
 import { useI18n } from "../../shared/i18n-react";
 import { Checkbox } from "./ui/checkbox";
 import type { Vehicle, VehicleInput, Dealer } from "../../shared/schemas";
@@ -432,7 +432,9 @@ export function VehicleSections({
                   >
                     {s === "draft"
                       ? t("Restore as draft")
-                      : t("Mark {status}", { status: s })}
+                      : t("Mark {status}", {
+                          status: t(statusLabel[s] ?? s),
+                        })}
                   </Button>
                 ))}
             </div>

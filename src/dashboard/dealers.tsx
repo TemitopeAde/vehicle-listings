@@ -16,6 +16,17 @@ import {
 import { Badge, Empty, LoadState } from "./components/common";
 import { statusLabel } from "../shared/i18n";
 import { useI18n } from "../shared/i18n-react";
+
+const dealerFieldLabels = {
+  businessName: "Business name",
+  location: "Location",
+  address: "Address",
+  email: "Email",
+  phone: "Phone",
+  whatsapp: "WhatsApp (international number)",
+  website: "Website",
+  hours: "Hours",
+} as const;
 export function Dealers() {
   const { t } = useI18n();
   const [search, setSearch] = useState(""),
@@ -122,7 +133,7 @@ export function Dealers() {
               <tr>
                 {["Dealership", "Email", "Phone", "Location", "Status", "Actions"].map(
                   (heading) => (
-                    <th key={heading} className="p-4 text-left font-medium">
+                    <th key={heading} className="p-4 text-start font-medium">
                       {t(heading)}
                     </th>
                   ),
@@ -242,14 +253,8 @@ export function Dealers() {
                 ] as const
               ).map((k) => (
                 <div key={k}>
-                  <label className="label capitalize" htmlFor={`d-${k}`}>
-                  {t(
-                    k === "businessName"
-                      ? "Business name"
-                      : k === "whatsapp"
-                        ? "WhatsApp (international number)"
-                        : k,
-                  )}
+                  <label className="label" htmlFor={`d-${k}`}>
+                    {t(dealerFieldLabels[k])}
                   </label>
                   <input
                     id={`d-${k}`}

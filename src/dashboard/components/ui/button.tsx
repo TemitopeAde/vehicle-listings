@@ -58,13 +58,20 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || pending || undefined}
         aria-busy={pending || props["aria-busy"]}
       >
-        {pending && !asChild ? (
-          <LoaderCircle
-            className="h-4 w-4 animate-spin motion-reduce:animate-none"
-            aria-hidden="true"
-          />
-        ) : null}
-        {children}
+        {/* Slot accepts exactly one child, so `asChild` must not get the spinner slot beside it. */}
+        {asChild ? (
+          children
+        ) : (
+          <>
+            {pending ? (
+              <LoaderCircle
+                className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                aria-hidden="true"
+              />
+            ) : null}
+            {children}
+          </>
+        )}
       </Comp>
     );
   },
