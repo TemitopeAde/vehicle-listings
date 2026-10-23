@@ -1,5 +1,4 @@
 import type { DataCollection } from "@wix/astro/builders";
-import { demoDealers } from "../../../shared/demo";
 export const collectionIdSuffix = "dealers";
 export default {
   idSuffix: collectionIdSuffix,
@@ -18,7 +17,6 @@ export default {
     { key: "approvalState", displayName: "approvalState", type: "TEXT" },
     { key: "accessToken", displayName: "accessToken", type: "TEXT" },
     { key: "memberId", displayName: "memberId", type: "TEXT" },
-    { key: "demo", displayName: "demo", type: "BOOLEAN" },
     { key: "createdAt", displayName: "createdAt", type: "TEXT" },
     { key: "updatedAt", displayName: "updatedAt", type: "TEXT" },
   ],
@@ -29,5 +27,4 @@ export default {
     itemRemove: "CMS_EDITOR",
   },
   indexes: [],
-  initialData: demoDealers,
 } satisfies DataCollection;

@@ -18,7 +18,6 @@ type Session = {
   businessName: string;
   location: string;
   approvalState: "pending" | "approved" | "suspended" | "rejected";
-  demo: boolean;
   createdAt?: string;
 };
 
@@ -37,17 +36,8 @@ function alreadyApplied(
   return t("You already applied on {date}.", { date: formatted });
 }
 
-function isLocalDemo() {
-  return (
-    import.meta.env.DEV &&
-    import.meta.env.PUBLIC_CAR_LISTING_DEMO === "1" &&
-    ["localhost", "127.0.0.1"].includes(window.location.hostname)
-  );
-}
-
 /** Login email from the current site member. Empty when nobody is logged in. */
 async function readLoginEmail() {
-  if (isLocalDemo()) return "";
   const { currentMember } = await import("@wix/site-members");
   const member = await currentMember.getMember({ fieldsets: ["FULL"] });
   return member?.loginEmail?.trim() ?? "";
@@ -75,24 +65,15 @@ function SellPageInner({
   const [email, setEmail] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
-  const [demo, setDemo] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState<Vehicle | null | undefined>(undefined);
-  const signedIn = demo || Boolean(email);
+  const signedIn = Boolean(email);
 
   useEffect(() => {
     let active = true;
-    const local = isLocalDemo();
-    setDemo(local);
-    if (local) {
-      setEmail("");
-      return () => {
-        active = false;
-      };
-    }
     readLoginEmail()
       .then((value) => {
         if (active) setEmail(value);
@@ -118,7 +99,7 @@ function SellPageInner({
       .then((next) => {
         if (!active) return;
         setSession(next);
-        if (next?.approvalState === "approved" && !next.demo)
+        if (next?.approvalState === "approved")
           return api<{ items: Vehicle[] }>("vehicles?limit=50").then((page) => {
             if (active) setVehicles(page.items);
           });
@@ -158,7 +139,7 @@ function SellPageInner({
     }
   }
 
-  const approved = session?.approvalState === "approved" && !session.demo;
+  const approved = session?.approvalState === "approved";
   const checking = (email === null && !sessionError) || (signedIn && loading);
   return (
     <div className="mx-auto max-w-5xl px-5 py-12" {...localeProps(language)}>
@@ -220,19 +201,15 @@ function SellPageInner({
             {t(statusLabel[session.approvalState] ?? session.approvalState)}
           </Badge>
           <p className="mt-4">
-            {session.demo
-              ? t(
-                  "Sample dealerships stay private. Apply with your own business to add vehicles.",
-                )
-              : session.approvalState === "pending"
-                ? t("Your application is waiting for approval.")
-                : session.approvalState === "suspended"
-                  ? t(
-                      "This dealership is suspended, so vehicles can't be added until it is approved again.",
-                    )
-                  : t(
-                      "This application was not approved, so vehicles can't be added.",
-                    )}
+            {session.approvalState === "pending"
+              ? t("Your application is waiting for approval.")
+              : session.approvalState === "suspended"
+                ? t(
+                    "This dealership is suspended, so vehicles can't be added until it is approved again.",
+                  )
+                : t(
+                    "This application was not approved, so vehicles can't be added.",
+                  )}
           </p>
           <p className="hint mt-4">
             {session.createdAt
@@ -250,7 +227,7 @@ function SellPageInner({
           onEdit={setEditing}
         />
       )}
-      {session?.approvalState === "pending" && !session.demo && !loading && (
+      {session?.approvalState === "pending" && !loading && (
         <div className="mt-8">
           <VehicleEditor
             vehicle={null}

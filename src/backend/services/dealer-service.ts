@@ -1,4 +1,3 @@
-import { randomBytes, randomUUID } from "node:crypto";
 import { members } from "@wix/members";
 import { z } from "zod";
 import {
@@ -8,6 +7,7 @@ import {
 } from "../../shared/schemas";
 import type { Context } from "../context";
 import { AppError } from "../errors";
+import { randomHex } from "../web-crypto";
 import { saveRow, getRow, queryRows, removeRow } from "../repositories/repository";
 import { audit } from "./audit-service";
 import {
@@ -46,19 +46,15 @@ export async function saveDealer(ctx: Context, raw: unknown, id?: string) {
   if (id && !existing)
     throw new AppError("NOT_FOUND", "Dealer not found.", 404);
   const now = new Date().toISOString();
-  const demo = existing?.demo ?? false;
   const currentToken =
     typeof existing?.accessToken === "string" ? existing.accessToken : "";
   const dealer = dealerSchema.parse({
     ...existing,
     ...input,
-    _id: id ?? randomUUID(),
-    accessToken: demo
-      ? ""
-      : /^[a-f0-9]{64}$/.test(currentToken)
-        ? currentToken
-        : randomBytes(32).toString("hex"),
-    demo,
+    _id: id ?? crypto.randomUUID(),
+    accessToken: /^[a-f0-9]{64}$/.test(currentToken)
+      ? currentToken
+      : randomHex(32),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   });
@@ -99,11 +95,6 @@ export async function deleteDealer(ctx: Context, id: string) {
   const existing = await getRow(ctx, "dealers", id);
   if (!existing) throw new AppError("NOT_FOUND", "Dealer not found.", 404);
   const dealer = dealerSchema.parse(existing);
-  if (dealer.demo)
-    throw new AppError(
-      "DEMO",
-      "Sample dealerships stay in the showroom.",
-    );
   await archivePublicVehicles(ctx, dealer._id);
   await removeRow(ctx, "dealers", dealer._id);
   await audit(ctx, "dealer", dealer._id, "delete");
@@ -133,7 +124,6 @@ export async function dealerFromAccess(ctx: Context, token: string) {
 const loginRequired = "Log in before applying to sell vehicles.";
 /** The application email is the logged-in member's login email, not the submitted value. */
 async function memberLoginEmail(ctx: Context) {
-  if (ctx.demo) return null;
   if (ctx.subjectType !== "MEMBER")
     throw new AppError("UNAUTHENTICATED", loginRequired, 401);
   // EXTENDED is the fieldset that includes loginEmail. Do not elevate: this must be the caller.
@@ -146,10 +136,7 @@ export async function applyDealer(ctx: Context, raw: unknown) {
   const command = zApply.parse(raw);
   if (command.honeypot)
     throw new AppError("VALIDATION", "Check the application and try again.");
-  const loginEmail = await memberLoginEmail(ctx);
-  const input = loginEmail
-    ? { ...command.payload, email: loginEmail }
-    : command.payload;
+  const input = { ...command.payload, email: await memberLoginEmail(ctx) };
   const existing = await existingDealerApplication(ctx, input.email);
   if (existing)
     throw new AppError(
@@ -161,10 +148,9 @@ export async function applyDealer(ctx: Context, raw: unknown) {
   const dealer = dealerSchema.parse({
     ...input,
     approvalState: "pending",
-    accessToken: randomBytes(32).toString("hex"),
+    accessToken: randomHex(32),
     memberId: ctx.subjectType === "MEMBER" ? ctx.actorId : "",
-    _id: randomUUID(),
-    demo: false,
+    _id: crypto.randomUUID(),
     createdAt: now,
     updatedAt: now,
   });
@@ -215,7 +201,7 @@ export async function dealerMatchingLogin(
   const dealers = rows
     .map((row) => dealerSchema.parse(row))
     .filter((dealer) => {
-      if (dealer.demo || seen.has(dealer._id)) return false;
+      if (seen.has(dealer._id)) return false;
       seen.add(dealer._id);
       const sameMember = Boolean(memberId) && dealer.memberId === memberId;
       const legacyEmail =
@@ -233,7 +219,7 @@ export async function dealerMatchingLogin(
   return (owned.length ? owned : dealers)[0] ?? null;
 }
 
-/** Any non-demo application for this email, including one tied to a member account. */
+/** Any application for this email, including one tied to a member account. */
 async function existingDealerApplication(ctx: Context, email: string) {
   const trimmed = email.trim();
   const normalized = trimmed.toLowerCase();
@@ -250,17 +236,14 @@ async function existingDealerApplication(ctx: Context, email: string) {
   return (
     rows
       .map((row) => dealerSchema.parse(row))
-      .find(
-        (dealer) =>
-          !dealer.demo && dealer.email.trim().toLowerCase() === normalized,
-      ) ?? null
+      .find((dealer) => dealer.email.trim().toLowerCase() === normalized) ??
+    null
   );
 }
 
 export async function dealerForCurrentMember(ctx: Context) {
-  if (ctx.demo || ctx.subjectType !== "MEMBER") return null;
+  if (ctx.subjectType !== "MEMBER") return null;
   const email = await memberLoginEmail(ctx);
-  if (!email) return null;
   return dealerMatchingLogin(ctx, { email, memberId: ctx.actorId });
 }
 
@@ -274,13 +257,12 @@ export async function dealerSession(ctx: Context) {
     businessName: dealer.businessName,
     location: dealer.location,
     approvalState: dealer.approvalState,
-    demo: dealer.demo,
     createdAt: dealer.createdAt,
   };
 }
 export async function publicDealer(ctx: Context, id: string) {
   const r = await getRow(ctx, "dealers", id, true);
-  if (!r || r.approvalState !== "approved" || r.demo) return null;
+  if (!r || r.approvalState !== "approved") return null;
   const d = dealerSchema.parse(r);
   return {
     _id: d._id,

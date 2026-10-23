@@ -101,10 +101,12 @@ export function VehicleDetail({
         setVehicle(v);
         setLoading(false);
         const [seller, cars] = await Promise.allSettled([
-          cachedApi<PublicDealer | null>(
-            `dealers?public=1&id=${encodeURIComponent(v.dealerId)}`,
-            cacheTtl.dealers,
-          ),
+          v.dealerId
+            ? cachedApi<PublicDealer | null>(
+                `dealers?public=1&id=${encodeURIComponent(v.dealerId)}`,
+                cacheTtl.dealers,
+              )
+            : Promise.resolve(null),
           cachedApi<{ items: Vehicle[] }>(
             `vehicles?public=1&similar=${encodeURIComponent(v._id)}&limit=4`,
             cacheTtl.vehicle,

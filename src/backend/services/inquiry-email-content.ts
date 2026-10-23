@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { sha256Hex } from "../web-crypto";
 import sanitizeHtml from "sanitize-html";
 import { translate, type Language } from "../../shared/i18n";
 import type { Context } from "../context";
@@ -75,9 +75,11 @@ export function brandedEmail(
   };
 }
 
-export function emailKey(siteId: string, inquiryId: string, key: string) {
-  const hash = createHash("sha256")
-    .update(`${siteId}:${inquiryId}:${key}`)
-    .digest("hex");
+export async function emailKey(
+  siteId: string,
+  inquiryId: string,
+  key: string,
+) {
+  const hash = await sha256Hex(`${siteId}:${inquiryId}:${key}`);
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-5${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
 }

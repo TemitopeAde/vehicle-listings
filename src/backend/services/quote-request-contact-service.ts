@@ -61,7 +61,6 @@ export async function syncQuoteContact(
   if (!row) return "failed";
   const request = quoteRequestSchema.parse(row);
   if (request.contactId) return "added";
-  if (ctx.demo) return "demo";
   try {
     const contactId = await deps.upsert(quoteContact(request));
     const latest = (await deps.getRow(ctx, collection, id, true)) ?? row;

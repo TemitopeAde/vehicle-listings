@@ -6,7 +6,7 @@ export async function dealerDirectory(ctx: Context, search = "", cursor = 0) {
     ctx,
     "dealers",
     {
-      eq: { approvalState: "approved", demo: false },
+      eq: { approvalState: "approved" },
       search,
       offset: cursor,
       limit: 30,

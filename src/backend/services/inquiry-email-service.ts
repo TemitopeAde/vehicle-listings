@@ -57,7 +57,6 @@ async function emailRequest<T>(
 }
 
 export async function emailBranding(ctx: Context) {
-  if (ctx.demo) return { siteName: "Local demo", enabled: false };
   const { properties } = await emailRequest(
     () => auth.elevate(siteProperties.getSiteProperties)(),
     "Could not read Wix website settings. Check the app's Manage Your App permission and try again.",
@@ -72,7 +71,6 @@ export async function emailBranding(ctx: Context) {
   const email = z.string().email().safeParse(properties?.email);
   return {
     siteName,
-    enabled: true,
     ...(email.success ? { replyTo: email.data } : {}),
   };
 }
@@ -137,12 +135,6 @@ export async function deliverInquiryEmail(
       "Only site collaborators can reply to inquiries.",
       403,
     );
-  if (ctx.demo)
-    throw new AppError(
-      "DEMO_EMAIL_DISABLED",
-      "Email sending is unavailable in the local demo.",
-      409,
-    );
   // The recipient comes exclusively from the stored inquiry, never from caller input.
   const row = await deps.getRow(ctx, "inquiries", inquiryId, automatic);
   if (!row) throw new AppError("NOT_FOUND", "Inquiry not found.", 404);
@@ -162,7 +154,7 @@ export async function deliverInquiryEmail(
         : {}),
       type: "TRANSACTIONAL",
     },
-    emailKey(ctx.siteId, inquiryId, key),
+    await emailKey(ctx.siteId, inquiryId, key),
   );
 }
 
@@ -191,7 +183,6 @@ export async function confirmInquiry(
   const row = await deps.getRow(ctx, "inquiries", id, true);
   if (!row) throw new AppError("NOT_FOUND", "Inquiry not found.", 404);
   if (row.confirmationEmailStatus === "queued") return "queued";
-  if (ctx.demo) return "demo";
   const inquiry = inquirySchema.parse(row);
   try {
     const result = await deliverInquiryEmail(

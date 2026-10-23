@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { sha256Hex } from "../web-crypto";
 import { z } from "zod";
 import { inquiryInput, inquirySchema } from "../../shared/schemas";
 import type { Context } from "../context";
@@ -12,20 +12,18 @@ export async function submitInquiry(ctx: Context, raw: unknown) {
     v = await getVehicle(ctx, input.vehicleId, true);
   if (v.status === "sold")
     throw new AppError("UNAVAILABLE", "This vehicle has been sold.");
-  const id = createHash("sha256")
-    .update(`${ctx.siteId}:${ctx.actorId}:${input.idempotencyKey}`)
-    .digest("hex");
+  const id = await sha256Hex(
+    `${ctx.siteId}:${ctx.actorId}:${input.idempotencyKey}`,
+  );
   if (await getRow(ctx, "inquiries", id, true))
     return {
       id,
       received: true,
       confirmationEmailStatus: await confirmInquiry(ctx, id),
     };
-  const actorHash = createHash("sha256")
-    .update(
-      `${ctx.siteId}:${ctx.actorId}:${new Date().toISOString().slice(0, 13)}`,
-    )
-    .digest("hex");
+  const actorHash = await sha256Hex(
+    `${ctx.siteId}:${ctx.actorId}:${new Date().toISOString().slice(0, 13)}`,
+  );
   const siteRecent = await queryRows(
     ctx,
     "inquiries",

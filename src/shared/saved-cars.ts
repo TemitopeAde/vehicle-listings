@@ -51,17 +51,15 @@ export function watchSavedCars() {
   window.addEventListener("focus", refresh);
   document.addEventListener("visibilitychange", refresh);
   const timer = window.setInterval(refresh, 30000);
-  if (import.meta.env.PUBLIC_CAR_LISTING_DEMO !== "1") {
-    void import("@wix/site")
-      .then(({ authentication }) => {
-        if (!active) return;
-        unsubscribe.push(authentication.onLogin(refresh));
-        unsubscribe.push(authentication.onLogout(() => store().reset()));
-      })
-      .catch((error) =>
-        console.error("Could not listen for member session changes", error),
-      );
-  }
+  void import("@wix/site")
+    .then(({ authentication }) => {
+      if (!active) return;
+      unsubscribe.push(authentication.onLogin(refresh));
+      unsubscribe.push(authentication.onLogout(() => store().reset()));
+    })
+    .catch((error) =>
+      console.error("Could not listen for member session changes", error),
+    );
   return () => {
     active = false;
     for (const stop of unsubscribe) stop();

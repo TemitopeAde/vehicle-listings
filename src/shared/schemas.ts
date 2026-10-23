@@ -76,7 +76,10 @@ export const vehicleInput = z
       .number()
       .int()
       .min(1886)
-      .max(new Date().getUTCFullYear() + 2),
+      // Read the clock per parse: Cloudflare Workers report 1970 while a module loads.
+      .refine((year) => year <= new Date().getUTCFullYear() + 2, {
+        message: "Select model year.",
+      }),
     condition: z.enum(["used", "new", "certified"]).default("used"),
     mileage: z.number().min(0).max(10000000).default(0),
     mileageUnit: z.enum(["km", "mi"]).default("mi"),
@@ -241,7 +244,7 @@ export function applicationPhone(code: string, number: string) {
 export const dealerSchema = dealerInput
   .extend({
     _id: z.string(),
-    /** Private key for the dealer's own listing page. Empty for sample dealers. */
+    /** Private key for the dealer's own listing page. */
     accessToken: z
       .string()
       .regex(/^[a-f0-9]{64}$/)
@@ -249,7 +252,6 @@ export const dealerSchema = dealerInput
       .default(""),
     /** Site member who applied. Empty on dealerships created before account matching. */
     memberId: z.string().default(""),
-    demo: z.boolean().default(false),
     createdAt: z.string(),
     updatedAt: z.string(),
   })

@@ -142,12 +142,10 @@ export function Dealers() {
                   <td className="p-4">{dealer.location || t("—")}</td>
                   <td className="p-4">
                     <Badge status={dealer.approvalState}>
-                      {dealer.demo
-                        ? t("Demo")
-                        : t(
-                            statusLabel[dealer.approvalState] ??
-                              dealer.approvalState,
-                          )}
+                      {t(
+                        statusLabel[dealer.approvalState] ??
+                          dealer.approvalState,
+                      )}
                     </Badge>
                   </td>
                   <td className="p-4">
@@ -160,16 +158,14 @@ export function Dealers() {
                       >
                         {t("Edit")}
                       </Button>
-                      {!dealer.demo && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => confirmRemove(dealer)}
-                        >
-                          {t("Delete")}
-                        </Button>
-                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => confirmRemove(dealer)}
+                      >
+                        {t("Delete")}
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -377,7 +373,7 @@ export function Dealers() {
               ))}
             </select>
             <div className="flex justify-between gap-2 pt-3">
-              {editing && !editing.demo ? (
+              {editing ? (
                 <Button
                   type="button"
                   variant="destructive"

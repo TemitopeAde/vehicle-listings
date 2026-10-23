@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { sha256Hex } from "../web-crypto";
 import { z } from "zod";
 import type { Context } from "../context";
 import { getVehicle } from "./vehicle-service";
@@ -19,12 +19,10 @@ export async function trackEvent(ctx: Context, raw: unknown) {
     .parse(raw);
   await getVehicle(ctx, input.vehicleId, true);
   const date = new Date().toISOString().slice(0, 10),
-    actorHash = createHash("sha256")
-      .update(`${ctx.siteId}:${ctx.actorId}:${date}`)
-      .digest("hex");
-  const id = createHash("sha256")
-    .update(`${actorHash}:${input.vehicleId}:${input.eventType}`)
-    .digest("hex");
+    actorHash = await sha256Hex(`${ctx.siteId}:${ctx.actorId}:${date}`);
+  const id = await sha256Hex(
+    `${actorHash}:${input.vehicleId}:${input.eventType}`,
+  );
   if (!(await getRow(ctx, "events", id, true)))
     await saveRow(
       ctx,
@@ -98,6 +96,5 @@ export async function analytics(ctx: Context, days = 14, dealerId = "") {
       status: r.status,
       createdAt: r.createdAt,
     })),
-    demo: ctx.demo,
   };
 }

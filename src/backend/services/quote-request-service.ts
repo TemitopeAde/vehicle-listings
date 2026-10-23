@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { sha256Hex } from "../web-crypto";
 import {
   quoteRequestInput,
   quoteRequestPatch,
@@ -37,9 +37,9 @@ export async function submitQuoteRequest(ctx: Context, raw: unknown) {
   const vehicle = await getVehicle(ctx, input.vehicleId, true);
   if (vehicle.status === "sold")
     throw new AppError("UNAVAILABLE", "This vehicle has been sold.");
-  const id = createHash("sha256")
-    .update(`${ctx.siteId}:${ctx.actorId}:quote:${input.idempotencyKey}`)
-    .digest("hex");
+  const id = await sha256Hex(
+    `${ctx.siteId}:${ctx.actorId}:quote:${input.idempotencyKey}`,
+  );
   // A retried submission resends any email that failed, without a second request.
   if (await getRow(ctx, collection, id, true)) return followUp(ctx, id);
   const hourAgo = new Date(Date.now() - 3600000).toISOString();
@@ -55,11 +55,9 @@ export async function submitQuoteRequest(ctx: Context, raw: unknown) {
       "The showroom is receiving many requests. Please try again later.",
       429,
     );
-  const actorHash = createHash("sha256")
-    .update(
-      `${ctx.siteId}:${ctx.actorId}:${new Date().toISOString().slice(0, 13)}`,
-    )
-    .digest("hex");
+  const actorHash = await sha256Hex(
+    `${ctx.siteId}:${ctx.actorId}:${new Date().toISOString().slice(0, 13)}`,
+  );
   const recent = await queryRows(
     ctx,
     collection,

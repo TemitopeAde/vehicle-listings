@@ -106,18 +106,6 @@ export function createSiteNavigation(
 }
 
 async function hostLocation(): Promise<SiteLocation> {
-  // Only the isolated localhost development fixture uses browser URLs.
-  if (
-    import.meta.env?.DEV &&
-    import.meta.env.PUBLIC_CAR_LISTING_DEMO === "1" &&
-    ["localhost", "127.0.0.1"].includes(window.location.hostname)
-  ) {
-    return {
-      baseUrl: async () => window.location.origin,
-      url: async () => window.location.href,
-      to: async (url) => window.location.assign(url),
-    };
-  }
   return (await import("@wix/site-location")).location;
 }
 export const siteNavigation = createSiteNavigation({

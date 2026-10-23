@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Context } from "../context";
 import { queryRows, saveRow } from "../repositories/repository";
@@ -25,7 +24,7 @@ async function insertPoint(
   elevated = false,
 ) {
   const row: PricePoint = {
-    _id: `price-${randomUUID()}`,
+    _id: `price-${crypto.randomUUID()}`,
     vehicleId,
     price,
     currency,

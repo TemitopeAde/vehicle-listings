@@ -4,27 +4,16 @@ import { AppError } from "./errors";
 export type DealerActor = {
   id: string;
   approvalState: "pending" | "approved" | "suspended" | "rejected";
-  demo: boolean;
 };
 export type Context = {
   siteId: string;
   actorId: string;
   manager: boolean;
-  demo: boolean;
   subjectType?: "APP" | "USER" | "MEMBER" | "VISITOR" | "UNKNOWN";
   /** Set for a dealer listing link or the logged-in member who owns the dealership. Never grants site-owner access. */
   dealer?: DealerActor | null;
 };
-export const isLocalDemo = () =>
-  import.meta.env.DEV && process.env.CAR_LISTING_DEMO === "1";
 export async function context(manager = false): Promise<Context> {
-  if (isLocalDemo())
-    return {
-      siteId: "local-demo",
-      actorId: "local-owner",
-      manager,
-      demo: true,
-    };
   const token = await auth.getTokenInfo().catch(() => {
     throw new AppError(
       "UNAUTHENTICATED",
@@ -63,6 +52,5 @@ export async function context(manager = false): Promise<Context> {
     actorId: token.subjectId,
     subjectType: token.subjectType,
     manager,
-    demo: false,
   };
 }

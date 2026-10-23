@@ -1,2 +1,2 @@
-// Shared requests attach the Wix session token and support the isolated local preview.
+// Shared requests attach the Wix session token.
 export { api, download } from "../shared/client";

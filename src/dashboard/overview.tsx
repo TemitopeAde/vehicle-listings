@@ -37,7 +37,6 @@ export type Analytics = {
     status: string;
     createdAt: string;
   }[];
-  demo: boolean;
 };
 export function Overview({
   navigate,

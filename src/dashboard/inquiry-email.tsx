@@ -115,7 +115,6 @@ export function EmailComposer({
   // Branding is the same for every email, so it is always read from the inquiry endpoint.
   const branding = useResource<{
     siteName: string;
-    enabled: boolean;
     replyTo?: string;
   }>("inquiry-emails");
   const [Editor, setEditor] = useState<typeof ReactQuill | null>(null);
@@ -257,11 +256,6 @@ export function EmailComposer({
             t("Replies go to {email}.", { email: branding.data.replyTo })}
         </p>
       )}
-      {branding.data && !branding.data.enabled && (
-        <p className="hint">
-          {t("Email sending is unavailable in the local demo.")}
-        </p>
-      )}
       {queued ? (
         <p role="status">{t("Email queued with Wix.")}</p>
       ) : (
@@ -273,7 +267,7 @@ export function EmailComposer({
             !Editor ||
             !hasText ||
             !subject.trim() ||
-            !branding.data?.enabled
+            !branding.data
           }
         >
           {t("Send email")}

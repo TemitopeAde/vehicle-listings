@@ -38,7 +38,6 @@ export async function notifyOwnerOfDealerApplication(
   dealer: Dealer,
   deps: InquiryEmailDependencies = emailDependencies,
 ) {
-  if (ctx.demo || dealer.demo) return "demo";
   try {
     const [branding, language] = await Promise.all([
       deps.branding(ctx),
@@ -69,7 +68,7 @@ export async function notifyOwnerOfDealerApplication(
         replyTo: { emailAddress: dealer.email },
         type: "TRANSACTIONAL",
       },
-      emailKey(ctx.siteId, dealer._id, "dealer-application"),
+      await emailKey(ctx.siteId, dealer._id, "dealer-application"),
     );
     return "queued";
   } catch (error) {
@@ -87,7 +86,6 @@ export async function notifyDealerApproved(
   dealer: Dealer,
   deps: InquiryEmailDependencies = emailDependencies,
 ) {
-  if (ctx.demo || dealer.demo) return "demo";
   const address = z.email().safeParse(dealer.email);
   if (!address.success) return "no-recipient";
   try {
@@ -115,7 +113,11 @@ export async function notifyDealerApproved(
           : {}),
         type: "TRANSACTIONAL",
       },
-      emailKey(ctx.siteId, dealer._id, `dealer-approved:${dealer.updatedAt}`),
+      await emailKey(
+        ctx.siteId,
+        dealer._id,
+        `dealer-approved:${dealer.updatedAt}`,
+      ),
     );
     return "queued";
   } catch (error) {

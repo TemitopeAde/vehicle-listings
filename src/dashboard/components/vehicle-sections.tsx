@@ -160,7 +160,7 @@ export function VehicleSections({
   const selectedDealerId = watch("dealerId");
   const dealerChoices = (dealers.data?.items ?? []).filter(
     (dealer) =>
-      (dealer.approvalState === "approved" && !dealer.demo) ||
+      dealer.approvalState === "approved" ||
       dealer._id === selectedDealerId,
   );
   const colors = [

@@ -96,12 +96,6 @@ export async function deliverQuoteEmail(
       "Only site collaborators can email quote requesters.",
       403,
     );
-  if (ctx.demo)
-    throw new AppError(
-      "DEMO_EMAIL_DISABLED",
-      "Email sending is unavailable in the local demo.",
-      409,
-    );
   const { request } = await loadRequest(ctx, id, deps);
   const [branding, resolvedLanguage] = await Promise.all([
     deps.branding(ctx),
@@ -121,7 +115,7 @@ export async function deliverQuoteEmail(
         : {}),
       type: "TRANSACTIONAL",
     },
-    emailKey(ctx.siteId, id, key),
+    await emailKey(ctx.siteId, id, key),
   );
 }
 
@@ -173,7 +167,6 @@ export async function confirmQuoteRequest(
 ) {
   const { row, request } = await loadRequest(ctx, id, deps);
   if (row.confirmationEmailStatus === "queued") return "queued";
-  if (ctx.demo) return "demo";
   const language = await showroomLanguage(ctx);
   const details = summary(request, language);
   try {
@@ -210,7 +203,6 @@ export async function notifyQuoteOwner(
 ) {
   const { row, request } = await loadRequest(ctx, id, deps);
   if (row.ownerEmailStatus === "queued") return "queued";
-  if (ctx.demo) return "demo";
   try {
     const [branding, language] = await Promise.all([
       deps.branding(ctx),
@@ -248,7 +240,7 @@ export async function notifyQuoteOwner(
         replyTo: { emailAddress: request.email },
         type: "TRANSACTIONAL",
       },
-      emailKey(ctx.siteId, id, "quote-owner-notification"),
+      await emailKey(ctx.siteId, id, "quote-owner-notification"),
     );
     await recordStatus(ctx, id, "ownerEmailStatus", "queued", deps);
     return "queued";

@@ -34,13 +34,10 @@ export async function api<T>(
   headers?: Record<string, string>,
 ): Promise<T> {
   const url = apiUrl(route);
-  const init = apiInit(body, method, headers);
-  // The local storefront preview has its own isolated file store and never sends a Wix token.
-  const response = await (import.meta.env.DEV &&
-  import.meta.env.PUBLIC_CAR_LISTING_DEMO === "1" &&
-  ["127.0.0.1", "localhost"].includes(window.location.hostname)
-    ? fetch(url, init)
-    : httpClient.fetchWithAuth(url, init));
+  const response = await httpClient.fetchWithAuth(
+    url,
+    apiInit(body, method, headers),
+  );
   return readResult<T>(response);
 }
 /** How long a public storefront read is reused before the API is asked again. */

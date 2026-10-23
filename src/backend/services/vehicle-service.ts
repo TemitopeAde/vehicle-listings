@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import {
   vehicleInput,
   vehicleSchema,
@@ -17,7 +16,7 @@ import { transitions, slugify } from "../../shared/utils";
 import { descriptionText } from "../../shared/rich-text";
 import { cleanDescription } from "../listing-html";
 import { rankSimilar } from "../../shared/similarity";
-import { demoVehicles, demoDealers } from "../../shared/demo";
+import { demoVehicles } from "../../shared/demo";
 import type { Context } from "../context";
 import { AppError } from "../errors";
 import {
@@ -35,9 +34,7 @@ import {
   recordPriceChange,
 } from "./price-history-service";
 function approvedDealer(ctx: Context) {
-  return ctx.dealer?.approvalState === "approved" && !ctx.dealer.demo
-    ? ctx.dealer
-    : null;
+  return ctx.dealer?.approvalState === "approved" ? ctx.dealer : null;
 }
 function requireInventoryWrite(ctx: Context) {
   if (ctx.manager) return { elevated: false, dealerId: "" };
@@ -303,7 +300,7 @@ async function assertUnique(
 export async function createVehicle(
   ctx: Context,
   raw: unknown,
-  key: string = randomUUID(),
+  key: string = crypto.randomUUID(),
 ) {
   const access = requireInventoryWrite(ctx);
   const parsed = vehicleInput.parse(raw);
@@ -444,11 +441,7 @@ async function validatePublication(ctx: Context, v: Vehicle) {
       "Add a photo, a description of at least 20 characters and a positive price before publishing.",
     );
   const dealer = await getRow(ctx, "dealers", v.dealerId, !ctx.manager);
-  if (
-    !dealer ||
-    dealerSchema.parse(dealer).approvalState !== "approved" ||
-    dealer.demo
-  )
+  if (!dealer || dealerSchema.parse(dealer).approvalState !== "approved")
     throw new AppError(
       "SELLER_REQUIRED",
       "Assign an approved, real dealership before publishing.",
@@ -491,7 +484,7 @@ export async function duplicateVehicle(ctx: Context, id: string, key?: string) {
     {
       ...input,
       stockId: input.stockId
-        ? `${input.stockId.slice(0, 25)}-${randomUUID().slice(0, 6)}`
+        ? `${input.stockId.slice(0, 25)}-${crypto.randomUUID().slice(0, 6)}`
         : "",
       vin: "",
       title: `${input.title.slice(0, 140)} (copy)`,
@@ -555,16 +548,6 @@ async function syncDemoInventory(
         false,
         elevated,
       );
-  }
-  if (!active) return;
-  for (const d of demoDealers) {
-    const existing = await getRow(ctx, "dealers", d._id, elevated);
-    const parsed = existing && dealerSchema.safeParse(existing);
-    const same =
-      parsed?.success &&
-      JSON.stringify({ ...parsed.data, createdAt: "", updatedAt: "" }) ===
-        JSON.stringify({ ...d, createdAt: "", updatedAt: "" });
-    if (!same) await saveRow(ctx, "dealers", d, !existing, elevated);
   }
 }
 export async function clearDemo(ctx: Context) {

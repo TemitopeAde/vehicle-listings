@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { sha256Hex } from "../web-crypto";
 import { z } from "zod";
 import type { Context } from "../context";
 import { previewCSV } from "../../shared/csv";
@@ -30,10 +30,11 @@ export async function importCSV(ctx: Context, raw: unknown) {
       continue;
     }
     try {
-      const key = createHash("sha256")
-        .update(`${input.csv}:${JSON.stringify(input.mapping)}:${row.row}`)
-        .digest("hex")
-        .slice(0, 32);
+      const key = (
+        await sha256Hex(
+          `${input.csv}:${JSON.stringify(input.mapping)}:${row.row}`,
+        )
+      ).slice(0, 32);
       const v = await createVehicle(ctx, row.data, key);
       results.push({ row: row.row, success: true, id: v._id, errors: [] });
     } catch (e) {

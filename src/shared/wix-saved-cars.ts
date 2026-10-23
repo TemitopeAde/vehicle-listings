@@ -16,12 +16,6 @@ async function recordId(memberId: string, vehicleId: string) {
 
 export const wixSavedCars: SavedCarsRepository = {
   async memberId() {
-    if (
-      import.meta.env?.DEV &&
-      import.meta.env.PUBLIC_CAR_LISTING_DEMO === "1" &&
-      ["localhost", "127.0.0.1"].includes(window.location.hostname)
-    )
-      return null;
     const { currentMember } = await import("@wix/site-members");
     return (await currentMember.getMember())?._id ?? null;
   },

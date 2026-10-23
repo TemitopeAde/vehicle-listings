@@ -10,12 +10,10 @@ export const dealerAccessHeader = "x-dealer-access";
 function dealerActor(dealer: {
   _id: string;
   approvalState: DealerActor["approvalState"];
-  demo: boolean;
 }): DealerActor {
   return {
     id: dealer._id,
     approvalState: dealer.approvalState,
-    demo: dealer.demo,
   };
 }
 

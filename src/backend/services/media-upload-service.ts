@@ -14,12 +14,6 @@ const resumableRequest = z
 function requireUploader(ctx: Context) {
   if (ctx.subjectType !== "MEMBER" && !ctx.manager)
     throw new AppError("UNAUTHENTICATED", "Log in before uploading a file.", 401);
-  if (ctx.demo)
-    throw new AppError(
-      "UNAVAILABLE",
-      "Photos and videos cannot be uploaded right now.",
-      503,
-    );
 }
 
 /** A signed TUS upload URL for the dealer's browser. The app creates it; the member does not need Media Manager access. */

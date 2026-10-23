@@ -20,17 +20,8 @@ import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
 import { Button } from "../dashboard/components/ui/button";
 import "../dashboard/styles.css";
 
-function isLocalDemo() {
-  return (
-    import.meta.env.DEV &&
-    import.meta.env.PUBLIC_CAR_LISTING_DEMO === "1" &&
-    ["localhost", "127.0.0.1"].includes(window.location.hostname)
-  );
-}
-
 /** Login email from the current site member. Empty when nobody is logged in. */
 async function readLoginEmail() {
-  if (isLocalDemo()) return "";
   const { currentMember } = await import("@wix/site-members");
   const member = await currentMember.getMember({ fieldsets: ["FULL"] });
   return member?.loginEmail?.trim() ?? "";
@@ -79,7 +70,6 @@ function ApplyPageInner({
   const [sessionError, setSessionError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
   const [sending, setSending] = useState(false);
-  const [demo, setDemo] = useState(false);
   const [application, setApplication] = useState<ExistingApplication | null | undefined>(
     undefined,
   );
@@ -103,14 +93,6 @@ function ApplyPageInner({
   });
   useEffect(() => {
     let active = true;
-    const local = isLocalDemo();
-    setDemo(local);
-    if (local) {
-      setEmail("");
-      return () => {
-        active = false;
-      };
-    }
     readLoginEmail()
       .then((value) => {
         if (!active) return;
@@ -128,9 +110,9 @@ function ApplyPageInner({
       active = false;
     };
   }, [setValue]);
-  const signedIn = demo || Boolean(email);
+  const signedIn = Boolean(email);
   useEffect(() => {
-    if (!signedIn || demo) {
+    if (!signedIn) {
       setApplication(null);
       return;
     }
@@ -147,7 +129,7 @@ function ApplyPageInner({
     return () => {
       active = false;
     };
-  }, [signedIn, demo, email]);
+  }, [signedIn, email]);
   async function login() {
     setLoggingIn(true);
     try {
@@ -169,13 +151,13 @@ function ApplyPageInner({
     }
   }
   async function submit(values: DealerApplicationFormInput) {
-    if (!demo && !email) {
+    if (!email) {
       toast.error(t("Log in before applying to sell vehicles."));
       return;
     }
     const parsed = dealerApplicationInput.safeParse({
       businessName: values.businessName,
-      email: demo ? values.email : email,
+      email,
       phone: applicationPhone(values.phoneCode, values.phoneNumber),
       location: values.location,
       address: values.address,
@@ -294,8 +276,8 @@ function ApplyPageInner({
               type="text"
               inputMode="email"
               autoComplete="email"
-              readOnly={!demo}
-              aria-readonly={!demo}
+              readOnly
+              aria-readonly
               aria-invalid={Boolean(errors.email)}
               {...register("email")}
             />

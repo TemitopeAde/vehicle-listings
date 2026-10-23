@@ -1,6 +1,0 @@
----
-import App from '../../../../dashboard/app';
-import { isLocalDemo } from '../../../../backend/context';
-if (!isLocalDemo()) return new Response('Local demo is disabled.', { status: 404 });
----
-<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><meta name="robots" content="noindex,nofollow"/><title>Dealer Workspace</title></head><body><App client:only="react"/></body></html>

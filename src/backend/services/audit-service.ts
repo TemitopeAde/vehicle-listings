@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import type { Context } from "../context";
 import { saveRow } from "../repositories/repository";
 export async function audit(
@@ -12,7 +11,7 @@ export async function audit(
     ctx,
     "audit-logs",
     {
-      _id: randomUUID(),
+      _id: crypto.randomUUID(),
       actorId: ctx.actorId,
       siteId: ctx.siteId,
       entity,

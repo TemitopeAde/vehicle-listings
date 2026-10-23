@@ -69,7 +69,7 @@
     "@types/sanitize-html": "^2.16.2",
     "@typescript-eslint/parser": "^8.71.2",
     "@wix/astro-wix-hosting-adapter": "^2.0.0",
-    "@wix/cli": "^1.1.135",
+    "@wix/cli": "^1.2.2",
     "@wix/editor-react-types": "^1.0.8",
     "@wix/sdk-types": "^1.0.0",
     "autoprefixer": "^10.6.1",

@@ -301,7 +301,7 @@ export function VehicleEditor({
   useEffect(() => {
     if (vehicle || lockedDealer) return;
     const choices = (dealers.data?.items ?? []).filter(
-      (item) => item.approvalState === "approved" && !item.demo,
+      (item) => item.approvalState === "approved",
     );
     if (choices.length !== 1) return;
     if (form.getValues("dealerId")) return;

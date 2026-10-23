@@ -91,12 +91,6 @@ export function vehicleCartItem(vehicle: Vehicle, language: Language = "en") {
  * request, and the call is not elevated so the cart stays the caller's.
  */
 export async function addVehicleToCart(ctx: Context, vehicleId: string) {
-  if (ctx.demo)
-    throw new AppError(
-      "NOT_AVAILABLE",
-      "The cart isn't available in the local preview.",
-      409,
-    );
   const vehicle = await getVehicle(ctx, vehicleId, true, false, "_id");
   assertPurchasable(vehicle);
   let language: Language = "en";
