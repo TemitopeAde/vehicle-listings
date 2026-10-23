@@ -170,15 +170,54 @@ export async function saveRow(
       );
   return { ...result, _id: String(result._id) };
 }
-export async function removeRow(
-  ctx: Context,
-  collection: string,
-  id: string,
-) {
+export async function removeRow(ctx: Context, collection: string, id: string) {
   if (!ctx.manager)
     throw new AppError("FORBIDDEN", "Management permission is required.", 403);
   // Same call the saved-cars store uses: collection id, then item id.
   await items.remove(`${namespace}/${collection}`, id);
+}
+/** Row counts per distinct value of `fields`, in one request instead of one count per value. */
+export async function countGroups(
+  ctx: Context,
+  collection: string,
+  fields: string[],
+  query: Pick<Query, "eq" | "ne" | "ge"> = {},
+  elevated = false,
+) {
+  if (!ctx.manager && !elevated)
+    throw new AppError("FORBIDDEN", "Management permission is required.", 403);
+  let filter = items.filter();
+  for (const [key, value] of Object.entries(query.eq ?? {}))
+    filter = filter.eq(key, value);
+  for (const [key, value] of Object.entries(query.ne ?? {}))
+    filter = filter.ne(key, value);
+  for (const [key, value] of Object.entries(query.ge ?? {}))
+    filter = filter.ge(key, value);
+  const createAggregate = elevated
+    ? auth.elevate(items.aggregate)
+    : items.aggregate;
+  let result = await createAggregate(`${namespace}/${collection}`)
+    .filter(filter)
+    .group(...fields)
+    .count()
+    .limit(1000)
+    .run();
+  const groups: { values: Record<string, unknown>; count: number }[] = [];
+  for (;;) {
+    for (const item of result.items) {
+      // Grouped values come back as top-level fields, and inside `_id` for several fields.
+      const id = item._id && typeof item._id === "object" ? item._id : {};
+      groups.push({
+        values: Object.fromEntries(
+          fields.map((field) => [field, item[field] ?? id[field]]),
+        ),
+        count: Number(item.count) || 0,
+      });
+    }
+    if (!result.hasNext()) break;
+    result = await result.next();
+  }
+  return groups;
 }
 export async function countRows(
   ctx: Context,

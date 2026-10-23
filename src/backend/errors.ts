@@ -60,7 +60,7 @@ export async function respond(run: () => Promise<unknown>, status = 200) {
       );
     console.error(
       "Car listing request failed",
-      error instanceof Error ? error.name : "unknown",
+      error instanceof Error ? `${error.name}: ${error.message}` : "unknown",
     );
     return Response.json(
       {
