@@ -7,14 +7,14 @@ import {
   AppError,
 } from "../../backend/errors";
 import {
-  currentPlanKey,
   planCheckoutUrl,
+  planStatus,
 } from "../../backend/services/plan-service";
 import { isPlanKey, plans, planKeys } from "../../shared/plans";
 
 export const GET: APIRoute = () =>
   respond(async () => ({
-    current: await currentPlanKey(await context()),
+    ...(await planStatus(await context())),
     plans: planKeys.map((key) => ({ key, ...plans[key] })),
   }));
 

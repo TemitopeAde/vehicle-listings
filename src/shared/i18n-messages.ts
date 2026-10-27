@@ -647,6 +647,8 @@ export const messages = {
   "Primary buttons": { es: "Botones principales", fr: "Boutons principaux", de: "Primäre Schaltflächen", pt: "Botões principais", ar: "الأزرار الأساسية" },
   "Primary buttons color": { es: "Color de los botones principales", fr: "Couleur des boutons principaux", de: "Farbe Primäre Schaltflächen", pt: "Cor dos botões principais", ar: "لون الأزرار الأساسية" },
   "Pro": { es: "Pro", fr: "Pro", de: "Pro", pt: "Pro", ar: "Pro" },
+  "Start free trial": { es: "Iniciar prueba gratuita", fr: "Commencer l'essai gratuit", de: "Kostenlos testen", pt: "Iniciar avaliação gratuita", ar: "ابدأ الفترة التجريبية المجانية" },
+  "Try paid features like more vehicles and invoices.": { es: "Prueba funciones de pago, como más vehículos y facturas.", fr: "Essayez les fonctionnalités payantes, comme plus de véhicules et les factures.", de: "Testen Sie kostenpflichtige Funktionen wie mehr Fahrzeuge und Rechnungen.", pt: "Experimente funcionalidades pagas, como mais veículos e faturas.", ar: "جرّب الميزات المدفوعة مثل المزيد من المركبات والفواتير." },
   "Proposed $19.99 / month": { es: "Propuesto $19.99 / mes", fr: "Proposé $19.99 / mois", de: "Vorgeschlagen $19.99 / Monat", pt: "Proposto $19.99 / mês", ar: "مقترح $19.99 / شهر" },
   "Proposed $9.99 / month": { es: "Propuesto $9.99 / mes", fr: "Proposé $9.99 / mois", de: "Vorgeschlagen $9.99 / Monat", pt: "Proposto $9.99 / mês", ar: "مقترح $9.99 / شهر" },
   "Publish": { es: "Publicar", fr: "Publier", de: "Veröffentlichen", pt: "Publicar", ar: "نشر" },

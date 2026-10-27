@@ -26,6 +26,7 @@ import {
 } from "./element-style-fields";
 import { filterSettings } from "../../../../storefront/filter-visibility";
 import { LocaleProvider, useI18n } from "../../../../shared/i18n-react";
+import { TrialFooter } from "../../trial-footer";
 
 const textKeys = ["display-name", "description"];
 
@@ -332,6 +333,7 @@ function PanelContent() {
             />
           )}
         </SidePanel.Content>
+        <TrialFooter />
       </SidePanel>
     </WixDesignSystemProvider>
   );

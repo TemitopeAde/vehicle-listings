@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { planForInstance, vehicleLimit } from "../backend/services/plan-service";
+import {
+  freeTrialUrl,
+  planForInstance,
+  vehicleLimit,
+} from "../backend/services/plan-service";
+import wixConfig from "../../wix.config.json";
 import { plans } from "../shared/plans";
 
 test("a free install is Basic", () => {
@@ -32,4 +37,24 @@ test("vehicle limits: Basic 1, Pro 50, Business unlimited", () => {
   assert.equal(vehicleLimit("basic"), 1);
   assert.equal(vehicleLimit("pro"), 50);
   assert.equal(vehicleLimit("business"), null);
+});
+
+test("a free install that can still trial links to the Wix upgrade page", () => {
+  assert.equal(
+    freeTrialUrl({ isFree: true, freeTrialAvailable: true, instanceId: "inst-1" }),
+    `https://www.wix.com/apps/upgrade/${wixConfig.appId}?appInstanceId=inst-1`,
+  );
+});
+
+test("no trial link once the trial is used or a plan is paid", () => {
+  assert.equal(
+    freeTrialUrl({ isFree: true, freeTrialAvailable: false, instanceId: "inst-1" }),
+    null,
+  );
+  assert.equal(
+    freeTrialUrl({ isFree: false, freeTrialAvailable: true, instanceId: "inst-1" }),
+    null,
+  );
+  assert.equal(freeTrialUrl({ isFree: true, freeTrialAvailable: true }), null);
+  assert.equal(freeTrialUrl(null), null);
 });

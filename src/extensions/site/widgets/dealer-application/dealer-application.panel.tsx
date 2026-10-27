@@ -9,6 +9,7 @@ import {
 } from '@wix/design-system';
 import '@wix/design-system/styles.global.css';
 import { LocaleProvider, useI18n } from '../../../../shared/i18n-react';
+import { TrialFooter } from '../../trial-footer';
 
 const Panel: FC = () => (
   <LocaleProvider>
@@ -52,6 +53,7 @@ const PanelContent: FC = () => {
             {t("Dealers log in here and apply. Approve them in the app dashboard before they can add vehicles.")}
           </SectionHelper>
         </SidePanel.Footer>
+        <TrialFooter />
       </SidePanel>
     </WixDesignSystemProvider>
   );

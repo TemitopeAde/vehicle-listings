@@ -3,12 +3,35 @@ import { auth } from "@wix/essentials";
 import { plans, planKeys, type PlanKey } from "../../shared/plans";
 import type { Context } from "../context";
 import { AppError } from "../errors";
+import wixConfig from "../../../wix.config.json";
 
 type InstanceBilling = { packageName?: string | null } | null | undefined;
 
-export async function currentPlanKey(_ctx: Context): Promise<PlanKey> {
+export async function currentPlanKey(ctx: Context): Promise<PlanKey> {
+  return (await planStatus(ctx)).current;
+}
+
+/** The current plan, plus Wix's upgrade page while the site can still start its one free trial. */
+export async function planStatus(ctx: Context) {
   const { instance } = await auth.elevate(appInstances.getAppInstance)();
-  return planForInstance(instance?.isFree, instance?.billing);
+  return {
+    current: planForInstance(instance?.isFree, instance?.billing),
+    // The link carries the app instance ID, so only site collaborators get it.
+    trialUrl: ctx.subjectType === "USER" ? freeTrialUrl(instance) : null,
+  };
+}
+
+type TrialInstance = {
+  isFree?: boolean | null;
+  freeTrialAvailable?: boolean | null;
+  instanceId?: string | null;
+} | null | undefined;
+
+// Wix runs the trial itself; the app only links to its upgrade page, which offers it.
+export function freeTrialUrl(instance: TrialInstance) {
+  if (instance?.isFree === false || !instance?.freeTrialAvailable) return null;
+  if (!instance.instanceId) return null;
+  return `https://www.wix.com/apps/upgrade/${wixConfig.appId}?appInstanceId=${encodeURIComponent(instance.instanceId)}`;
 }
 
 // Wix reports the purchased plan in `billing.packageName`. A paid instance that matches no

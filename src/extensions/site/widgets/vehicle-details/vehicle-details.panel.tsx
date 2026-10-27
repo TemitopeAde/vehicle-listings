@@ -17,6 +17,7 @@ import {
 } from "../../../../storefront/widget-style";
 import { ColorField, FontField } from "../vehicle-marketplace/style-fields";
 import { LocaleProvider, useI18n } from "../../../../shared/i18n-react";
+import { TrialFooter } from "../../trial-footer";
 
 const defaults: Record<string, string> = {
   radius: "12",
@@ -173,6 +174,7 @@ function PanelContent() {
             />
           )}
         </SidePanel.Content>
+        <TrialFooter />
       </SidePanel>
     </WixDesignSystemProvider>
   );
