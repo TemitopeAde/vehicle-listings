@@ -18,14 +18,8 @@ import { api } from "../shared/client";
 import { localeFor, localizeDefault, type Vars } from "../shared/i18n";
 import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
 import { Button } from "../dashboard/components/ui/button";
+import { readLoginEmail } from "../shared/wix-member";
 import "../dashboard/styles.css";
-
-/** Login email from the current site member. Empty when nobody is logged in. */
-async function readLoginEmail() {
-  const { currentMember } = await import("@wix/site-members");
-  const member = await currentMember.getMember({ fieldsets: ["FULL"] });
-  return member?.loginEmail?.trim() ?? "";
-}
 
 function FieldError({ message }: { message?: string }) {
   const { t } = useI18n();

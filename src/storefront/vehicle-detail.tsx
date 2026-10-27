@@ -18,6 +18,7 @@ import { VehicleCard } from "./vehicle-card";
 import { DetailGallery } from "./vehicle-gallery";
 import { VehicleContact, type PublicDealer } from "./vehicle-contact";
 // import { AddToCart } from "./add-to-cart";
+import { VehicleSave } from "./vehicle-save";
 import { VehicleShare } from "./vehicle-share";
 import { VehicleVideo } from "./vehicle-video";
 import { VehicleDetailSkeleton } from "./vehicle-detail-skeleton";
@@ -261,7 +262,10 @@ export function VehicleDetail({
             preview={preview}
             className="w-full min-w-[12rem]"
           /> */}
-          <VehicleShare vehicle={vehicle} />
+          <div className="flex items-start gap-2">
+            <VehicleSave vehicle={vehicle} disabled={preview} />
+            <VehicleShare vehicle={vehicle} />
+          </div>
         </div>
       </header>
       <div className="sf-detail grid grid-cols-1 gap-8">

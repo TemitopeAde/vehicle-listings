@@ -34,9 +34,12 @@ export const plans: Record<PlanKey, PlanDefinition> = {
       "Unlimited vehicles",
       "Multiple dealerships",
       "Seller self-service",
+      "Draft invoices from quote requests",
     ],
   },
 };
+/** Draft Wix invoices from quote requests are a Business plan feature. */
+export const canInvoiceQuotes = (plan: PlanKey) => plan === "business";
 export function isPlanKey(value: unknown): value is PlanKey {
   return typeof value === "string" && (planKeys as readonly string[]).includes(value);
 }

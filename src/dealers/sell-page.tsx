@@ -11,6 +11,7 @@ import { dealerMediaUpload } from "./media-upload";
 import { Button } from "../dashboard/components/ui/button";
 import { Badge } from "../dashboard/components/common";
 import { DealerInventory } from "./dealer-inventory";
+import { readLoginEmail } from "../shared/wix-member";
 import "../dashboard/styles.css";
 
 type Stats = Record<string, { views: number; clicks: number }>;
@@ -36,13 +37,6 @@ function alreadyApplied(
     year: "numeric",
   }).format(date);
   return t("You already applied on {date}.", { date: formatted });
-}
-
-/** Login email from the current site member. Empty when nobody is logged in. */
-async function readLoginEmail() {
-  const { currentMember } = await import("@wix/site-members");
-  const member = await currentMember.getMember({ fieldsets: ["FULL"] });
-  return member?.loginEmail?.trim() ?? "";
 }
 
 export default function SellPage({

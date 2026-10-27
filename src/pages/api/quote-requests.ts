@@ -4,6 +4,7 @@ import { context } from "../../backend/context";
 import { respond, readJson, methodNotAllowed } from "../../backend/errors";
 import { quoteStatuses } from "../../shared/quote-requests";
 import {
+  deleteQuoteRequest,
   listQuoteRequests,
   submitQuoteRequest,
   updateQuoteRequest,
@@ -35,4 +36,14 @@ export const PATCH: APIRoute = ({ request }) =>
     return updateQuoteRequest(await context(true), c.id, c.payload);
   });
 
-export const ALL: APIRoute = () => methodNotAllowed(["GET", "POST", "PATCH"]);
+export const DELETE: APIRoute = ({ request }) =>
+  respond(async () => {
+    const c = z
+      .object({ id: z.string().min(1) })
+      .strict()
+      .parse(await readJson(request));
+    return deleteQuoteRequest(await context(true), c.id);
+  });
+
+export const ALL: APIRoute = () =>
+  methodNotAllowed(["GET", "POST", "PATCH", "DELETE"]);

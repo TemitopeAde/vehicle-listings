@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "../shared/client";
@@ -8,6 +8,7 @@ import {
   type InquiryFormValues,
 } from "../shared/inquiries";
 import { useI18n } from "../shared/i18n-react";
+import { readLoginEmail } from "../shared/wix-member";
 import type { Vehicle } from "../shared/schemas";
 import { Button } from "./ui/button";
 import { Alert } from "./ui/card";
@@ -24,6 +25,8 @@ export function VehicleInquiryForm({ vehicle }: { vehicle: Vehicle }) {
   const {
     register,
     handleSubmit,
+    getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<InquiryFormInput, unknown, InquiryFormValues>({
     resolver: zodResolver(inquiryForm),
@@ -40,6 +43,19 @@ export function VehicleInquiryForm({ vehicle }: { vehicle: Vehicle }) {
       consent: false,
     },
   });
+  useEffect(() => {
+    let active = true;
+    // Visitors who aren't logged in, or pages outside a live site, just keep an empty field.
+    readLoginEmail()
+      .then((email) => {
+        if (active && email && !getValues("email"))
+          setValue("email", email, { shouldValidate: true });
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [getValues, setValue]);
   async function submit(values: InquiryFormValues) {
     if (!key.current) key.current = crypto.randomUUID();
     setFormError("");

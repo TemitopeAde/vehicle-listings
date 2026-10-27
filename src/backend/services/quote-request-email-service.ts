@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { Context } from "../context";
 import { AppError } from "../errors";
 import {
+  advanceQuoteStatus,
   quotePaymentLabels,
   quoteRequestSchema,
   quoteRequesterName,
@@ -125,7 +126,7 @@ export async function replyToQuoteRequest(
   deps: InquiryEmailDependencies = emailDependencies,
 ) {
   const input = quoteReplyInput.parse(raw);
-  return deliverQuoteEmail(
+  const result = await deliverQuoteEmail(
     ctx,
     input.id,
     input.subject,
@@ -134,6 +135,28 @@ export async function replyToQuoteRequest(
     false,
     deps,
   );
+  // A reply with a saved price is the quote; any other reply means work has started.
+  try {
+    const latest = await deps.getRow(ctx, collection, input.id, true);
+    if (latest) {
+      const request = quoteRequestSchema.parse(latest);
+      const status = advanceQuoteStatus(
+        request.status,
+        request.quotedPrice == null ? "in-progress" : "quoted",
+      );
+      if (status !== request.status)
+        await deps.saveRow(
+          ctx,
+          collection,
+          { ...latest, status, updatedAt: new Date().toISOString() },
+          false,
+          true,
+        );
+    }
+  } catch {
+    console.error("Could not update quote request status after reply");
+  }
+  return result;
 }
 
 async function recordStatus(

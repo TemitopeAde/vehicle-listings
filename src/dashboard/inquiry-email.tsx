@@ -21,12 +21,15 @@ const formats = ["bold", "italic", "underline", "list", "bullet", "link"];
 export function InquiryEmail({
   inquiry,
   reload,
+  defaultOpen = false,
 }: {
   inquiry: Inquiry;
   reload: () => Promise<void>;
+  /** Opens with the composer showing, for the table's Email action. */
+  defaultOpen?: boolean;
 }) {
   const { t } = useI18n();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [retrying, setRetrying] = useState(false);
   async function retryConfirmation() {
     setRetrying(true);
@@ -106,10 +109,12 @@ export function EmailComposer({
   endpoint,
   recipient,
   defaultSubject,
+  onSent,
 }: {
   endpoint: "inquiry-emails" | "quote-request-emails";
   recipient: { id: string; name: string; email: string };
   defaultSubject: string;
+  onSent?: () => void;
 }) {
   const { t } = useI18n();
   // Branding is the same for every email, so it is always read from the inquiry endpoint.
@@ -186,6 +191,7 @@ export function EmailComposer({
       });
       setQueued(true);
       toast.success(t("Email queued with Wix"));
+      onSent?.();
     } catch (error) {
       toast.error(
         t(

@@ -9,18 +9,30 @@ import {
 
 const collection = "quote-requests";
 
-/** The Wix contact for a requester; Wix matches existing contacts by email and phone. */
-export function quoteContact(q: QuoteRequest) {
-  const address = {
+/** A Wix address; Wix only accepts ISO 3166 codes, so free-text values stay on the request only. */
+export function wixAddress(q: QuoteRequest) {
+  const country = /^[a-z]{2}$/i.test(q.country) ? q.country.toUpperCase() : "";
+  // The state picker stores bare codes ("LA"); Wix wants ISO 3166-2 ("NG-LA").
+  const state = q.subdivision.trim().toUpperCase();
+  const subdivision = !country
+    ? ""
+    : new RegExp(`^${country}-[A-Z0-9]{1,3}$`).test(state)
+      ? state
+      : /^[A-Z0-9]{1,3}$/.test(state)
+        ? `${country}-${state}`
+        : "";
+  return {
     ...(q.addressLine ? { addressLine1: q.addressLine } : {}),
     ...(q.city ? { city: q.city } : {}),
-    ...(q.subdivision ? { subdivision: q.subdivision } : {}),
+    ...(subdivision ? { subdivision } : {}),
     ...(q.postalCode ? { postalCode: q.postalCode } : {}),
-    // Wix stores countries as ISO 3166 alpha-2 codes; free-text names stay on the request only.
-    ...(/^[a-z]{2}$/i.test(q.country)
-      ? { country: q.country.toUpperCase() }
-      : {}),
+    ...(country ? { country } : {}),
   };
+}
+
+/** The Wix contact for a requester; Wix matches existing contacts by email and phone. */
+export function quoteContact(q: QuoteRequest) {
+  const address = wixAddress(q);
   return {
     name: { first: q.firstName, last: q.lastName },
     email: { email: q.email },
@@ -32,22 +44,79 @@ export function quoteContact(q: QuoteRequest) {
   };
 }
 
+type Contact = ReturnType<typeof quoteContact>;
+
+const isInvalidSubdivision = (error: unknown) =>
+  (
+    error as {
+      details?: {
+        validationError?: { fieldViolations?: { field?: string }[] };
+      };
+    }
+  ).details?.validationError?.fieldViolations?.some((v) =>
+    v.field?.endsWith(".subdivision"),
+  ) ?? false;
+
+function withoutSubdivision(contact: Contact): Contact {
+  if (!contact.addresses) return contact;
+  return {
+    ...contact,
+    addresses: contact.addresses.map(
+      ({ address: { subdivision, ...address }, ...rest }) => ({
+        ...rest,
+        address,
+      }),
+    ),
+  };
+}
+
 export type QuoteContactDependencies = {
   getRow: typeof getRow;
   saveRow: typeof saveRow;
-  upsert: (contact: ReturnType<typeof quoteContact>) => Promise<string>;
+  upsert: (contact: Contact) => Promise<string>;
 };
 const dependencies: QuoteContactDependencies = {
   getRow,
   saveRow,
   async upsert(contact) {
-    // APPEND fills only empty fields, so an anonymous form never overwrites an existing contact.
-    const response = await auth.elevate(contactsV5.upsertContact)(contact, {
-      upsertMode: "APPEND",
-    });
-    const id = response.contact?._id;
-    if (!id) throw new Error("Wix did not return a contact ID");
-    return id;
+    try {
+      // APPEND fills only empty fields, so an anonymous form never overwrites an existing contact.
+      const response = await auth
+        .elevate(contactsV5.upsertContact)(contact, { upsertMode: "APPEND" })
+        .catch((error) => {
+          // Some region codes from the location lookup aren't ISO 3166-2; keep the rest of the address.
+          if (!isInvalidSubdivision(error)) throw error;
+          return auth.elevate(contactsV5.upsertContact)(
+            withoutSubdivision(contact),
+            { upsertMode: "APPEND" },
+          );
+        });
+      const id = response.contact?._id;
+      if (!id) throw new Error("Wix did not return a contact ID");
+      return id;
+    } catch (error) {
+      // Apps can't change a site member's contact, but linking the existing one is all we need.
+      const applicationError = (
+        error as {
+          details?: {
+            applicationError?: { code?: string; data?: { contactId?: string } };
+          };
+        }
+      ).details?.applicationError;
+      if (
+        applicationError?.code !== "CANNOT_UPDATE_MEMBER" &&
+        applicationError?.code !== "UNAUTHORIZED_UPDATE_MEMBER"
+      )
+        throw error;
+      if (applicationError.data?.contactId)
+        return applicationError.data.contactId;
+      const matches = await auth.elevate(contactsV5.findMatchingContacts)({
+        email: contact.email.email,
+      });
+      const id = matches.contacts?.[0]?._id;
+      if (!id) throw error;
+      return id;
+    }
   },
 };
 
@@ -69,7 +138,7 @@ export async function syncQuoteContact(
   } catch (error) {
     console.error(
       "Could not add quote requester to Wix contacts",
-      error instanceof Error ? error.name : "unknown",
+      error instanceof Error ? `${error.name}: ${error.message}` : "unknown",
     );
     return "failed";
   }

@@ -47,6 +47,7 @@ export const cacheTtl = {
   listings: 2 * 60_000,
   vehicle: 5 * 60_000,
   dealers: 10 * 60_000,
+  places: 60 * 60_000,
 };
 const storefrontCache = createApiCache((route) => api(route));
 /** A GET through the storefront cache; errors are never cached, so a retry calls the API. */

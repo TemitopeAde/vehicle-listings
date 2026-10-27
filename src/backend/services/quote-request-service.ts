@@ -3,10 +3,19 @@ import {
   quoteRequestInput,
   quoteRequestPatch,
   quoteRequestSchema,
+  quoteStatuses,
+  advanceQuoteStatus,
+  legacyQuotedStatuses,
 } from "../../shared/quote-requests";
 import type { Context } from "../context";
 import { AppError } from "../errors";
-import { getRow, queryRows, saveRow } from "../repositories/repository";
+import {
+  countGroups,
+  getRow,
+  queryRows,
+  removeRow,
+  saveRow,
+} from "../repositories/repository";
 import { audit } from "./audit-service";
 import { getVehicle } from "./vehicle-service";
 import {
@@ -14,6 +23,9 @@ import {
   notifyQuoteOwner,
 } from "./quote-request-email-service";
 import { syncQuoteContact } from "./quote-request-contact-service";
+import { canInvoiceQuotes } from "../../shared/plans";
+import { currentPlanKey } from "./plan-service";
+import { invoicesDashboardUrl } from "./quote-request-invoice-service";
 
 const collection = "quote-requests";
 
@@ -88,17 +100,46 @@ export async function submitQuoteRequest(ctx: Context, raw: unknown) {
 }
 
 export async function listQuoteRequests(ctx: Context, status = "", cursor = 0) {
-  const r = await queryRows(ctx, collection, {
-    eq: status ? { status } : {},
-    offset: cursor,
-    limit: 50,
-    sort: "createdAt",
-    descending: true,
-  });
+  // Wix refuses aggregation to site collaborators, so the counts run elevated; the route
+  // requires a manager. Counts only decorate the pipeline, so a failure leaves them out.
+  const [r, groups, plan] = await Promise.all([
+    queryRows(ctx, collection, {
+      // Requests still stored as Won or Lost count as Quote sent.
+      ...(status === "quoted"
+        ? { notIn: { status: ["new", "in-progress"] } }
+        : { eq: status ? { status } : {} }),
+      offset: cursor,
+      limit: 50,
+      sort: "createdAt",
+      descending: true,
+    }),
+    countGroups(ctx, collection, ["status"], {}, true).catch(() => null),
+    // The invoice route checks the plan again; here it only decides how the button looks.
+    currentPlanKey(ctx).catch(() => "basic" as const),
+  ]);
   return {
     items: r.rows.map((row) => quoteRequestSchema.parse(row)),
     total: r.total,
+    counts: groups
+      ? Object.fromEntries(
+          quoteStatuses.map((s) => [
+            s,
+            groups
+              .filter((g) => {
+                const stored = g.values.status ?? "new";
+                return (
+                  (legacyQuotedStatuses.includes(stored as string)
+                    ? "quoted"
+                    : stored) === s
+                );
+              })
+              .reduce((sum, g) => sum + g.count, 0),
+          ]),
+        )
+      : null,
     nextCursor: cursor + 50 < r.total ? cursor + 50 : null,
+    invoicesUrl: invoicesDashboardUrl(ctx.siteId),
+    invoicesEnabled: canInvoiceQuotes(plan),
   };
 }
 
@@ -110,10 +151,29 @@ export async function updateQuoteRequest(
   const patch = quoteRequestPatch.parse(raw);
   const old = await getRow(ctx, collection, id);
   if (!old) throw new AppError("NOT_FOUND", "Quote request not found.", 404);
-  const updated = { ...old, ...patch, updatedAt: new Date().toISOString() };
+  // Saving notes or a price means the dealer has started working on the request.
+  const status = advanceQuoteStatus(
+    quoteRequestSchema.parse(old).status,
+    "in-progress",
+  );
+  const updated = {
+    ...old,
+    ...patch,
+    status,
+    updatedAt: new Date().toISOString(),
+  };
   await saveRow(ctx, collection, updated);
   await audit(ctx, "quote-request", id, "update");
   return quoteRequestSchema.parse(updated);
+}
+
+/** Removes a request for good. Its Wix contact and any draft invoice stay in Wix. */
+export async function deleteQuoteRequest(ctx: Context, id: string) {
+  if (!(await getRow(ctx, collection, id)))
+    throw new AppError("NOT_FOUND", "Quote request not found.", 404);
+  await removeRow(ctx, collection, id);
+  await audit(ctx, "quote-request", id, "delete");
+  return { _id: id };
 }
 
 /** Dashboard retry for automatic emails that failed when the request arrived. */
