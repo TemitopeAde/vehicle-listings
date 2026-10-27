@@ -89,6 +89,9 @@ export type MarketplaceProps = {
   filterVisibility?: FilterVisibility;
   /** Page holding the Vehicle Details widget; without it, details open inside this widget. */
   detailsPage?: string;
+  /** Editor element hooks, so a Harmony component can select and style the built-in heading. */
+  headingClassName?: string;
+  descriptionClassName?: string;
 };
 const badgeFor = (v: Vehicle) =>
   v.demo ? "Sample" : v.status === "published" ? v.condition : v.status;
@@ -121,6 +124,8 @@ function MarketplaceContent({
   pagination = "pages",
   filterVisibility = {},
   detailsPage,
+  headingClassName,
+  descriptionClassName,
 }: MarketplaceProps) {
   const { t, language, number } = useI18n();
   const toasterId = useId();
@@ -514,14 +519,20 @@ function MarketplaceContent({
             )}
             <h2
               data-sf="heading"
-              className="sf-title text-3xl font-semibold tracking-tight"
+              className={cn(
+                "sf-title text-3xl font-semibold tracking-tight",
+                headingClassName,
+              )}
             >
               {localizeDefault(language, title, "Find your next chapter.")}
             </h2>
             {description && (
               <p
                 data-sf="description"
-                className="sf-hide-sm leading-relaxed text-muted-foreground"
+                className={cn(
+                  "sf-hide-sm leading-relaxed text-muted-foreground",
+                  descriptionClassName,
+                )}
               >
                 {localizeDefault(
                   language,
@@ -532,220 +543,234 @@ function MarketplaceContent({
             )}
           </header>
           <div className="sf-shop">
-          <SearchFilters
-            availableMakes={availableMakes}
-            makesError={makesError}
-            visibility={filterVisibility}
-            search={search}
-            make={make}
-            minYear={minYear}
-            maxPrice={maxPrice}
-            fuel={fuel}
-            body={body}
-            setSearch={setSearch}
-            setMake={setMake}
-            setMinYear={setMinYear}
-            setMaxPrice={setMaxPrice}
-            setFuel={setFuel}
-            setBody={setBody}
-            extraFilters={extraFilters}
-            setExtraFilters={setExtraFilters}
-          />
-          <div className="min-w-0">
-          {loading && !vehicles && (
-            <VehicleGridSkeleton
-              count={Math.min(pageSize, 6)}
-              label={t("Loading showroom")}
-              style={gridStyle}
+            <SearchFilters
+              availableMakes={availableMakes}
+              makesError={makesError}
+              visibility={filterVisibility}
+              search={search}
+              make={make}
+              minYear={minYear}
+              maxPrice={maxPrice}
+              fuel={fuel}
+              body={body}
+              setSearch={setSearch}
+              setMake={setMake}
+              setMinYear={setMinYear}
+              setMaxPrice={setMaxPrice}
+              setFuel={setFuel}
+              setBody={setBody}
+              extraFilters={extraFilters}
+              setExtraFilters={setExtraFilters}
             />
-          )}
-          {(filterVisibility.sort !== false || (vehicles && total > 0)) && (
-            <div className="mb-4 flex min-h-8 flex-wrap items-end justify-between gap-3">
-              {vehicles && total > 0 ? (
-                <p
-                  {...elementStyle("results-count")}
-                  className="pb-2 text-sm text-muted-foreground"
-                  role="status"
-                  aria-live="polite"
-                >
-                  {pagination === "infinite"
-                    ? t("Showing {shown} of {total} vehicles", {
-                        shown: number(cards.length),
-                        total: number(total),
-                      })
-                    : t("Showing {start}–{end} of {total} vehicles", {
-                        start: number(cursor + 1),
-                        end: number(cursor + cards.length),
-                        total: number(total),
-                      })}
-                </p>
-              ) : (
-                <span />
+            <div className="min-w-0">
+              {loading && !vehicles && (
+                <VehicleGridSkeleton
+                  count={Math.min(pageSize, 6)}
+                  label={t("Loading showroom")}
+                  style={gridStyle}
+                />
               )}
-              <div className="ml-auto flex flex-wrap items-end gap-2">
-                {filterVisibility.sort !== false && (
-                  <Label className="w-44">
-                    <span {...elementStyle("filter-sort-label")}>{t("Sort")}</span>
-                    <NativeSelect
-                      {...elementStyle("filter-sort-input")}
-                      value={sort}
-                      onChange={(e) => setSort(e.target.value)}
+              {(filterVisibility.sort !== false || (vehicles && total > 0)) && (
+                <div className="mb-4 flex min-h-8 flex-wrap items-end justify-between gap-3">
+                  {vehicles && total > 0 ? (
+                    <p
+                      {...elementStyle("results-count")}
+                      className="pb-2 text-sm text-muted-foreground"
+                      role="status"
+                      aria-live="polite"
                     >
-                      <option value="recent">{t("Recently added")}</option>
-                      <option value="price-asc">{t("Price: low to high")}</option>
-                      <option value="price-desc">{t("Price: high to low")}</option>
-                      <option value="year-desc">{t("Model year")}</option>
-                    </NativeSelect>
-                  </Label>
-                )}
-                {/* Always reachable, even where the site layout stops the tray from pinning. */}
-                {comparison.length >= 2 && (
+                      {pagination === "infinite"
+                        ? t("Showing {shown} of {total} vehicles", {
+                            shown: number(cards.length),
+                            total: number(total),
+                          })
+                        : t("Showing {start}–{end} of {total} vehicles", {
+                            start: number(cursor + 1),
+                            end: number(cursor + cards.length),
+                            total: number(total),
+                          })}
+                    </p>
+                  ) : (
+                    <span />
+                  )}
+                  <div className="ml-auto flex flex-wrap items-end gap-2">
+                    {filterVisibility.sort !== false && (
+                      <Label className="w-44">
+                        <span {...elementStyle("filter-sort-label")}>
+                          {t("Sort")}
+                        </span>
+                        <NativeSelect
+                          {...elementStyle("filter-sort-input")}
+                          value={sort}
+                          onChange={(e) => setSort(e.target.value)}
+                        >
+                          <option value="recent">{t("Recently added")}</option>
+                          <option value="price-asc">
+                            {t("Price: low to high")}
+                          </option>
+                          <option value="price-desc">
+                            {t("Price: high to low")}
+                          </option>
+                          <option value="year-desc">{t("Model year")}</option>
+                        </NativeSelect>
+                      </Label>
+                    )}
+                    {/* Always reachable, even where the site layout stops the tray from pinning. */}
+                    {comparison.length >= 2 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="sf-hide-sm mb-0.5"
+                        {...elementStyle("compare-vehicles")}
+                        onClick={() => setComparing(true)}
+                      >
+                        {t("Compare {count} vehicles", {
+                          count: comparison.length,
+                        })}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+              {!designMode && vehicles?.samples && cards.length > 0 && (
+                <Alert className="mb-5">
+                  {t(
+                    "Sample listings for preview. Real inventory replaces them once the first vehicle is published.",
+                  )}
+                </Alert>
+              )}
+              {vehicles && !loading && !error && cards.length === 0 && (
+                <p
+                  {...elementStyle("empty-results")}
+                  className="py-12 text-center text-muted-foreground"
+                >
+                  {t("No matching vehicles. Try adjusting your filters.")}
+                </p>
+              )}
+              {vehicles && (
+                <div
+                  className={cn(
+                    "grid gap-5 transition-opacity",
+                    loading && "opacity-50",
+                  )}
+                  aria-busy={busy}
+                  style={gridStyle}
+                >
+                  {cards.map((v) => (
+                    <VehicleCard
+                      key={v._id}
+                      vehicle={v}
+                      badge={badgeFor(v)}
+                      onOpen={
+                        designMode ? undefined : () => void viewVehicle(v)
+                      }
+                      mediaAction={
+                        <Button
+                          {...elementStyle("save-vehicle")}
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "h-9 w-9 rounded-full bg-white/95 px-0 text-foreground shadow-sm hover:bg-white",
+                            saved.includes(v._id) && "text-primary",
+                          )}
+                          disabled={designMode || savedBusy}
+                          aria-busy={savedBusy}
+                          aria-pressed={saved.includes(v._id)}
+                          aria-label={t(
+                            saved.includes(v._id)
+                              ? "Remove {title}"
+                              : "Save {title}",
+                            { title: v.title },
+                          )}
+                          onClick={() => void save(v)}
+                        >
+                          <Heart
+                            className="h-5 w-5"
+                            fill={
+                              saved.includes(v._id) ? "currentColor" : "none"
+                            }
+                          />
+                        </Button>
+                      }
+                    >
+                      <Button
+                        disabled={designMode}
+                        className="w-full"
+                        {...elementStyle("view-vehicle")}
+                        onClick={() => void viewVehicle(v)}
+                      >
+                        {t("View vehicle")}
+                      </Button>
+                      <div className="flex items-center gap-2">
+                        <CompareToggle
+                          className="sf-hide-sm"
+                          vehicle={v}
+                          comparison={comparison}
+                          setComparison={setComparison}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="sf-hide-sm ml-auto h-10 w-10 px-0"
+                          disabled={designMode}
+                          aria-label={t("Quick view {title}", {
+                            title: v.title,
+                          })}
+                          title={t("Quick view")}
+                          onClick={(e) => {
+                            quickViewTrigger.current = e.currentTarget;
+                            setQuickView(v);
+                          }}
+                        >
+                          <Eye className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    </VehicleCard>
+                  ))}
+                </div>
+              )}
+              {error && (
+                <Alert
+                  variant="destructive"
+                  role="alert"
+                  className="mt-6 flex flex-wrap items-center justify-between gap-3"
+                >
+                  {t(error)}
                   <Button
                     variant="outline"
                     size="sm"
-                    className="sf-hide-sm mb-0.5"
-                    {...elementStyle("compare-vehicles")}
-                    onClick={() => setComparing(true)}
+                    {...elementStyle("retry")}
+                    onClick={() => setAttempt((n) => n + 1)}
                   >
-                    {t("Compare {count} vehicles", {
-                      count: comparison.length,
-                    })}
+                    {t("Try again")}
                   </Button>
-                )}
-              </div>
-            </div>
-          )}
-          {!designMode && vehicles?.samples && cards.length > 0 && (
-            <Alert className="mb-5">
-              {t(
-                "Sample listings for preview. Real inventory replaces them once the first vehicle is published.",
+                </Alert>
               )}
-            </Alert>
-          )}
-          {vehicles && !loading && !error && cards.length === 0 && (
-            <p
-              {...elementStyle("empty-results")}
-              className="py-12 text-center text-muted-foreground"
-            >
-              {t("No matching vehicles. Try adjusting your filters.")}
-            </p>
-          )}
-          {vehicles && (
-            <div
-              className={cn(
-                "grid gap-5 transition-opacity",
-                loading && "opacity-50",
-              )}
-              aria-busy={busy}
-              style={gridStyle}
-            >
-              {cards.map((v) => (
-                <VehicleCard
-                  key={v._id}
-                  vehicle={v}
-                  badge={badgeFor(v)}
-                  onOpen={designMode ? undefined : () => void viewVehicle(v)}
-                  mediaAction={
+              {pagination === "pages" ? (
+                <Pagination
+                  page={page}
+                  pages={pages}
+                  disabled={busy}
+                  onChange={goToPage}
+                />
+              ) : (
+                canLoadMore &&
+                !error && (
+                  <div ref={sentinelRef} className="mt-6 flex justify-center">
+                    {/* Fallback for keyboard users and browsers without IntersectionObserver. */}
                     <Button
-                      {...elementStyle("save-vehicle")}
-                      variant="ghost"
-                      size="sm"
-                      className={cn(
-                        "h-9 w-9 rounded-full bg-white/95 px-0 text-foreground shadow-sm hover:bg-white",
-                        saved.includes(v._id) && "text-primary",
-                      )}
-                      disabled={designMode || savedBusy}
-                      aria-busy={savedBusy}
-                      aria-pressed={saved.includes(v._id)}
-                      aria-label={t(
-                        saved.includes(v._id) ? "Remove {title}" : "Save {title}",
-                        { title: v.title },
-                      )}
-                      onClick={() => void save(v)}
+                      {...elementStyle("load-more")}
+                      variant="outline"
+                      disabled={showSpinner}
+                      pending={showSpinner}
+                      onClick={loadMore}
                     >
-                      <Heart
-                        className="h-5 w-5"
-                        fill={saved.includes(v._id) ? "currentColor" : "none"}
-                      />
-                    </Button>
-                  }
-                >
-                  <Button
-                    disabled={designMode}
-                    className="w-full"
-                    {...elementStyle("view-vehicle")}
-                    onClick={() => void viewVehicle(v)}
-                  >
-                    {t("View vehicle")}
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    <CompareToggle
-                      className="sf-hide-sm"
-                      vehicle={v}
-                      comparison={comparison}
-                      setComparison={setComparison}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="sf-hide-sm ml-auto h-10 w-10 px-0"
-                      disabled={designMode}
-                      aria-label={t("Quick view {title}", { title: v.title })}
-                      title={t("Quick view")}
-                      onClick={(e) => {
-                        quickViewTrigger.current = e.currentTarget;
-                        setQuickView(v);
-                      }}
-                    >
-                      <Eye className="h-5 w-5" />
+                      {t("Load more")}
                     </Button>
                   </div>
-                </VehicleCard>
-              ))}
+                )
+              )}
             </div>
-          )}
-          {error && (
-            <Alert
-              variant="destructive"
-              role="alert"
-              className="mt-6 flex flex-wrap items-center justify-between gap-3"
-            >
-              {t(error)}
-              <Button
-                variant="outline"
-                size="sm"
-                {...elementStyle("retry")}
-                onClick={() => setAttempt((n) => n + 1)}
-              >
-                {t("Try again")}
-              </Button>
-            </Alert>
-          )}
-          {pagination === "pages" ? (
-            <Pagination
-              page={page}
-              pages={pages}
-              disabled={busy}
-              onChange={goToPage}
-            />
-          ) : (
-            canLoadMore &&
-            !error && (
-              <div ref={sentinelRef} className="mt-6 flex justify-center">
-                {/* Fallback for keyboard users and browsers without IntersectionObserver. */}
-                <Button
-                  {...elementStyle("load-more")}
-                  variant="outline"
-                  disabled={showSpinner}
-                  pending={showSpinner}
-                  onClick={loadMore}
-                >
-                  {t("Load more")}
-                </Button>
-              </div>
-            )
-          )}
-          </div>
           </div>
           <VehicleQuickView
             vehicle={quickView}

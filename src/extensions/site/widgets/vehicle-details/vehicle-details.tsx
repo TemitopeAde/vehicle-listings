@@ -3,9 +3,12 @@ import { createRoot, type Root } from "react-dom/client";
 import { window as wixWindow } from "@wix/site-window";
 import { VehicleDetailsPage } from "../../../../storefront/vehicle-details-page";
 import { styleKeys } from "../../../../storefront/widget-style";
+import { widgetReader, type WidgetValues } from "../../../../shared/widget-settings";
+import { loadWidgetSettings } from "../../../../storefront/widget-settings-client";
 class VehicleDetails extends HTMLElement {
   private root: Root | null = null;
   private designMode = true;
+  private shared: WidgetValues = {};
   private slug: string | null = null;
   private onNavigate = () => this.render();
   static get observedAttributes() {
@@ -27,6 +30,8 @@ class VehicleDetails extends HTMLElement {
       this.slug = new URLSearchParams(window.location.search).get("slug") ?? "";
     }
     this.render();
+    this.shared = await loadWidgetSettings("details");
+    this.render();
   }
   disconnectedCallback() {
     window.removeEventListener("popstate", this.onNavigate);
@@ -37,8 +42,11 @@ class VehicleDetails extends HTMLElement {
     this.render();
   }
   render() {
-    const accent = this.getAttribute("accent") ?? "";
-    const radius = Number(this.getAttribute("radius") || NaN);
+    const read = widgetReader(this.shared, this.designMode, (name) =>
+      this.getAttribute(name),
+    );
+    const accent = read("accent") ?? "";
+    const radius = Number(read("radius") || NaN);
     this.root?.render(
       <VehicleDetailsPage
         slug={this.slug}
@@ -50,7 +58,7 @@ class VehicleDetails extends HTMLElement {
             : undefined
         }
         widgetStyle={Object.fromEntries(
-          styleKeys.map((key) => [key, this.getAttribute(key) ?? ""]),
+          styleKeys.map((key) => [key, read(key) ?? ""]),
         )}
       />,
     );

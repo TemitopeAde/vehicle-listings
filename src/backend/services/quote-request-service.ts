@@ -167,6 +167,12 @@ export async function updateQuoteRequest(
   return quoteRequestSchema.parse(updated);
 }
 
+export async function getQuoteRequest(ctx: Context, id: string) {
+  const row = await getRow(ctx, collection, id);
+  if (!row) throw new AppError("NOT_FOUND", "Quote request not found.", 404);
+  return quoteRequestSchema.parse(row);
+}
+
 /** Removes a request for good. Its Wix contact and any draft invoice stay in Wix. */
 export async function deleteQuoteRequest(ctx: Context, id: string) {
   if (!(await getRow(ctx, collection, id)))

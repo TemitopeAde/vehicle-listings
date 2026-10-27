@@ -27,6 +27,11 @@ import {
 import { filterSettings } from "../../../../storefront/filter-visibility";
 import { LocaleProvider, useI18n } from "../../../../shared/i18n-react";
 import { TrialFooter } from "../../trial-footer";
+import {
+  shareError,
+  shareSetting,
+  withSharedSettings,
+} from "../../widget-settings-panel";
 
 const textKeys = ["display-name", "description"];
 
@@ -55,10 +60,11 @@ function PanelContent() {
     )
       .then(async (values) => {
         if (!active) return;
-        const settings = {
+        const settings = await withSharedSettings("marketplace", {
           ...panelDefaults,
           ...Object.fromEntries(values.filter(([, value]) => value != null)),
-        };
+        });
+        if (!active) return;
         current.current = settings;
         setProps(settings);
         try {
@@ -94,6 +100,7 @@ function PanelContent() {
           await widget.setPreloadFonts(selectedFonts(settings));
         await widget.setProp(key, value);
         setError("");
+        shareSetting("marketplace", key, value, () => setError(shareError));
       } catch (error) {
         console.error(error);
         if (current.current[key] === value) {

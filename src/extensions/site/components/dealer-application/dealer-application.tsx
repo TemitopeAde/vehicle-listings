@@ -3,14 +3,22 @@ import type { FC } from "react";
 import ApplyPage from "../../../../dealers/apply-page";
 import type { DealerApplicationProps } from "./dealer-application.props";
 import styles from "./dealer-application.module.css";
+import { withWidgetValues } from "../../../../shared/widget-settings";
+import { useWidgetSettings } from "../../../../storefront/widget-settings-client";
 
-const DealerApplication: FC<DealerApplicationProps> = ({
-  id,
-  className,
-  direction,
-  title,
-  elementProps,
-}) => {
+const DealerApplication: FC<DealerApplicationProps> = (editorProps) => {
+  // Shared settings from the panels and Wix AI override the Editor props.
+  const {
+    id,
+    className,
+    direction,
+    title,
+    elementProps,
+  } = withWidgetValues(
+    "dealer-application",
+    editorProps,
+    useWidgetSettings("dealer-application"),
+  );
   return (
     <section
       id={id}

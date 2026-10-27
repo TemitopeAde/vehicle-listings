@@ -4,6 +4,7 @@ import { localizeDefault } from "../shared/i18n";
 import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
 import { defaultTheme, type Theme } from "../shared/schemas";
 import { demoVehicles } from "../shared/demo";
+import { ElementStyleContext } from "./element-style";
 import { VehicleDetail } from "./vehicle-detail";
 import { VehicleDetailSkeleton } from "./vehicle-detail-skeleton";
 import { ArrowLeft } from "lucide-react";
@@ -28,7 +29,10 @@ export type VehicleDetailsPageProps = {
 export function VehicleDetailsPage(props: VehicleDetailsPageProps) {
   return (
     <LocaleProvider>
-      <VehicleDetailsView {...props} />
+      {/* Per-element styles reach the details page too, as they do inside the marketplace. */}
+      <ElementStyleContext.Provider value={props.widgetStyle ?? {}}>
+        <VehicleDetailsView {...props} />
+      </ElementStyleContext.Provider>
     </LocaleProvider>
   );
 }

@@ -14,6 +14,7 @@ import {
   toggleSavedCar,
   watchSavedCars,
 } from "../shared/saved-cars";
+import { useElementStyle } from "./element-style";
 import { Button } from "./ui/button";
 import { cn } from "./ui/utils";
 
@@ -27,6 +28,7 @@ export function VehicleSave({
   disabled?: boolean;
 }) {
   const { t } = useI18n();
+  const elementStyle = useElementStyle();
   const [saved, setSaved] = useState(false),
     [loading, setLoading] = useState(false),
     [toggling, setToggling] = useState(false),
@@ -74,6 +76,7 @@ export function VehicleSave({
   return (
     <div className="grid justify-items-end gap-1">
       <Button
+        {...elementStyle("save-vehicle")}
         variant="outline"
         size="sm"
         className={cn(saved && "text-primary")}

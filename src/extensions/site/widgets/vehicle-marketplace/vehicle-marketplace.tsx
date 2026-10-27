@@ -8,9 +8,12 @@ import {
   readFilterVisibility,
 } from "../../../../storefront/filter-visibility";
 import { vehicleDetailsPath } from "../../../../shared/utils";
+import { widgetReader, type WidgetValues } from "../../../../shared/widget-settings";
+import { loadWidgetSettings } from "../../../../storefront/widget-settings-client";
 class VehicleMarketplace extends HTMLElement {
   private root: Root | null = null;
   private designMode = true;
+  private shared: WidgetValues = {};
   static get observedAttributes() {
     return [
       "display-name",
@@ -34,6 +37,8 @@ class VehicleMarketplace extends HTMLElement {
       this.designMode = true;
     }
     this.render();
+    this.shared = await loadWidgetSettings("marketplace");
+    this.render();
   }
   disconnectedCallback() {
     this.root?.unmount();
@@ -43,36 +48,39 @@ class VehicleMarketplace extends HTMLElement {
     this.render();
   }
   render() {
+    const read = widgetReader(this.shared, this.designMode, (name) =>
+      this.getAttribute(name),
+    );
     const number = (name: string, fallback: number, min: number, max: number) =>
       Math.max(
         min,
         Math.min(
           max,
-          this.getAttribute(name) === null ||
-            this.getAttribute(name) === "" ||
-            !Number.isFinite(Number(this.getAttribute(name)))
+          read(name) === null ||
+            read(name) === "" ||
+            !Number.isFinite(Number(read(name)))
             ? fallback
-            : Number(this.getAttribute(name)),
+            : Number(read(name)),
         ),
       );
-    const accent = this.getAttribute("accent") ?? "";
+    const accent = read("accent") ?? "";
     this.root?.render(
       <Marketplace
-        title={this.getAttribute("display-name") || "Find your next chapter."}
-        description={this.getAttribute("description") ?? undefined}
+        title={read("display-name") || "Find your next chapter."}
+        description={read("description") ?? undefined}
         widgetStyle={Object.fromEntries(
-          styleKeys.map((key) => [key, this.getAttribute(key) ?? ""]),
+          styleKeys.map((key) => [key, read(key) ?? ""]),
         )}
         designMode={this.designMode}
-        filterVisibility={readFilterVisibility((key) => this.getAttribute(key))}
+        filterVisibility={readFilterVisibility(read)}
         accent={/^#[a-f\d]{6}$/i.test(accent) ? accent : undefined}
         columns={number("columns", 3, 1, 4)}
         radius={number("radius", 12, 0, 32)}
         limit={number("item-limit", 12, 1, 100)}
-        layout={this.getAttribute("layout") === "list" ? "list" : "grid"}
-        featuredOnly={this.getAttribute("featured-only") === "true"}
+        layout={read("layout") === "list" ? "list" : "grid"}
+        featuredOnly={read("featured-only") === "true"}
         pagination={
-          this.getAttribute("pagination") === "infinite" ? "infinite" : "pages"
+          read("pagination") === "infinite" ? "infinite" : "pages"
         }
         detailsPage={vehicleDetailsPath}
       />,

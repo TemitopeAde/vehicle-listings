@@ -5,8 +5,16 @@ import { Marketplace } from "../../../../storefront/marketplace";
 import { vehicleDetailsPath } from "../../../../shared/utils";
 import type { VehicleInventoryProps } from "./vehicle-inventory.props";
 import styles from "./vehicle-inventory.module.css";
+import { withWidgetValues } from "../../../../shared/widget-settings";
+import { useWidgetSettings } from "../../../../storefront/widget-settings-client";
 import { widgetAppearance, inventoryFilterVisibility } from "../widget-props";
-export const VehicleInventory: FC<VehicleInventoryProps> = (props) => {
+export const VehicleInventory: FC<VehicleInventoryProps> = (editorProps) => {
+  // Shared settings from the panels and Wix AI override the Editor props.
+  const props = withWidgetValues(
+    "marketplace",
+    editorProps,
+    useWidgetSettings("marketplace"),
+  );
   const {
     id,
     className,
@@ -30,26 +38,6 @@ export const VehicleInventory: FC<VehicleInventoryProps> = (props) => {
         className,
       )}
     >
-      <h2
-        {...elementProps?.heading}
-        className={classNames(
-          "vehicle-inventory-heading",
-          styles.heading,
-          elementProps?.heading?.className,
-        )}
-      >
-        {title}
-      </h2>
-      <p
-        {...elementProps?.description}
-        className={classNames(
-          "vehicle-inventory-description",
-          styles.description,
-          elementProps?.description?.className,
-        )}
-      >
-        {description}
-      </p>
       <div
         {...elementProps?.inventory}
         className={classNames(
@@ -59,8 +47,18 @@ export const VehicleInventory: FC<VehicleInventoryProps> = (props) => {
         )}
       >
         <Marketplace
-          title="Available vehicles"
-          description=""
+          // The storefront draws the heading, like the classic widget; the Editor element
+          // classes go on it so the heading and description stay selectable.
+          title={title}
+          description={description}
+          headingClassName={classNames(
+            "vehicle-inventory-heading",
+            elementProps?.heading?.className,
+          )}
+          descriptionClassName={classNames(
+            "vehicle-inventory-description",
+            elementProps?.description?.className,
+          )}
           limit={itemLimit}
           featuredOnly={featuredOnly}
           pagination={pagination === "infinite" ? "infinite" : "pages"}

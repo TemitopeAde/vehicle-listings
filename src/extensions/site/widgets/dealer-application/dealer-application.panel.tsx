@@ -10,6 +10,11 @@ import {
 import '@wix/design-system/styles.global.css';
 import { LocaleProvider, useI18n } from '../../../../shared/i18n-react';
 import { TrialFooter } from '../../trial-footer';
+import {
+  shareError,
+  shareSetting,
+  withSharedSettings,
+} from '../../widget-settings-panel';
 
 const Panel: FC = () => (
   <LocaleProvider>
@@ -23,7 +28,12 @@ const PanelContent: FC = () => {
 
   useEffect(() => {
     widget.getProp('display-name')
-      .then(displayName => setDisplayName(displayName || "Apply to sell vehicles"))
+      .then(async (displayName) => {
+        const settings = await withSharedSettings('dealer-application', {
+          'display-name': displayName || "Apply to sell vehicles",
+        });
+        setDisplayName(settings['display-name']);
+      })
       .catch(error => console.error('Failed to fetch display-name:', error));
   }, [setDisplayName]);
 
@@ -31,6 +41,9 @@ const PanelContent: FC = () => {
     const newDisplayName = event.target.value;
     setDisplayName(newDisplayName);
     widget.setProp('display-name', newDisplayName);
+    shareSetting('dealer-application', 'display-name', newDisplayName, () =>
+      console.error(shareError),
+    );
   }, [setDisplayName]);
 
   return (

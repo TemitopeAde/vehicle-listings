@@ -12,6 +12,13 @@ export default {
       type: "OBJECT",
       objectOptions: { fields: [] },
     },
+    // Shared widget settings, one row per widget type (`widget-<type>`).
+    {
+      key: "values",
+      displayName: "values",
+      type: "OBJECT",
+      objectOptions: { fields: [] },
+    },
   ],
   dataPermissions: {
     itemRead: "CMS_EDITOR",

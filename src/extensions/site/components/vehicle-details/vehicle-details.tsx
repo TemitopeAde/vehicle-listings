@@ -4,8 +4,16 @@ import type { FC } from "react";
 import { VehicleDetailsPage } from "../../../../storefront/vehicle-details-page";
 import type { VehicleDetailsProps } from "./vehicle-details.props";
 import styles from "./vehicle-details.module.css";
+import { withWidgetValues } from "../../../../shared/widget-settings";
+import { useWidgetSettings } from "../../../../storefront/widget-settings-client";
 import { widgetAppearance } from "../widget-props";
-export const VehicleDetails: FC<VehicleDetailsProps> = (props) => {
+export const VehicleDetails: FC<VehicleDetailsProps> = (editorProps) => {
+  // Shared settings from the panels and Wix AI override the Editor props.
+  const props = withWidgetValues(
+    "details",
+    editorProps,
+    useWidgetSettings("details"),
+  );
   const { id, className, direction, backLabel, elementProps } = props;
   const designMode = useIsEditMode();
   const currentUrl = useCurrentUrl();
