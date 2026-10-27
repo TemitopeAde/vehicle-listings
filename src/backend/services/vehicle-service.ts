@@ -89,6 +89,7 @@ export async function listVehicles(
     eq: Record<string, unknown> = {},
     ge: Query["ge"] = {},
     le: Query["le"] = {},
+    ne: Record<string, unknown> = {},
     notIn: NonNullable<Query["notIn"]> = {};
   for (const key of [
     "status",
@@ -103,6 +104,8 @@ export async function listVehicles(
   ] as const)
     if (f[key]) eq[key] = f[key];
   if (ownInventory && ctx.dealer) eq.dealerId = ctx.dealer.id;
+  // Deleted vehicles stay restorable but only show under the Deleted filter.
+  if (!f.status) ne.status = "deleted";
   // Vehicles saved before categories existed have no `category` and count as cars.
   if (f.category === "car") notIn.category = ["lorry", "trailer"];
   else if (f.category) eq.category = f.category;
@@ -115,6 +118,7 @@ export async function listVehicles(
   if (f.maxMileage !== undefined) le.mileage = f.maxMileage;
   const query: Query = {
     eq,
+    ne,
     notIn,
     ge,
     le,
@@ -450,8 +454,15 @@ async function validatePublication(ctx: Context, v: Vehicle) {
       "PUBLISH_VALIDATION",
       "Add a photo, a description of at least 20 characters and a positive price before publishing.",
     );
-  const dealer = await getRow(ctx, "dealers", v.dealerId, !ctx.manager);
-  if (!dealer || dealerSchema.parse(dealer).approvalState !== "approved")
+  // Site owners may sell under their own name; an assigned dealership must still be approved.
+  const ownListing = ctx.manager && !v.dealerId;
+  const dealer = ownListing
+    ? null
+    : await getRow(ctx, "dealers", v.dealerId, !ctx.manager);
+  if (
+    !ownListing &&
+    (!dealer || dealerSchema.parse(dealer).approvalState !== "approved")
+  )
     throw new AppError(
       "SELLER_REQUIRED",
       "Assign an approved, real dealership before publishing.",

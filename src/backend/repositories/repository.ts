@@ -9,6 +9,8 @@ export type Query = {
   ne?: Record<string, unknown>;
   /** Field is missing or not any of the values. */
   notIn?: Record<string, string[]>;
+  /** Field is any of the values. */
+  in?: Record<string, string[]>;
   ge?: Record<string, number | string>;
   le?: Record<string, number | string>;
   search?: string;
@@ -181,7 +183,7 @@ export async function countGroups(
   ctx: Context,
   collection: string,
   fields: string[],
-  query: Pick<Query, "eq" | "ne" | "ge"> = {},
+  query: Pick<Query, "eq" | "ne" | "ge" | "in"> = {},
   elevated = false,
 ) {
   if (!ctx.manager && !elevated)
@@ -189,6 +191,8 @@ export async function countGroups(
   let filter = items.filter();
   for (const [key, value] of Object.entries(query.eq ?? {}))
     filter = filter.eq(key, value);
+  for (const [key, values] of Object.entries(query.in ?? {}))
+    filter = filter.hasSome(key, values);
   for (const [key, value] of Object.entries(query.ne ?? {}))
     filter = filter.ne(key, value);
   for (const [key, value] of Object.entries(query.ge ?? {}))

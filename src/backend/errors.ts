@@ -34,6 +34,17 @@ export function methodNotAllowed(methods: string[]) {
     },
   );
 }
+/** Wix SDK errors carry the real reason in `details.applicationError`. */
+function describeError(error: unknown) {
+  if (!(error instanceof Error)) return { name: "unknown", message: String(error) };
+  const details = (error as { details?: { applicationError?: unknown } })
+    .details;
+  return {
+    name: error.name,
+    message: error.message,
+    applicationError: details?.applicationError,
+  };
+}
 export async function respond(run: () => Promise<unknown>, status = 200) {
   try {
     return Response.json(
@@ -58,10 +69,8 @@ export async function respond(run: () => Promise<unknown>, status = 200) {
         { success: false, error: { code: error.code, message: error.message } },
         { status: error.status, headers: { "Cache-Control": "no-store" } },
       );
-    console.error(
-      "Car listing request failed",
-      error instanceof Error ? `${error.name}: ${error.message}` : "unknown",
-    );
+    const cause = describeError(error);
+    console.error("Car listing request failed", JSON.stringify(cause));
     return Response.json(
       {
         success: false,
@@ -69,6 +78,7 @@ export async function respond(run: () => Promise<unknown>, status = 200) {
           code: "REQUEST_FAILED",
           message:
             "The request failed. Check Wix collection permissions and try again.",
+          cause,
         },
       },
       { status: 500, headers: { "Cache-Control": "no-store" } },
