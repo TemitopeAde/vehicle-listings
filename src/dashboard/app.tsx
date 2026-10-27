@@ -30,6 +30,7 @@ const Dealers = lazy(() =>
 const Inquiries = lazy(() =>
   import("./inquiries").then((m) => ({ default: m.Inquiries })),
 );
+import { ReviewPrompt } from "./review-prompt";
 const QuoteRequests = lazy(() =>
   import("./quote-requests").then((m) => ({ default: m.QuoteRequests })),
 );
@@ -140,6 +141,7 @@ function Dashboard() {
   return (
     <div className="min-h-screen flex" {...localeProps(language)}>
       <Toaster richColors position="bottom-right" />
+      <ReviewPrompt />
       <aside
         className={cn(
           "fixed inset-y-0 start-0 z-30 w-60 overflow-hidden bg-[#fbfcfa] border-e flex flex-col md:translate-x-0",
@@ -265,7 +267,9 @@ function Dashboard() {
                   {t("DEALER WORKSPACE")}
                 </p>
                 <h1 className="text-3xl font-semibold tracking-tight">
-                  {page === "Overview" ? t("Welcome to your showroom") : t(page)}
+                  {page === "Overview"
+                    ? t("Welcome to your showroom")
+                    : t(page)}
                 </h1>
                 <p className="hint mt-2">{t(descriptions[page] ?? "")}</p>
               </div>
