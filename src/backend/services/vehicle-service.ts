@@ -450,8 +450,15 @@ async function validatePublication(ctx: Context, v: Vehicle) {
       "PUBLISH_VALIDATION",
       "Add a photo, a description of at least 20 characters and a positive price before publishing.",
     );
-  const dealer = await getRow(ctx, "dealers", v.dealerId, !ctx.manager);
-  if (!dealer || dealerSchema.parse(dealer).approvalState !== "approved")
+  // Site owners may sell under their own name; an assigned dealership must still be approved.
+  const ownListing = ctx.manager && !v.dealerId;
+  const dealer = ownListing
+    ? null
+    : await getRow(ctx, "dealers", v.dealerId, !ctx.manager);
+  if (
+    !ownListing &&
+    (!dealer || dealerSchema.parse(dealer).approvalState !== "approved")
+  )
     throw new AppError(
       "SELLER_REQUIRED",
       "Assign an approved, real dealership before publishing.",
