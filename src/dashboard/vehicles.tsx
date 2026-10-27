@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   List,
   Archive,
+  Trash2,
 } from "lucide-react";
 import { useResource } from "./hooks";
 import { Button, cn } from "./components/ui/button";
@@ -30,6 +31,23 @@ import { categoryLabels, vehicleCategories } from "../shared/vehicle-options";
 import { statusLabel } from "../shared/i18n";
 import { useI18n } from "../shared/i18n-react";
 import type { Vehicle } from "../shared/schemas";
+/** Each vehicle costs several Wix calls; small batches stay under the production subrequest limit. */
+const bulkBatchSize = 8;
+type Confirm = { status: "published" | "archived" | "deleted"; ids: string[] };
+const confirmCopy: Record<Confirm["status"], { title: string; body: string }> = {
+  published: {
+    title: "Publish {count} vehicles?",
+    body: "Published listings are visible to visitors. Each vehicle must have a photo, description and approved dealership.",
+  },
+  archived: {
+    title: "Archive {count} vehicles?",
+    body: "Archived listings will be hidden from your storefront. You can restore them as drafts.",
+  },
+  deleted: {
+    title: "Delete {count} vehicles?",
+    body: "Deleted vehicles are removed from your storefront and inventory. You can still find them under the Deleted filter and restore them as drafts.",
+  },
+};
 export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
   const { t, money, number } = useI18n();
   const [search, setSearch] = useState(""),
@@ -39,7 +57,7 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
     [cursor, setCursor] = useState(0),
     [grid, setGrid] = useState(false),
     [selected, setSelected] = useState<string[]>([]),
-    [confirm, setConfirm] = useState(""),
+    [confirm, setConfirm] = useState<Confirm | null>(null),
     [busy, setBusy] = useState(false);
   const resource = useResource<{
     items: Vehicle[];
@@ -64,13 +82,21 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
     }
   }
   async function bulk() {
+    if (!confirm) return;
     setBusy(true);
     try {
-      const r = await api<{ results: { success: boolean; error?: string }[] }>(
-        "vehicles",
-        { action: "bulk", ids: selected, status: confirm },
-      );
-      const failed = r.results.filter((r) => !r.success);
+      const results: { success: boolean; error?: string }[] = [];
+      for (let i = 0; i < confirm.ids.length; i += bulkBatchSize) {
+        const r = await api<{
+          results: { success: boolean; error?: string }[];
+        }>("vehicles", {
+          action: "bulk",
+          ids: confirm.ids.slice(i, i + bulkBatchSize),
+          status: confirm.status,
+        });
+        results.push(...r.results);
+      }
+      const failed = results.filter((r) => !r.success);
       if (failed.length)
         toast.error(
           t("{count} could not be updated: {error}", {
@@ -78,12 +104,12 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
             error: t(failed[0]?.error ?? ""),
           }),
         );
+      else if (confirm.status === "deleted")
+        toast.success(t("{count} vehicles deleted", { count: results.length }));
       else
-        toast.success(
-          t("{count} vehicles updated", { count: selected.length }),
-        );
-      setSelected([]);
-      setConfirm("");
+        toast.success(t("{count} vehicles updated", { count: results.length }));
+      setSelected((s) => s.filter((id) => !confirm.ids.includes(id)));
+      setConfirm(null);
       await resource.reload();
     } catch (e) {
       toast.error(t((e as Error).message));
@@ -246,17 +272,26 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setConfirm("published")}
+              onClick={() => setConfirm({ status: "published", ids: selected })}
             >
               {t("Publish")}
             </Button>
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setConfirm("archived")}
+              onClick={() => setConfirm({ status: "archived", ids: selected })}
             >
               <Archive size={14} />
               {t("Archive")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-red-700"
+              onClick={() => setConfirm({ status: "deleted", ids: selected })}
+            >
+              <Trash2 size={14} />
+              {t("Delete")}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setSelected([])}>
               {t("Clear")}
@@ -421,6 +456,19 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
                           >
                             <Copy size={15} />
                           </Button>
+                          {v.status !== "deleted" && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-red-700"
+                              aria-label={t("Delete {title}", { title: v.title })}
+                              onClick={() =>
+                                setConfirm({ status: "deleted", ids: [v._id] })
+                              }
+                            >
+                              <Trash2 size={15} />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -468,33 +516,37 @@ export function Vehicles({ edit }: { edit: (v: Vehicle | null) => void }) {
       <Dialog
         open={!!confirm}
         onOpenChange={(open) => {
-          if (!open) setConfirm("");
+          if (!open && !busy) setConfirm(null);
         }}
       >
         <DialogContent>
-          <DialogTitle className="section-heading">
-            {t(
-              confirm === "published"
-                ? "Publish {count} vehicles?"
-                : "Archive {count} vehicles?",
-              { count: selected.length },
-            )}
-          </DialogTitle>
-          <DialogDescription className="hint mt-2 mb-6">
-            {confirm === "published"
-              ? t(
-                  "Published listings are visible to visitors. Each vehicle must have a photo, description and approved dealership.",
-                )
-              : t(
-                  "Archived listings will be hidden from your storefront. You can restore them as drafts.",
-                )}
-          </DialogDescription>
+          {confirm && (
+            <>
+              <DialogTitle className="section-heading">
+                {t(confirmCopy[confirm.status].title, {
+                  count: confirm.ids.length,
+                })}
+              </DialogTitle>
+              <DialogDescription className="hint mt-2 mb-6">
+                {t(confirmCopy[confirm.status].body)}
+              </DialogDescription>
+            </>
+          )}
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setConfirm("")}>
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setConfirm(null)}
+            >
               {t("Cancel")}
             </Button>
-            <Button onClick={() => void bulk()} disabled={busy} pending={busy}>
-              {t("Confirm")}
+            <Button
+              variant={confirm?.status === "deleted" ? "destructive" : undefined}
+              onClick={() => void bulk()}
+              disabled={busy}
+              pending={busy}
+            >
+              {t(confirm?.status === "deleted" ? "Delete" : "Confirm")}
             </Button>
           </div>
         </DialogContent>

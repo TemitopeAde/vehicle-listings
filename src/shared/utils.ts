@@ -38,9 +38,9 @@ export function payment(
 }
 export const transitions: Record<Vehicle["status"], Vehicle["status"][]> = {
   draft: ["published", "archived", "deleted"],
-  published: ["draft", "reserved", "sold", "archived"],
-  reserved: ["published", "sold", "archived"],
-  sold: ["published", "archived"],
+  published: ["draft", "reserved", "sold", "archived", "deleted"],
+  reserved: ["published", "sold", "archived", "deleted"],
+  sold: ["published", "archived", "deleted"],
   archived: ["draft", "deleted"],
   deleted: ["draft"],
 };
