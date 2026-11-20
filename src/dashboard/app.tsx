@@ -14,6 +14,7 @@ import {
   ArrowUpRight,
   Menu,
   X,
+  BookOpen,
 } from "lucide-react";
 const Overview = lazy(() =>
   import("./overview").then((m) => ({ default: m.Overview })),
@@ -40,6 +41,9 @@ const Analytics = lazy(() =>
 const Imports = lazy(() =>
   import("./imports").then((m) => ({ default: m.Imports })),
 );
+const SetupGuide = lazy(() =>
+  import("./setup-guide").then((m) => ({ default: m.SetupGuide })),
+);
 const Settings = lazy(() =>
   import("./settings").then((m) => ({ default: m.Settings })),
 );
@@ -55,6 +59,7 @@ import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
 import "./styles.css";
 const navigation = [
   { label: "Overview", icon: LayoutDashboard },
+  { label: "Setup guide", icon: BookOpen },
   { label: "Vehicles", icon: CarFront },
   { label: "Dealers", icon: Building2 },
   { label: "Inquiries", icon: MessageSquare },
@@ -66,6 +71,7 @@ const navigation = [
 ];
 const descriptions: Record<string, string> = {
   Overview: "A little perspective on your dealership.",
+  "Setup guide": "Put your inventory on your site in a few steps.",
   Vehicles: "Every car. Every detail. One place.",
   Dealers: "Build a trusted network of sellers.",
   Inquiries: "From interest to a new set of keys.",
@@ -300,6 +306,8 @@ function Dashboard() {
               />
             ) : page === "Overview" ? (
               <Overview navigate={navigate} edit={edit} />
+            ) : page === "Setup guide" ? (
+              <SetupGuide navigate={navigate} />
             ) : page === "Vehicles" ? (
               <Vehicles edit={edit} />
             ) : page === "Dealers" ? (
