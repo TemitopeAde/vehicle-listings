@@ -93,6 +93,29 @@ function VehicleDetailsView({
       active = false;
     };
   }, [designMode]);
+  // Outside the editor (the editor's Preview mode, or the page opened directly), a page with no
+  // `?slug=` shows the first vehicle instead of an empty state. `undefined` while it loads, `""`
+  // when there is no vehicle to show.
+  const [firstSlug, setFirstSlug] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    if (designMode || slug !== "") return;
+    let active = true;
+    cachedApi<{ items: Vehicle[] }>(
+      "vehicles?public=1&sort=recent&limit=1",
+      cacheTtl.listings,
+    )
+      .then(({ items }) => {
+        if (active) setFirstSlug(items[0]?.slug ?? "");
+      })
+      .catch((error) => {
+        console.error("Could not load the first vehicle", error);
+        if (active) setFirstSlug("");
+      });
+    return () => {
+      active = false;
+    };
+  }, [designMode, slug]);
+  const shownSlug = slug || firstSlug;
   const previewVehicle =
     previewVehicles?.find((v) => v._id === previewId) ??
     previewVehicles?.[0] ??
@@ -192,9 +215,9 @@ function VehicleDetailsView({
         ) : (
           <VehicleDetailSkeleton />
         )
-      ) : slug === null ? (
+      ) : slug === null || shownSlug === undefined ? (
         <VehicleDetailSkeleton />
-      ) : slug ? (
+      ) : shownSlug ? (
         <>
           <Button
             variant="outline"
@@ -206,7 +229,8 @@ function VehicleDetailsView({
             <ArrowLeft aria-hidden="true" className="size-5" />
           </Button>
           <VehicleDetail
-            slug={slug}
+            key={shownSlug}
+            slug={shownSlug}
             consent={false}
             inquiryFieldLabels={inquiryFieldLabels}
             quoteFieldLabels={quoteFieldLabels}
