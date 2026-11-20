@@ -410,7 +410,7 @@ function MarketplaceContent({
     }
   }
   async function viewVehicle(v: Vehicle) {
-    if (!detailsPage) {
+    if (designMode || !detailsPage) {
       open(v.slug);
       return;
     }
@@ -478,7 +478,8 @@ function MarketplaceContent({
           )}
         </Alert>
       )}
-      {detail && !designMode ? (
+      {detail &&
+      (!designMode || vehicles?.items.some((v) => v.slug === detail)) ? (
         <>
           <Button
             {...elementStyle("back-to-inventory")}
@@ -493,10 +494,15 @@ function MarketplaceContent({
           <VehicleDetail
             slug={detail}
             initialVehicle={
-              initialVehicle?.slug === detail ? initialVehicle : undefined
+              designMode
+                ? vehicles?.items.find((v) => v.slug === detail)
+                : initialVehicle?.slug === detail
+                  ? initialVehicle
+                  : undefined
             }
             consent={false}
             onRelated={open}
+            preview={designMode}
           />
         </>
       ) : comparing && comparison.length > 0 ? (
@@ -694,7 +700,7 @@ function MarketplaceContent({
                       }
                     >
                       <Button
-                        disabled={designMode}
+                        disabled={designMode && !v.demo}
                         className="w-full"
                         {...elementStyle("view-vehicle")}
                         onClick={() => void viewVehicle(v)}
