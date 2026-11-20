@@ -1,6 +1,7 @@
 import { httpClient } from "@wix/essentials";
 import { readResult } from "./api-response";
 import { createApiCache } from "./api-cache";
+import { samplePhotos } from "./sample-photos";
 export { readResult } from "./api-response";
 export const apiOrigin = new URL(import.meta.url).origin;
 export function apiUrl(route: string) {
@@ -12,9 +13,28 @@ export function apiUrl(route: string) {
  */
 export function assetUrl(url: string) {
   // During server rendering the module URL is `file://` and its origin is "null".
-  return url.startsWith("/") && apiOrigin.startsWith("http")
-    ? new URL(url, apiOrigin).href
-    : url;
+  if (!url.startsWith("/") || !apiOrigin.startsWith("http")) return url;
+  const origin = new URL(apiOrigin);
+  // Wix's HTTPS development site can't load app-bundled images from the local
+  // HTTP dev server. Use the already credited Commons source for sample photos
+  // in that case; deployed apps continue to serve their bundled assets.
+  if (
+    ["localhost", "127.0.0.1", "::1"].includes(origin.hostname) &&
+    /^\/media\/samples\/[a-z0-9-]+\.jpg$/.test(url)
+  ) {
+    const file = url.split("/").at(-1)?.replace(/\.jpg$/, "");
+    const photo = Object.values(samplePhotos).find((item) => item.file === file);
+    if (photo?.creditUrl) {
+      const path = new URL(photo.creditUrl).pathname;
+      const title = path.startsWith("/wiki/File:")
+        ? decodeURIComponent(path.slice("/wiki/File:".length))
+        : "";
+      if (title) {
+        return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(title)}`;
+      }
+    }
+  }
+  return new URL(url, origin).href;
 }
 export function apiInit(
   body: unknown,

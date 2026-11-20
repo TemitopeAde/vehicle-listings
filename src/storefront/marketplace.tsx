@@ -398,7 +398,7 @@ function MarketplaceContent({
     }
   }
   async function viewVehicle(v: Vehicle) {
-    if (designMode || !detailsPage) {
+    if (!detailsPage) {
       open(v.slug);
       return;
     }
@@ -690,7 +690,6 @@ function MarketplaceContent({
                       }
                     >
                       <Button
-                        disabled={designMode && !v.demo}
                         className="w-full"
                         {...elementStyle("view-vehicle")}
                         onClick={() => void viewVehicle(v)}

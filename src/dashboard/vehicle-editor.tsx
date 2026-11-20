@@ -259,13 +259,26 @@ export function VehicleEditor({
             ]),
           ),
         )
-      : createTestVehicle({
-          dealerId: lockedDealer?._id ?? "",
-          location: lockedDealer?.location ?? "",
-          currency: "USD",
+      : {
+          title: "",
+          make: "",
+          model: "",
+          currency: "" as FormInput["currency"],
+          condition: "" as FormInput["condition"],
+          mileageUnit: "" as FormInput["mileageUnit"],
+          category: "" as FormInput["category"],
+          bodyStyle: "" as FormInput["bodyStyle"],
+          transmission: "" as FormInput["transmission"],
+          fuel: "" as FormInput["fuel"],
+          doors: Number.NaN,
+          seats: Number.NaN,
+          features: [],
           media: [],
           videos: [],
-        }),
+          description: "",
+          dealerId: lockedDealer?._id ?? "",
+          location: lockedDealer?.location ?? "",
+        },
   );
   const form = useForm<FormInput, unknown, VehicleInput>({
     resolver: zodResolver(vehicleInput),

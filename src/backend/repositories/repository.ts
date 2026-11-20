@@ -38,17 +38,23 @@ function removeRetiredSampleDealers() {
   );
 }
 function vehicleVisibility(query: Query) {
-  if (query.publicOnly)
+  if (query.publicOnly) {
+    const saleStatus = items
+      .filter()
+      .eq("status", "published")
+      .or(items.filter().eq("status", "reserved"))
+      .or(items.filter().eq("status", "sold"));
     return items
       .filter()
       .eq("demo", false)
-      .hasSome("status", ["published", "reserved", "sold"])
+      .and(saleStatus)
       .and(
         items
           .filter()
           .isEmpty("expiresAt")
           .or(items.filter().gt("expiresAt", new Date().toISOString())),
       );
+  }
   return items.filter().eq("demo", true).ne("status", "deleted");
 }
 

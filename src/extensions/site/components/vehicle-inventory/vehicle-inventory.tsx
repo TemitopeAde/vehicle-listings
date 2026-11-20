@@ -69,7 +69,7 @@ export const VehicleInventory: FC<VehicleInventoryProps> = (editorProps) => {
           widgetStyle={widgetAppearance(props)}
           filterVisibility={inventoryFilterVisibility(props)}
           designMode={designMode}
-          detailsPage={`${vehicleDetailsPath}-page`}
+          detailsPage={vehicleDetailsPath}
         />
       </div>
     </section>
