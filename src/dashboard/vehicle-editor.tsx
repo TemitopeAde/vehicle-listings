@@ -211,25 +211,6 @@ export function VehicleEditor({
     [confirm, setConfirm] = useState(""),
     [leaveTarget, setLeaveTarget] = useState<string | undefined>();
   const createKey = useRef("");
-  const testDataButton = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    const button = testDataButton.current;
-    const bounds = button?.getBoundingClientRect();
-    console.info("[Vehicle test data] Editor state (debug v3)", {
-      development: import.meta.env.DEV,
-      editingExistingVehicle: Boolean(vehicle),
-      hasSavedVehicle: Boolean(saved),
-      buttonExpected: !saved,
-      buttonMounted: Boolean(button),
-      buttonDisabled: button?.disabled,
-      buttonDisplay: button ? window.getComputedStyle(button).display : null,
-      buttonVisibility: button ? window.getComputedStyle(button).visibility : null,
-      buttonBounds: bounds?.toJSON(),
-      viewport: { width: window.innerWidth, height: window.innerHeight },
-      submitDisabled,
-      dealerLocked: Boolean(lockedDealer),
-    });
-  }, [vehicle, saved, submitDisabled, lockedDealer]);
   const dealerList = useResource<{ items: Dealer[] }>(
     lockedDealer || submitDisabled ? null : "dealers",
     client,
@@ -357,7 +338,6 @@ export function VehicleEditor({
     if (steps.length) setSection(Math.min(...steps));
   }
   function fillTestData() {
-    console.info("[Vehicle test data] Fill button clicked");
     try {
       const current = form.getValues();
       const sample = createTestVehicle({
@@ -372,16 +352,9 @@ export function VehicleEditor({
       locationAuto.current = { last: sample.location, stop: false };
       form.reset(sample, { keepDefaultValues: true });
       setSection(0);
-      console.info("[Vehicle test data] Form filled", {
-        titleMatches: form.getValues("title") === sample.title,
-        category: form.getValues("category"),
-        photoCount: form.getValues("media")?.length ?? 0,
-        dealerSelected: Boolean(form.getValues("dealerId")),
-      });
       toast.success(t("Test data filled. Review before saving or publishing."));
-    } catch (error) {
-      console.error("[Vehicle test data] Failed to fill form", error);
-      toast.error(t("Could not fill test data. Check the browser console."));
+    } catch {
+      toast.error(t("Could not fill test data."));
     }
   }
   async function stepReady(step: number) {
@@ -430,12 +403,6 @@ export function VehicleEditor({
     setBusy(true);
     try {
       const isNewVehicle = !saved;
-      console.info("[Vehicle inventory] Saving listing", {
-        mode: isNewVehicle ? "create" : "update",
-        title: input.title,
-        dealerId: input.dealerId,
-        publish,
-      });
       if (!createKey.current) createKey.current = crypto.randomUUID();
       let result = await client<Vehicle>(
         "vehicles",
@@ -474,23 +441,11 @@ export function VehicleEditor({
       toast.success(
         publish ? t("Vehicle published") : t("Vehicle saved"),
       );
-      console.info("[Vehicle inventory] Listing saved", {
-        id: result._id,
-        title: result.title,
-        dealerId: result.dealerId,
-        status: result.status,
-        demo: result.demo,
-      });
       setConfirm("");
       if (isNewVehicle) {
-        console.info("[Vehicle inventory] Returning to inventory after create", {
-          hasOnBack: Boolean(onBack),
-          id: result._id,
-        });
         onBack?.();
       }
     } catch (e) {
-      console.error("[Vehicle inventory] Listing save failed", e);
       toast.error(t((e as Error).message));
     } finally {
       setBusy(false);
@@ -530,7 +485,6 @@ export function VehicleEditor({
         <div className="flex gap-2 items-center">
           {!saved && (
             <Button
-              ref={testDataButton}
               type="button"
               variant="outline"
               onClick={fillTestData}

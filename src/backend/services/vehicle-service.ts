@@ -135,15 +135,6 @@ export async function listVehicles(
     descending: f.sort !== "price-asc",
     publicOnly,
   };
-  if (!publicOnly) {
-    console.info("[Vehicle inventory query] Dealer inventory request", {
-      manager: ctx.manager,
-      dealerId: ctx.dealer?.id ?? null,
-      ownInventory,
-      filters: f,
-      query: { eq, ne, limit: query.limit, offset: query.offset },
-    });
-  }
   let result = await queryRows(
     ctx,
     "vehicles",
@@ -180,20 +171,6 @@ export async function listVehicles(
   const total = publicOnly
     ? result.total
     : await countRows(ctx, "vehicles", query, publicOnly || ownInventory);
-  if (!publicOnly) {
-    console.info("[Vehicle inventory query] Dealer inventory response", {
-      total,
-      count: items.length,
-      demoCount: items.filter((item) => item.demo).length,
-      items: items.map(({ _id, title, dealerId, status, demo }) => ({
-        id: _id,
-        title,
-        dealerId,
-        status,
-        demo,
-      })),
-    });
-  }
   return {
     items,
     total,

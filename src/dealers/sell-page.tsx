@@ -161,16 +161,6 @@ function SellPageInner({
         if (next?.approvalState === "approved")
           return api<{ items: Vehicle[]; stats: Stats }>("vehicles?limit=50").then((page) => {
             if (!active) return;
-            console.info("[Vehicle inventory] Initial inventory loaded", {
-              count: page.items.length,
-              items: page.items.map(({ _id, title, dealerId, status, demo }) => ({
-                id: _id,
-                title,
-                dealerId,
-                status,
-                demo,
-              })),
-            });
             setVehicles(page.items);
             setStats(page.stats);
           });
@@ -212,23 +202,6 @@ function SellPageInner({
 
   const approved = session?.approvalState === "approved";
   const checking = (email === null && !sessionError) || (signedIn && loading);
-  useEffect(() => {
-    console.info("[Vehicle test data] Add Vehicle page state (debug v3)", {
-      signedIn,
-      checking,
-      loading,
-      hasSession: Boolean(session),
-      approvalState: session?.approvalState ?? null,
-      editorExpected: Boolean(
-        (approved && editing !== undefined) ||
-        (session?.approvalState === "pending" && !loading) ||
-        (signedIn && !checking && !session && !error),
-      ),
-      view: editing === undefined ? "inventory" : editing === null ? "new vehicle" : "existing vehicle",
-      hasSessionError: Boolean(sessionError),
-      hasError: Boolean(error),
-    });
-  }, [signedIn, checking, loading, session, approved, editing, sessionError, error]);
   // In the editor, a signed-in dealer sees their real dealership; anyone else sees the sample one.
   if (designMode && !checking && !session)
     return (
@@ -351,25 +324,13 @@ function SellPageInner({
             vehicle={editing}
             uploadDependencies={dealerMediaUpload}
             onBack={() => {
-              console.info("[Vehicle inventory] Editor returned; refreshing inventory");
               setEditing(undefined);
               void api<{ items: Vehicle[]; stats: Stats }>("vehicles?limit=50").then(
                 (page) => {
-                  console.info("[Vehicle inventory] Inventory refresh succeeded", {
-                    count: page.items.length,
-                    items: page.items.map(({ _id, title, dealerId, status, demo }) => ({
-                      id: _id,
-                      title,
-                      dealerId,
-                      status,
-                      demo,
-                    })),
-                  });
                   setVehicles(page.items);
                   setStats(page.stats);
                 },
               ).catch((reason) => {
-                console.error("[Vehicle inventory] Inventory refresh failed", reason);
                 setError(reason instanceof Error ? reason.message : String(reason));
               });
             }}
