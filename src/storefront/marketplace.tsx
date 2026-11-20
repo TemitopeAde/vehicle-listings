@@ -54,6 +54,16 @@ type ListingPage = {
   nextCursor: number | null;
   samples?: boolean;
 };
+/** Sample inventory for the editor when the listings API can't be reached. */
+function sampleListing(featuredOnly: boolean, pageSize: number): ListingPage {
+  const items = demoVehicles.filter((v) => !featuredOnly || v.featured);
+  return {
+    items: items.slice(0, pageSize),
+    total: items.length,
+    nextCursor: null,
+    samples: true,
+  };
+}
 export type PaginationMode = "pages" | "infinite";
 // Matches the API's maximum `cursor`; later pages of a huge catalog are reached by filtering.
 const maxCursor = 100000;
@@ -162,10 +172,8 @@ function MarketplaceContent({
     [availableMakes, setAvailableMakes] = useState<string[]>([]),
     [makesError, setMakesError] = useState("");
   useEffect(() => {
-    if (designMode) {
-      setAvailableMakes(demoVehicles.map((vehicle) => vehicle.make));
-      return;
-    }
+    // The editor shows the site's real makes when it has any, and the sample makes otherwise.
+    const sampleMakes = [...new Set(demoVehicles.map((vehicle) => vehicle.make))];
     let active = true;
     const load = async () => {
       try {
@@ -174,13 +182,16 @@ function MarketplaceContent({
           cacheTtl.makes,
         );
         if (active) {
-          setAvailableMakes(result.makes);
+          setAvailableMakes(
+            designMode && result.makes.length === 0 ? sampleMakes : result.makes,
+          );
           setMakesError("");
         }
       } catch (error) {
         console.error("Could not load vehicle makes", error);
-        if (active)
-          setMakesError("Could not load all makes. Refresh to retry.");
+        if (!active) return;
+        if (designMode) setAvailableMakes(sampleMakes);
+        else setMakesError("Could not load all makes. Refresh to retry.");
       }
     };
     void load();
@@ -205,10 +216,11 @@ function MarketplaceContent({
     };
   }, [designMode]);
   useEffect(() => {
-    if (designMode) return;
+    // The site's own theme applies in the editor too, so the preview matches the live page.
     cachedApi<Theme>("settings", cacheTtl.settings)
       .then(setTheme)
       .catch(() => {});
+    if (designMode) return;
     const read = () => {
       const p = new URLSearchParams(window.location.hash.replace(/^#/, ""));
       setDetail(p.get("car") ?? initialVehicle?.slug ?? "");
@@ -282,7 +294,10 @@ function MarketplaceContent({
         });
       })
       .catch((e) => {
-        if (active) setError(e.message);
+        if (!active) return;
+        // The editor never shows an error state: it falls back to the sample inventory.
+        if (designMode) setVehicles(sampleListing(featuredOnly, pageSize));
+        else setError(e.message);
       })
       .finally(() => {
         if (!active) return;
@@ -662,9 +677,10 @@ function MarketplaceContent({
                       vehicle={v}
                       badge={badgeFor(v)}
                       onOpen={
-                        !designMode || v.demo
-                          ? () => void viewVehicle(v)
-                          : undefined
+                        // The editor opens the vehicle in place instead of leaving the page.
+                        designMode
+                          ? () => open(v.slug)
+                          : () => void viewVehicle(v)
                       }
                       mediaAction={
                         <Button

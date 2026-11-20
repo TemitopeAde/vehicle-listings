@@ -1,5 +1,6 @@
 import classNames from "classnames";
 import type { FC } from "react";
+import { useIsEditMode } from "@wix/react-component-utils";
 import SellPage from "../../../../dealers/sell-page";
 import type { AddAVehicleProps } from "./add-a-vehicle.props";
 import styles from "./add-a-vehicle.module.css";
@@ -19,6 +20,7 @@ const AddAVehicle: FC<AddAVehicleProps> = (editorProps) => {
     editorProps,
     useWidgetSettings("add-vehicle"),
   );
+  const designMode = useIsEditMode();
   return (
     <div {...editorProps.wix?.presetsWrapperProps}>
     <section
@@ -39,7 +41,7 @@ const AddAVehicle: FC<AddAVehicleProps> = (editorProps) => {
           elementProps?.form?.className,
         )}
       >
-        <SellPage title={title} />
+        <SellPage title={title} designMode={designMode} />
       </div>
     </section>
     </div>

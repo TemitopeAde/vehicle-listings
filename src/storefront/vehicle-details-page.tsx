@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { cacheTtl, cachedApi } from "../shared/client";
 import { localizeDefault } from "../shared/i18n";
 import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
-import { defaultTheme, type Theme } from "../shared/schemas";
+import { defaultTheme, type Theme, type Vehicle } from "../shared/schemas";
 import { demoVehicles } from "../shared/demo";
 import { ElementStyleContext } from "./element-style";
 import { VehicleDetail } from "./vehicle-detail";
@@ -63,12 +63,48 @@ function VehicleDetailsView({
       );
   }
   useEffect(() => {
-    if (designMode) return;
+    // The site's own theme applies in the editor too, so the preview matches the live page.
     cachedApi<Theme>("settings", cacheTtl.settings)
       .then(setTheme)
       .catch(() => {});
-  }, [designMode]);
-  const sample = demoVehicles[0];
+  }, []);
+  // The editor previews a real vehicle when the site has one (the page's `?slug=` first, then the
+  // newest published listing) and the sample vehicle otherwise. The listings API itself returns
+  // samples while nothing is published.
+  const [previewVehicle, setPreviewVehicle] = useState<Vehicle | null>(null);
+  useEffect(() => {
+    if (!designMode) return;
+    let active = true;
+    const fallback = demoVehicles[0] ?? null;
+    const load = async () => {
+      if (slug) {
+        try {
+          return await cachedApi<Vehicle>(
+            `vehicles?public=1&slug=${encodeURIComponent(slug)}`,
+            cacheTtl.vehicle,
+          );
+        } catch {
+          // A stale or sample slug falls through to the newest listing.
+        }
+      }
+      const page = await cachedApi<{ items: Vehicle[] }>(
+        "vehicles?public=1&sort=recent&limit=1",
+        cacheTtl.listings,
+      );
+      return page.items[0] ?? fallback;
+    };
+    load()
+      .then((vehicle) => {
+        if (active) setPreviewVehicle(vehicle ?? fallback);
+      })
+      .catch((error) => {
+        console.error("Could not load a vehicle for the editor preview", error);
+        if (active) setPreviewVehicle(fallback);
+      });
+    return () => {
+      active = false;
+    };
+  }, [designMode, slug]);
   return (
     <div
       className="autohaus"
@@ -96,23 +132,28 @@ function VehicleDetailsView({
         </Alert>
       )}
       {designMode ? (
-        <>
-          <Alert>
-            {t(
-              "Editor preview · sample vehicle. On your live site this shows the vehicle a visitor clicked in the marketplace.",
+        previewVehicle ? (
+          <>
+            {previewVehicle.demo && (
+              <Alert>
+                {t(
+                  "Editor preview · sample vehicle. On your live site this shows the vehicle a visitor clicked in the marketplace.",
+                )}
+              </Alert>
             )}
-          </Alert>
-          {sample && (
             <VehicleDetail
-              slug={sample.slug}
-              initialVehicle={sample}
+              key={previewVehicle._id}
+              slug={previewVehicle.slug}
+              initialVehicle={previewVehicle}
               consent={false}
               preview
               inquiryFieldLabels={inquiryFieldLabels}
               quoteFieldLabels={quoteFieldLabels}
             />
-          )}
-        </>
+          </>
+        ) : (
+          <VehicleDetailSkeleton />
+        )
       ) : slug === null ? (
         <VehicleDetailSkeleton />
       ) : slug ? (

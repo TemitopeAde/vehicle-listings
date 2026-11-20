@@ -39,23 +39,27 @@ function firstError(errors: FieldErrors<DealerApplicationFormInput>) {
   return "Check the application.";
 }
 
+type ApplyPageProps = {
+  title?: string;
+  /** Editor preview: show the form itself instead of the log-in step. */
+  designMode?: boolean;
+};
+
 export default function ApplyPage({
   title = "Apply to sell vehicles",
-}: {
-  title?: string;
-}) {
+  designMode = false,
+}: ApplyPageProps) {
   return (
     <LocaleProvider>
-      <ApplyPageInner title={title} />
+      <ApplyPageInner title={title} designMode={designMode} />
     </LocaleProvider>
   );
 }
 
 function ApplyPageInner({
   title = "Apply to sell vehicles",
-}: {
-  title?: string;
-}) {
+  designMode = false,
+}: ApplyPageProps) {
   const { t, language } = useI18n();
   const heading = localizeDefault(language, title, "Apply to sell vehicles");
   const [submitted, setSubmitted] = useState(false);
@@ -105,6 +109,8 @@ function ApplyPageInner({
     };
   }, [setValue]);
   const signedIn = Boolean(email);
+  // The editor shows the form to someone who isn't logged in, with submitting turned off.
+  const preview = designMode && !signedIn;
   useEffect(() => {
     if (!signedIn) {
       setApplication(null);
@@ -219,7 +225,7 @@ function ApplyPageInner({
             {alreadyApplied(application.createdAt, t, language)}
           </p>
         </section>
-      ) : !signedIn ? (
+      ) : !signedIn && !designMode ? (
         <section className="surface mt-8 space-y-4 p-6">
           <h2 className="section-heading">{t("Log in to apply")}</h2>
           <p className="hint">
@@ -242,10 +248,21 @@ function ApplyPageInner({
         <form
           className="surface mt-8 space-y-4 p-6"
           noValidate
-          onSubmit={handleSubmit(submit, (formErrors) => {
-            toast.error(t(firstError(formErrors)));
-          })}
+          onSubmit={
+            preview
+              ? (event) => event.preventDefault()
+              : handleSubmit(submit, (formErrors) => {
+                  toast.error(t(firstError(formErrors)));
+                })
+          }
         >
+          {preview && (
+            <p className="hint">
+              {t(
+                "Editor preview · on your live site, visitors log in first and their email is filled in for them.",
+              )}
+            </p>
+          )}
           <div>
             <label className="label" htmlFor="businessName">
               {t("Business name *")}
@@ -270,6 +287,7 @@ function ApplyPageInner({
               type="text"
               inputMode="email"
               autoComplete="email"
+              placeholder={preview ? "name@example.com" : undefined}
               readOnly
               aria-readonly
               aria-invalid={Boolean(errors.email)}
@@ -343,7 +361,7 @@ function ApplyPageInner({
             aria-hidden="true"
             name="company"
           />
-          <Button disabled={sending} pending={sending}>
+          <Button disabled={sending || preview} pending={sending}>
             {t("Submit application")}
           </Button>
         </form>

@@ -1,5 +1,6 @@
 import classNames from "classnames";
 import type { FC } from "react";
+import { useIsEditMode } from "@wix/react-component-utils";
 import ApplyPage from "../../../../dealers/apply-page";
 import type { DealerApplicationProps } from "./dealer-application.props";
 import styles from "./dealer-application.module.css";
@@ -19,6 +20,7 @@ const DealerApplication: FC<DealerApplicationProps> = (editorProps) => {
     editorProps,
     useWidgetSettings("dealer-application"),
   );
+  const designMode = useIsEditMode();
   return (
     <div {...editorProps.wix?.presetsWrapperProps}>
     <section
@@ -39,7 +41,7 @@ const DealerApplication: FC<DealerApplicationProps> = (editorProps) => {
           elementProps?.form?.className,
         )}
       >
-        <ApplyPage title={title} />
+        <ApplyPage title={title} designMode={designMode} />
       </div>
     </section>
     </div>

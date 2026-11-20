@@ -664,6 +664,22 @@ export function QuoteRequests() {
                     </figcaption>
                   </figure>
                 )}
+                {quote.customFields.some((field) => field.value) && (
+                  <dl className="grid gap-3 rounded-xl border p-5">
+                    {quote.customFields
+                      .filter((field) => field.value)
+                      .map((field, index) => (
+                        <div key={`${field.label}-${index}`}>
+                          <dt className="text-xs text-muted-foreground">
+                            {field.label}
+                          </dt>
+                          <dd className="whitespace-pre-wrap text-sm">
+                            {field.value}
+                          </dd>
+                        </div>
+                      ))}
+                  </dl>
+                )}
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <Facts

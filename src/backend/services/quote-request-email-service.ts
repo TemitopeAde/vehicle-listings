@@ -74,6 +74,9 @@ function summary(q: QuoteRequest, language: Language) {
     ["Phone", q.phone],
     ...(q.company ? ([["Company", q.company]] as [string, string][]) : []),
     ...(address ? ([["Address", address]] as [string, string][]) : []),
+    ...q.customFields
+      .filter((field) => field.value)
+      .map((field) => [field.label, field.value] as [string, string]),
   ];
   const list = (items: [string, string][]) =>
     `<ul>${items.map(([k, v]) => `<li><strong>${e(label(k))}:</strong> ${e(v)}</li>`).join("")}</ul>`;

@@ -279,6 +279,22 @@ export function Inquiries() {
             <p className="text-sm leading-relaxed bg-muted rounded-lg p-5 whitespace-pre-wrap">
               {inquiry.message}
             </p>
+            {inquiry.customFields.some((field) => field.value) && (
+              <dl className="grid gap-3 rounded-lg border p-4">
+                {inquiry.customFields
+                  .filter((field) => field.value)
+                  .map((field, index) => (
+                    <div key={`${field.label}-${index}`}>
+                      <dt className="text-xs text-muted-foreground">
+                        {field.label}
+                      </dt>
+                      <dd className="whitespace-pre-wrap text-sm">
+                        {field.value}
+                      </dd>
+                    </div>
+                  ))}
+              </dl>
+            )}
             <p className="text-xs text-muted-foreground mt-3">
               {t("Buyer consent recorded · {when} UTC", {
                 when: inquiry.createdAt.slice(0, 16).replace("T", " "),

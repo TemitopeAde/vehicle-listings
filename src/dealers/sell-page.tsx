@@ -12,6 +12,7 @@ import { Button } from "../dashboard/components/ui/button";
 import { Badge } from "../dashboard/components/common";
 import { DealerInventory } from "./dealer-inventory";
 import { readLoginEmail } from "../shared/wix-member";
+import { demoVehicles } from "../shared/demo";
 import "../dashboard/styles.css";
 
 type Stats = Record<string, { views: number; clicks: number }>;
@@ -39,23 +40,84 @@ function alreadyApplied(
   return t("You already applied on {date}.", { date: formatted });
 }
 
+type SellPageProps = {
+  title?: string;
+  /** Editor preview: show a sample dealership when there is no real one to show. */
+  designMode?: boolean;
+};
+
 export default function SellPage({
   title = "Add a vehicle for sale",
-}: {
-  title?: string;
-}) {
+  designMode = false,
+}: SellPageProps) {
   return (
     <LocaleProvider>
-      <SellPageInner title={title} />
+      <SellPageInner title={title} designMode={designMode} />
     </LocaleProvider>
+  );
+}
+
+const sampleDealer: Session = {
+  _id: "demo-dealer",
+  businessName: "Sample Motors",
+  location: "Los Angeles, CA",
+  approvalState: "approved",
+};
+// Sample cars in a mix of states, so every inventory tab has something to show.
+const sampleStatuses = ["published", "published", "reserved", "published", "draft", "sold"] as const;
+const sampleDealerVehicles: Vehicle[] = demoVehicles.map((vehicle, i) => ({
+  ...vehicle,
+  status: sampleStatuses[i % sampleStatuses.length],
+}));
+
+/** What the page looks like for an approved dealer, built from sample data. */
+function SellPagePreview() {
+  const { t } = useI18n();
+  const [editing, setEditing] = useState<Vehicle | null | undefined>(undefined);
+  return (
+    <>
+      <p className="hint surface mb-6 p-4">
+        {t(
+          "Editor preview · sample dealership. On your live site, approved dealers see and manage their own vehicles here.",
+        )}
+      </p>
+      {editing === undefined ? (
+        <DealerInventory
+          businessName={sampleDealer.businessName}
+          location={sampleDealer.location}
+          vehicles={sampleDealerVehicles}
+          stats={{}}
+          onAdd={() => setEditing(null)}
+          onEdit={setEditing}
+        />
+      ) : (
+        <>
+          <p className="text-xs uppercase tracking-[.15em] text-muted-foreground">
+            {sampleDealer.businessName}
+          </p>
+          <div className="mt-8">
+            <VehicleEditor
+              key={editing?._id ?? "new"}
+              vehicle={editing}
+              onBack={() => setEditing(undefined)}
+              backLabel={t("Back to your vehicles")}
+              client={api}
+              submitDisabled
+              showFeatured={false}
+              uploadDependencies={dealerMediaUpload}
+              lockedDealer={sampleDealer}
+            />
+          </div>
+        </>
+      )}
+    </>
   );
 }
 
 function SellPageInner({
   title = "Add a vehicle for sale",
-}: {
-  title?: string;
-}) {
+  designMode = false,
+}: SellPageProps) {
   const { t, language } = useI18n();
   const heading = localizeDefault(language, title, "Add a vehicle for sale");
   const [email, setEmail] = useState<string | null>(null);
@@ -167,6 +229,13 @@ function SellPageInner({
       hasError: Boolean(error),
     });
   }, [signedIn, checking, loading, session, approved, editing, sessionError, error]);
+  // In the editor, a signed-in dealer sees their real dealership; anyone else sees the sample one.
+  if (designMode && !checking && !session)
+    return (
+      <div className="mx-auto max-w-5xl px-5 py-12" {...localeProps(language)}>
+        <SellPagePreview />
+      </div>
+    );
   return (
     <div className="mx-auto max-w-5xl px-5 py-12" {...localeProps(language)}>
       <Toaster richColors position="bottom-right" />

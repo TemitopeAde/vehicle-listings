@@ -9,6 +9,8 @@ import styles from "./add-a-vehicle.module.css";
 class AddAVehicle extends HTMLElement {
   private root: Root | null = null;
   private designMode = true;
+  /** Set once the view mode is read, so a live page never shows the editor preview. */
+  private editorPreview = false;
   private shared: WidgetValues = {};
   static get observedAttributes() {
     return ["display-name"];
@@ -20,6 +22,7 @@ class AddAVehicle extends HTMLElement {
     this.render();
     try {
       this.designMode = (await wixWindow.viewMode()) === "Editor";
+      this.editorPreview = this.designMode;
     } catch {
       this.designMode = true;
     }
@@ -40,6 +43,7 @@ class AddAVehicle extends HTMLElement {
     this.root?.render(
       <div className={styles.root}>
         <SellPage
+          designMode={this.editorPreview}
           title={read("display-name") || "Add a vehicle for sale"}
         />
       </div>,

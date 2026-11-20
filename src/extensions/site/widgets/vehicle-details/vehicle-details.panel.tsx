@@ -26,6 +26,8 @@ import {
 
 const defaults: Record<string, string> = {
   radius: "12",
+  "inquiry-fields": "",
+  "quote-fields": "",
   ...Object.fromEntries(styleKeys.map((key) => [key, ""])),
 };
 
@@ -137,6 +139,46 @@ function PanelContent() {
                         />
                       </FormField>
                     </SidePanel.Field>
+                  ),
+                },
+                {
+                  title: t("Contact form fields"),
+                  children: (
+                    <>
+                      <SidePanel.Field>
+                        <FormField
+                          id="inquiry-fields"
+                          label={t("Ask a question fields")}
+                        >
+                          <Input
+                            id="inquiry-fields"
+                            value={props["inquiry-fields"] ?? ""}
+                            placeholder={t("Example: Best time to call, Budget")}
+                            onChange={(event) =>
+                              set("inquiry-fields", event.target.value)
+                            }
+                          />
+                        </FormField>
+                      </SidePanel.Field>
+                      <SidePanel.Field>
+                        <FormField
+                          id="quote-fields"
+                          label={t("Request a quote fields")}
+                        >
+                          <Input
+                            id="quote-fields"
+                            value={props["quote-fields"] ?? ""}
+                            placeholder={t("Example: Company size, Delivery date")}
+                            onChange={(event) =>
+                              set("quote-fields", event.target.value)
+                            }
+                          />
+                        </FormField>
+                      </SidePanel.Field>
+                      <SectionHelper>
+                        {t("Separate optional field labels with commas. Up to 8 per form.")}
+                      </SectionHelper>
+                    </>
                   ),
                 },
                 {
