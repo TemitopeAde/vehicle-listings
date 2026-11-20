@@ -99,6 +99,16 @@ function SellPageInner({
         if (next?.approvalState === "approved")
           return api<{ items: Vehicle[]; stats: Stats }>("vehicles?limit=50").then((page) => {
             if (!active) return;
+            console.info("[Vehicle inventory] Initial inventory loaded", {
+              count: page.items.length,
+              items: page.items.map(({ _id, title, dealerId, status, demo }) => ({
+                id: _id,
+                title,
+                dealerId,
+                status,
+                demo,
+              })),
+            });
             setVehicles(page.items);
             setStats(page.stats);
           });
@@ -272,13 +282,27 @@ function SellPageInner({
             vehicle={editing}
             uploadDependencies={dealerMediaUpload}
             onBack={() => {
+              console.info("[Vehicle inventory] Editor returned; refreshing inventory");
               setEditing(undefined);
               void api<{ items: Vehicle[]; stats: Stats }>("vehicles?limit=50").then(
                 (page) => {
+                  console.info("[Vehicle inventory] Inventory refresh succeeded", {
+                    count: page.items.length,
+                    items: page.items.map(({ _id, title, dealerId, status, demo }) => ({
+                      id: _id,
+                      title,
+                      dealerId,
+                      status,
+                      demo,
+                    })),
+                  });
                   setVehicles(page.items);
                   setStats(page.stats);
                 },
-              );
+              ).catch((reason) => {
+                console.error("[Vehicle inventory] Inventory refresh failed", reason);
+                setError(reason instanceof Error ? reason.message : String(reason));
+              });
             }}
           />
         </div>

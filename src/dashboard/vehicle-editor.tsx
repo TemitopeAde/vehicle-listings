@@ -417,6 +417,12 @@ export function VehicleEditor({
     setBusy(true);
     try {
       const isNewVehicle = !saved;
+      console.info("[Vehicle inventory] Saving listing", {
+        mode: isNewVehicle ? "create" : "update",
+        title: input.title,
+        dealerId: input.dealerId,
+        publish,
+      });
       if (!createKey.current) createKey.current = crypto.randomUUID();
       let result = await client<Vehicle>(
         "vehicles",
@@ -455,9 +461,23 @@ export function VehicleEditor({
       toast.success(
         publish ? t("Vehicle published") : t("Vehicle saved"),
       );
+      console.info("[Vehicle inventory] Listing saved", {
+        id: result._id,
+        title: result.title,
+        dealerId: result.dealerId,
+        status: result.status,
+        demo: result.demo,
+      });
       setConfirm("");
-      if (isNewVehicle) onBack?.();
+      if (isNewVehicle) {
+        console.info("[Vehicle inventory] Returning to inventory after create", {
+          hasOnBack: Boolean(onBack),
+          id: result._id,
+        });
+        onBack?.();
+      }
     } catch (e) {
+      console.error("[Vehicle inventory] Listing save failed", e);
       toast.error(t((e as Error).message));
     } finally {
       setBusy(false);

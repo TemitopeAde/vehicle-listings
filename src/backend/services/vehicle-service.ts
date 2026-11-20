@@ -106,8 +106,9 @@ export async function listVehicles(
   if (ownInventory && ctx.dealer) eq.dealerId = ctx.dealer.id;
   // Deleted vehicles stay restorable but only show under the Deleted filter.
   if (!f.status) ne.status = "deleted";
-  // Sample listings are for the public demo storefront, never a dealer's inventory.
-  if (ownInventory) ne.demo = true;
+  // Sample listings belong to the public demo storefront, not internal inventory.
+  // This also covers manager sessions, which do not have a dealer-scoped context.
+  if (!publicOnly) ne.demo = true;
   // Vehicles saved before categories existed have no `category` and count as cars.
   if (f.category === "car") notIn.category = ["lorry", "trailer"];
   else if (f.category) eq.category = f.category;
@@ -135,6 +136,15 @@ export async function listVehicles(
     descending: f.sort !== "price-asc",
     publicOnly,
   };
+  if (!publicOnly) {
+    console.info("[Vehicle inventory query] Dealer inventory request", {
+      manager: ctx.manager,
+      dealerId: ctx.dealer?.id ?? null,
+      ownInventory,
+      filters: f,
+      query: { eq, ne, limit: query.limit, offset: query.offset },
+    });
+  }
   let result = await queryRows(
     ctx,
     "vehicles",
@@ -163,6 +173,20 @@ export async function listVehicles(
     }
   }
   const items = result.rows.map((row) => vehicleSchema.parse(row));
+  if (!publicOnly) {
+    console.info("[Vehicle inventory query] Dealer inventory response", {
+      total: result.total,
+      count: items.length,
+      demoCount: items.filter((item) => item.demo).length,
+      items: items.map(({ _id, title, dealerId, status, demo }) => ({
+        id: _id,
+        title,
+        dealerId,
+        status,
+        demo,
+      })),
+    });
+  }
   return {
     items,
     total: result.total,

@@ -65,6 +65,20 @@ export function DealerInventory({
     );
   }, [vehicles, filter, search]);
 
+  console.info("[Vehicle inventory UI] Inventory rendered", {
+    businessName,
+    total: vehicles.length,
+    demoCount: vehicles.filter((vehicle) => vehicle.demo).length,
+    visibleCount: shown.length,
+    items: vehicles.map(({ _id, title, dealerId, status, demo }) => ({
+      id: _id,
+      title,
+      dealerId,
+      status,
+      demo,
+    })),
+  });
+
   return (
     <div>
       <header className="flex flex-wrap items-end justify-between gap-4">
