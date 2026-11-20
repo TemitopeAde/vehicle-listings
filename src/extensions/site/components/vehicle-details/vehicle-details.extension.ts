@@ -85,6 +85,7 @@ export default extensions.editorReactComponent({
   displayName: "vehicle-details",
   description:
     "Shows the full details of the vehicle a visitor selected from the inventory: photo gallery, specifications, features, payment estimate and dealer contact options.",
+  thumbnailUrl: "{{BASE_URL}}/vehicle-details-component-thumbnail.svg",
   editorElement: merge(editorElementWithDefaults, {
     layout: {
       resizeDirection: LAYOUT.RESIZE_DIRECTION.horizontal,

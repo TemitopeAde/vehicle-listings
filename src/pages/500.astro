@@ -1,0 +1,30 @@
+---
+interface Props {
+  error: unknown;
+}
+
+const { error } = Astro.props;
+const detail =
+  error instanceof Error
+    ? `${error.name}: ${error.message}`
+    : error == null
+      ? "No error details were provided by the request handler."
+      : String(error);
+
+console.error("Car listing route crashed", detail);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Something went wrong</title>
+  </head>
+  <body>
+    <main>
+      <h1>Something went wrong</h1>
+      <p>The request could not be completed. Please try again.</p>
+    </main>
+  </body>
+</html>

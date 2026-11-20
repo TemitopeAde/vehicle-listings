@@ -57,6 +57,7 @@ export default extensions.editorReactComponent({
   type: 'vehicle_listings.AddAVehicle',
   displayName: 'Add a vehicle',
   description: 'A form where a logged-in site member prepares a vehicle for sale. Saving stays off until that account has an approved dealership application.',
+  thumbnailUrl: '{{BASE_URL}}/add-a-vehicle-component-thumbnail.svg',
   editorElement: merge(
     editorElementWithDefaults,
     {

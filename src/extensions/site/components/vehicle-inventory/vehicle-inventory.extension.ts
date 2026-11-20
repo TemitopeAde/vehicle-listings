@@ -19,6 +19,7 @@ export default extensions.editorReactComponent({
   displayName: "vehicle-inventory",
   description:
     "Search vehicle inventory, compare cars, view vehicle details and contact the dealership. Customize the layout and appearance for your site.",
+  thumbnailUrl: "{{BASE_URL}}/vehicle-inventory-component-thumbnail.svg",
   editorElement: merge(editorElementWithDefaults, {
     // Declared here until `wix generate manifest` can regenerate this component.
     data: {
