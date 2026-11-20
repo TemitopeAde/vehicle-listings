@@ -34,7 +34,8 @@ class VehicleMarketplace extends HTMLElement {
     try {
       this.designMode = (await wixWindow.viewMode()) === "Editor";
     } catch {
-      this.designMode = true;
+      // If the view-mode API is unavailable on a live site, keep navigation enabled.
+      this.designMode = false;
     }
     this.render();
     this.shared = await loadWidgetSettings("marketplace");

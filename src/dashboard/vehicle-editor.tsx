@@ -263,7 +263,7 @@ export function VehicleEditor({
           title: "",
           make: "",
           model: "",
-          currency: "USD",
+          currency: "" as FormInput["currency"],
           condition: "" as FormInput["condition"],
           mileageUnit: "" as FormInput["mileageUnit"],
           category: "" as FormInput["category"],
@@ -295,7 +295,6 @@ export function VehicleEditor({
   const titleAuto = useRef({ last: null as string | null, stop: false });
   const seoAuto = useRef({ last: null as string | null, stop: false });
   const locationAuto = useRef({ last: null as string | null, stop: false });
-  const currencyAuto = useRef("USD");
   const year = form.watch("year");
   const make = form.watch("make");
   const model = form.watch("model");
@@ -343,15 +342,6 @@ export function VehicleEditor({
     if (!acceptAuto(current, generated, locationAuto.current)) return;
     form.setValue("location", generated, { shouldDirty: true });
   }, [vehicle, dealerId, dealers.data, form]);
-  useEffect(() => {
-    if (vehicle) return;
-    const next = showroom.data?.currency;
-    if (!next) return;
-    const current = form.getValues("currency");
-    if (current !== currencyAuto.current) return;
-    currencyAuto.current = next;
-    if (current !== next) form.setValue("currency", next);
-  }, [vehicle, showroom.data, form]);
   useEffect(() => {
     const fn = (e: BeforeUnloadEvent) => {
       if (isDirty || uploads.busy) {

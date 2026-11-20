@@ -2,6 +2,7 @@ import { useElementStyle } from "./element-style";
 import {
   useRef,
   type MouseEvent,
+  type KeyboardEvent,
   type PointerEvent,
   type ReactNode,
 } from "react";
@@ -52,6 +53,16 @@ export function VehicleCard({
     }
     onOpen();
   }
+  function openFromKeyboard(event: KeyboardEvent<HTMLDivElement>) {
+    if (
+      !onOpen ||
+      isCardControl(event.target) ||
+      (event.key !== "Enter" && event.key !== " ")
+    )
+      return;
+    event.preventDefault();
+    onOpen();
+  }
   function trackPress(event: PointerEvent<HTMLDivElement>) {
     if (!onOpen || event.button !== 0 || isCardControl(event.target)) {
       press.current = null;
@@ -89,10 +100,17 @@ export function VehicleCard({
   return (
     <Card
       data-sf="card"
-      className={cn("flex flex-col", onOpen && "cursor-pointer")}
+      className={cn(
+        "flex flex-col",
+        onOpen && "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+      )}
+      role={onOpen ? "link" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      aria-label={onOpen ? v.title : undefined}
       onPointerDown={onOpen ? trackPress : undefined}
       onPointerUp={onOpen ? releasePress : undefined}
       onClick={onOpen ? openFromCard : undefined}
+      onKeyDown={onOpen ? openFromKeyboard : undefined}
     >
       <div className="relative">
         <CardGallery

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Check, Link, Mail, MoreHorizontal, Share2 } from "lucide-react";
+import { Check, Link, Mail, Share2 } from "lucide-react";
 import { useI18n } from "../shared/i18n-react";
 import type { Vehicle } from "../shared/schemas";
 import { Button } from "./ui/button";
@@ -92,8 +92,6 @@ export function VehicleShare({ vehicle }: { vehicle: Vehicle }) {
   }, []);
   const title = `${vehicle.title} · ${money(vehicle.price, vehicle.currency)}`;
   const links = shareLinks(title, url);
-  const canNativeShare = Boolean(url) && typeof navigator.share === "function";
-
   useEffect(() => {
     if (!open) return;
     const close = (e: Event) => {
@@ -189,17 +187,6 @@ export function VehicleShare({ vehicle }: { vehicle: Vehicle }) {
             {copied ? t("Link copied") : t("Copy link")}
           </span>
         </Item>
-        {canNativeShare && (
-          <Item
-            icon={<MoreHorizontal className="h-4 w-4" />}
-            onClick={() => {
-              setOpen(false);
-              navigator.share({ title, url }).catch(() => {});
-            }}
-          >
-            {t("More options…")}
-          </Item>
-        )}
       </div>
     </div>
   );

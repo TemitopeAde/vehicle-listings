@@ -798,7 +798,6 @@ function MarketplaceContent({
               scrollToTop();
             }}
             scope={scope}
-            inline={designMode}
           />
         </>
       )}
