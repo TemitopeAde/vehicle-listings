@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { api, cacheTtl, cachedApi } from "../shared/client";
+import { demoVehicles } from "../shared/demo";
 import { conditionLabel, statusLabel } from "../shared/i18n";
 import { useI18n } from "../shared/i18n-react";
 import { payment, vehicleDetailsUrl } from "../shared/utils";
@@ -94,8 +95,41 @@ export function VehicleDetail({
     [rate, setRate] = useState("12"),
     [months, setMonths] = useState(48);
   useEffect(() => {
-    if (preview) return;
     let active = true;
+    // The seller and similar vehicles load in the editor preview too, so it shows the whole page.
+    const loadExtras = async (v: Vehicle) => {
+      const [seller, cars] = await Promise.allSettled([
+        v.dealerId
+          ? cachedApi<PublicDealer | null>(
+              `dealers?public=1&id=${encodeURIComponent(v.dealerId)}`,
+              cacheTtl.dealers,
+            )
+          : Promise.resolve(null),
+        cachedApi<{ items: Vehicle[] }>(
+          `vehicles?public=1&similar=${encodeURIComponent(v._id)}&limit=4`,
+          cacheTtl.vehicle,
+        ),
+      ]);
+      if (!active) return;
+      if (seller.status === "fulfilled") setDealer(seller.value);
+      else setDealer(null);
+      const similar =
+        cars.status === "fulfilled"
+          ? cars.value.items.filter((x) => x._id !== v._id)
+          : [];
+      // A sample vehicle in the editor always has sample neighbours to show.
+      setRelated(
+        preview && v.demo && similar.length === 0
+          ? demoVehicles.filter((x) => x._id !== v._id).slice(0, 3)
+          : similar,
+      );
+    };
+    if (preview) {
+      if (initialVehicle) void loadExtras(initialVehicle);
+      return () => {
+        active = false;
+      };
+    }
     setLoading(true);
     setError("");
     setRelated([]);
@@ -107,23 +141,7 @@ export function VehicleDetail({
         if (!active) return;
         setVehicle(v);
         setLoading(false);
-        const [seller, cars] = await Promise.allSettled([
-          v.dealerId
-            ? cachedApi<PublicDealer | null>(
-                `dealers?public=1&id=${encodeURIComponent(v.dealerId)}`,
-                cacheTtl.dealers,
-              )
-            : Promise.resolve(null),
-          cachedApi<{ items: Vehicle[] }>(
-            `vehicles?public=1&similar=${encodeURIComponent(v._id)}&limit=4`,
-            cacheTtl.vehicle,
-          ),
-        ]);
-        if (!active) return;
-        if (seller.status === "fulfilled") setDealer(seller.value);
-        else setDealer(null);
-        if (cars.status === "fulfilled")
-          setRelated(cars.value.items.filter((x) => x._id !== v._id));
+        await loadExtras(v);
       })
       .catch((e) => {
         if (active) {
