@@ -668,7 +668,9 @@ function MarketplaceContent({
                       vehicle={v}
                       badge={badgeFor(v)}
                       onOpen={
-                        designMode ? undefined : () => void viewVehicle(v)
+                        !designMode || v.demo
+                          ? () => void viewVehicle(v)
+                          : undefined
                       }
                       mediaAction={
                         <Button
