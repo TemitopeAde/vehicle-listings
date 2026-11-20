@@ -67,6 +67,8 @@ export function VehicleDetail({
   consent,
   onRelated,
   preview = false,
+  inquiryFieldLabels,
+  quoteFieldLabels,
 }: {
   /** The vehicle's public slug, used to look it up. */
   slug: string;
@@ -75,6 +77,8 @@ export function VehicleDetail({
   onRelated?: (slug: string) => void;
   /** Editor preview: show `initialVehicle` without calling the API. */
   preview?: boolean;
+  inquiryFieldLabels?: string;
+  quoteFieldLabels?: string;
 }) {
   const { t, money, number } = useI18n();
   const [vehicle, setVehicle] = useState<Vehicle | null>(
@@ -402,6 +406,8 @@ export function VehicleDetail({
           vehicle={vehicle}
           dealer={dealer}
           track={track}
+          inquiryFieldLabels={inquiryFieldLabels}
+          quoteFieldLabels={quoteFieldLabels}
         />
       </div>
       <PriceHistory vehicle={vehicle} preview={preview} />

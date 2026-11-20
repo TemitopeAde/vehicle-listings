@@ -72,7 +72,16 @@ const keysByType: Record<WidgetType, WidgetKeyInfo[]> = {
     ),
     ...styleInfo,
   ],
-  details: [radius, ...styleInfo],
+  details: [
+    radius,
+    info("inquiry-fields", "Ask a question fields", "long-text", {
+      prop: "inquiryFieldLabels",
+    }),
+    info("quote-fields", "Request a quote fields", "long-text", {
+      prop: "quoteFieldLabels",
+    }),
+    ...styleInfo,
+  ],
   "add-vehicle": [info("display-name", "Heading", "text", { prop: "title" })],
   "dealer-application": [
     info("display-name", "Heading", "text", { prop: "title" }),
@@ -110,7 +119,7 @@ function invalid(key: WidgetKeyInfo, value: string): string | null {
     case "text":
       return value.length <= 200 ? null : "Use 200 characters or fewer.";
     case "long-text":
-      return value.length <= 500 ? null : "Use 500 characters or fewer.";
+      return value.length <= 2000 ? null : "Use 2000 characters or fewer.";
   }
 }
 

@@ -81,6 +81,8 @@ export type MarketplaceProps = {
   filterVisibility?: FilterVisibility;
   /** Page holding the Vehicle Details widget; without it, details open inside this widget. */
   detailsPage?: string;
+  inquiryFieldLabels?: string;
+  quoteFieldLabels?: string;
   /** Editor element hooks, so a Harmony component can select and style the built-in heading. */
   headingClassName?: string;
   descriptionClassName?: string;
@@ -116,6 +118,8 @@ function MarketplaceContent({
   pagination = "pages",
   filterVisibility = {},
   detailsPage,
+  inquiryFieldLabels,
+  quoteFieldLabels,
   headingClassName,
   descriptionClassName,
 }: MarketplaceProps) {
@@ -491,6 +495,8 @@ function MarketplaceContent({
             consent={false}
             onRelated={open}
             preview={designMode}
+            inquiryFieldLabels={inquiryFieldLabels}
+            quoteFieldLabels={quoteFieldLabels}
           />
         </>
       ) : comparing && comparison.length > 0 ? (

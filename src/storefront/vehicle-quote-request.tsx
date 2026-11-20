@@ -20,6 +20,7 @@ import {
 import { localeFor } from "../shared/i18n";
 import { useI18n } from "../shared/i18n-react";
 import { readLoginEmail } from "../shared/wix-member";
+import { emptyCustomFields } from "../shared/custom-form-fields";
 import { Button } from "./ui/button";
 import { Alert } from "./ui/card";
 import { Checkbox, Input, NativeSelect, Textarea } from "./ui/input";
@@ -54,7 +55,13 @@ function usePlaces<T>(route: string | null) {
   };
 }
 
-export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
+export function VehicleQuoteRequest({
+  vehicle,
+  customFieldLabels,
+}: {
+  vehicle: Vehicle;
+  customFieldLabels?: string;
+}) {
   const { t, language } = useI18n();
   const countries = useMemo(
     () => countryOptions(localeFor(language)),
@@ -101,6 +108,7 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
       tradeInDetails: "",
       message: "",
       consent: false as unknown as true,
+      customFields: emptyCustomFields(customFieldLabels),
     },
   });
   useEffect(() => {
@@ -426,6 +434,17 @@ export function VehicleQuoteRequest({ vehicle }: { vehicle: Vehicle }) {
           )}
         </Field>
       )}
+      {emptyCustomFields(customFieldLabels).map((field, index) => (
+        <Field key={`${index}-${field.label}`} label={field.label}>
+          {(a) => (
+            <Input
+              {...a}
+              {...register(`customFields.${index}.value`)}
+              maxLength={1000}
+            />
+          )}
+        </Field>
+      ))}
       <Field label={t("Message")} error={message("message")}>
         {(a) => (
           <Textarea

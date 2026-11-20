@@ -30,6 +30,7 @@ export default {
     { key: "tradeIn", displayName: "Trade-in", type: "BOOLEAN" },
     text("tradeInDetails", "Trade-in details"),
     text("message", "Message"),
+    { key: "customFields", displayName: "Custom fields", type: "ARRAY" },
     { key: "consent", displayName: "Consent", type: "BOOLEAN" },
     text("status", "Status"),
     text("notes", "Notes"),

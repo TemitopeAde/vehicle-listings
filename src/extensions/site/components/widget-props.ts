@@ -4,6 +4,10 @@ const camelCase = (key: string) =>
   key.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
 
 export type WidgetAppearanceProps = {
+  /** Comma or newline separated optional visitor question field labels. */
+  inquiryFieldLabels?: string;
+  /** Comma or newline separated optional quote request field labels. */
+  quoteFieldLabels?: string;
   backgroundColor?: string;
   textColor?: string;
   mutedColor?: string;

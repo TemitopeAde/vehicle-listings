@@ -9,13 +9,20 @@ import {
 } from "../shared/inquiries";
 import { useI18n } from "../shared/i18n-react";
 import { readLoginEmail } from "../shared/wix-member";
+import { emptyCustomFields } from "../shared/custom-form-fields";
 import type { Vehicle } from "../shared/schemas";
 import { Button } from "./ui/button";
 import { Alert } from "./ui/card";
 import { FormField } from "./ui/form-field";
 import { Checkbox, Input, NativeSelect, Textarea } from "./ui/input";
 
-export function VehicleInquiryForm({ vehicle }: { vehicle: Vehicle }) {
+export function VehicleInquiryForm({
+  vehicle,
+  customFieldLabels,
+}: {
+  vehicle: Vehicle;
+  customFieldLabels?: string;
+}) {
   const { t } = useI18n();
   const [sent, setSent] = useState(false);
   const [formError, setFormError] = useState("");
@@ -41,6 +48,7 @@ export function VehicleInquiryForm({ vehicle }: { vehicle: Vehicle }) {
         title: vehicle.title,
       }),
       consent: false,
+      customFields: emptyCustomFields(customFieldLabels),
     },
   });
   useEffect(() => {
@@ -135,6 +143,17 @@ export function VehicleInquiryForm({ vehicle }: { vehicle: Vehicle }) {
           <Input {...props} {...register("preferredDate")} type="date" />
         )}
       </FormField>
+      {emptyCustomFields(customFieldLabels).map((field, index) => (
+        <FormField key={`${index}-${field.label}`} label={field.label}>
+          {(props) => (
+            <Input
+              {...props}
+              {...register(`customFields.${index}.value`)}
+              maxLength={1000}
+            />
+          )}
+        </FormField>
+      ))}
       <FormField label={t("Message")} error={error("message")}>
         {(props) => (
           <Textarea

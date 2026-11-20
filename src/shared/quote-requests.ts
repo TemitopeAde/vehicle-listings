@@ -90,6 +90,15 @@ const quoteRequestFields = z.object({
   tradeIn: z.boolean().default(false),
   tradeInDetails: optional(500, "Trade-in details"),
   message: optional(3000, "Message"),
+  customFields: z
+    .array(
+      z.object({
+        label: z.string().trim().min(1).max(80),
+        value: z.string().trim().max(1000),
+      }),
+    )
+    .max(8)
+    .default([]),
   consent: z.literal(true, {
     error: "Agree to be contacted so the dealership can send your quote.",
   }),

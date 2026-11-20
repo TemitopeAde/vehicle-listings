@@ -277,6 +277,15 @@ export const inquiryInput = z
       error: "Select request type",
     }).default("inquiry"),
     preferredDate: text(40),
+    customFields: z
+      .array(
+        z.object({
+          label: z.string().trim().min(1).max(80),
+          value: z.string().trim().max(1000),
+        }),
+      )
+      .max(8)
+      .default([]),
     honeypot: z.string().max(0).default(""),
     idempotencyKey: z.string().uuid(),
   })

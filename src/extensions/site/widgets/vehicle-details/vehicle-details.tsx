@@ -12,7 +12,7 @@ class VehicleDetails extends HTMLElement {
   private slug: string | null = null;
   private onNavigate = () => this.render();
   static get observedAttributes() {
-    return [...styleKeys, "radius"];
+    return [...styleKeys, "radius", "inquiry-fields", "quote-fields"];
   }
   async connectedCallback() {
     this.root = createRoot(this);
@@ -60,6 +60,8 @@ class VehicleDetails extends HTMLElement {
         widgetStyle={Object.fromEntries(
           styleKeys.map((key) => [key, read(key) ?? ""]),
         )}
+        inquiryFieldLabels={read("inquiry-fields") ?? undefined}
+        quoteFieldLabels={read("quote-fields") ?? undefined}
       />,
     );
   }

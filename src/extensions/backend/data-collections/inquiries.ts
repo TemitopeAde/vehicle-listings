@@ -14,6 +14,7 @@ export default {
     { key: "consent", displayName: "consent", type: "BOOLEAN" },
     { key: "kind", displayName: "kind", type: "TEXT" },
     { key: "preferredDate", displayName: "preferredDate", type: "TEXT" },
+    { key: "customFields", displayName: "Custom fields", type: "ARRAY" },
     { key: "status", displayName: "status", type: "TEXT" },
     { key: "notes", displayName: "notes", type: "TEXT" },
     {

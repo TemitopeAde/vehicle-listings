@@ -25,6 +25,8 @@ export type VehicleDetailsPageProps = {
   accent?: string;
   radius?: number;
   widgetStyle?: WidgetStyle;
+  inquiryFieldLabels?: string;
+  quoteFieldLabels?: string;
 };
 export function VehicleDetailsPage(props: VehicleDetailsPageProps) {
   return (
@@ -43,6 +45,8 @@ function VehicleDetailsView({
   accent,
   radius,
   widgetStyle = {},
+  inquiryFieldLabels,
+  quoteFieldLabels,
 }: VehicleDetailsPageProps) {
   const { t, language } = useI18n();
   const back = localizeDefault(language, backLabel, "Back");
@@ -104,6 +108,8 @@ function VehicleDetailsView({
               initialVehicle={sample}
               consent={false}
               preview
+              inquiryFieldLabels={inquiryFieldLabels}
+              quoteFieldLabels={quoteFieldLabels}
             />
           )}
         </>
@@ -120,7 +126,12 @@ function VehicleDetailsView({
           >
             <ArrowLeft aria-hidden="true" className="size-5" />
           </Button>
-          <VehicleDetail slug={slug} consent={false} />
+          <VehicleDetail
+            slug={slug}
+            consent={false}
+            inquiryFieldLabels={inquiryFieldLabels}
+            quoteFieldLabels={quoteFieldLabels}
+          />
         </>
       ) : (
         <div className="grid justify-items-center gap-4 py-12 text-center">

@@ -45,6 +45,8 @@ export const VehicleDetails: FC<VehicleDetailsProps> = (editorProps) => {
           designMode={designMode}
           radius={props.radius}
           widgetStyle={widgetAppearance(props)}
+          inquiryFieldLabels={editorProps.inquiryFieldLabels ?? props.inquiryFieldLabels}
+          quoteFieldLabels={editorProps.quoteFieldLabels ?? props.quoteFieldLabels}
         />
       </div>
     </section>

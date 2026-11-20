@@ -17,6 +17,16 @@ const declared = {
   displayName: "Vehicle Details",
   data: {
     ...appearanceData,
+    inquiryFieldLabels: {
+      displayName: "Ask a question fields (comma or line separated)",
+      dataType: "text",
+      text: {},
+    },
+    quoteFieldLabels: {
+      displayName: "Request a quote fields (comma or line separated)",
+      dataType: "text",
+      text: {},
+    },
     radius: {
       displayName: "Corner radius",
       dataType: "number",

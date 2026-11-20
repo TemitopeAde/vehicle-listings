@@ -29,10 +29,14 @@ export function VehicleContact({
   vehicle,
   dealer,
   track,
+  inquiryFieldLabels,
+  quoteFieldLabels,
 }: {
   vehicle: Vehicle;
   dealer: PublicDealer | null;
   track: (channel: string) => void;
+  inquiryFieldLabels?: string;
+  quoteFieldLabels?: string;
 }) {
   const { t } = useI18n();
   const [mode, setMode] = useState<"message" | "quote">("message");
@@ -121,10 +125,17 @@ export function VehicleContact({
           <>
             {/* Hidden, not unmounted, so switching tabs keeps what was typed. */}
             <div hidden={mode !== "quote"}>
-              <VehicleQuoteRequest vehicle={vehicle} />
+              <VehicleQuoteRequest
+                vehicle={vehicle}
+                customFieldLabels={quoteFieldLabels}
+              />
             </div>
             <div hidden={mode !== "message"}>
-              <VehicleInquiryForm key={vehicle._id} vehicle={vehicle} />
+              <VehicleInquiryForm
+                key={vehicle._id}
+                vehicle={vehicle}
+                customFieldLabels={inquiryFieldLabels}
+              />
             </div>
           </>
         )}
