@@ -17,7 +17,7 @@ export default extensions.customElement({
     {
       id: '5e5ed31d-425c-4068-9c6c-56401e2e1fb7',
       name: 'default',
-      thumbnailUrl: '{{BASE_URL}}/vehicle-marketplace-thumbnail.png',
+      thumbnailUrl: '{{BASE_URL}}/dealer-application-component-thumbnail.png',
     },
   ],
   

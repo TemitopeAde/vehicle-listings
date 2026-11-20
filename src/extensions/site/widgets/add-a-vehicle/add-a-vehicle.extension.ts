@@ -17,7 +17,7 @@ export default extensions.customElement({
     {
       id: '339c58df-c9f5-4e2e-ad36-0bd8fbba4130',
       name: 'default',
-      thumbnailUrl: '{{BASE_URL}}/vehicle-details-thumbnail.png',
+      thumbnailUrl: '{{BASE_URL}}/add-a-vehicle-component-thumbnail.png',
     },
   ],
   
