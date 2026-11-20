@@ -66,6 +66,7 @@ export default extensions.editorReactComponent({
       vehicleInventoryInventory: {
         inlineElement: {
           cssProperties: {
+            background: { defaultValue: "transparent" },
             borderTop: { defaultValue: "none" },
             borderBottom: { defaultValue: "none" },
             borderInlineStart: { defaultValue: "none" },
@@ -73,6 +74,9 @@ export default extensions.editorReactComponent({
           },
         },
       },
+    },
+    cssProperties: {
+      background: { defaultValue: "transparent" },
     },
     layout: {
       resizeDirection: LAYOUT.RESIZE_DIRECTION.horizontal,

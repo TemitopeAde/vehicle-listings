@@ -259,26 +259,13 @@ export function VehicleEditor({
             ]),
           ),
         )
-      : {
-          title: "",
-          make: "",
-          model: "",
-          currency: "" as FormInput["currency"],
-          condition: "" as FormInput["condition"],
-          mileageUnit: "" as FormInput["mileageUnit"],
-          category: "" as FormInput["category"],
-          bodyStyle: "" as FormInput["bodyStyle"],
-          transmission: "" as FormInput["transmission"],
-          fuel: "" as FormInput["fuel"],
-          doors: Number.NaN,
-          seats: Number.NaN,
-          features: [],
-          media: [],
-          videos: [],
-          description: "",
+      : createTestVehicle({
           dealerId: lockedDealer?._id ?? "",
           location: lockedDealer?.location ?? "",
-        },
+          currency: "USD",
+          media: [],
+          videos: [],
+        }),
   );
   const form = useForm<FormInput, unknown, VehicleInput>({
     resolver: zodResolver(vehicleInput),
@@ -429,6 +416,7 @@ export function VehicleEditor({
     }
     setBusy(true);
     try {
+      const isNewVehicle = !saved;
       if (!createKey.current) createKey.current = crypto.randomUUID();
       let result = await client<Vehicle>(
         "vehicles",
@@ -468,6 +456,7 @@ export function VehicleEditor({
         publish ? t("Vehicle published") : t("Vehicle saved"),
       );
       setConfirm("");
+      if (isNewVehicle) onBack?.();
     } catch (e) {
       toast.error(t((e as Error).message));
     } finally {

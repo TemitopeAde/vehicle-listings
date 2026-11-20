@@ -106,6 +106,8 @@ export async function listVehicles(
   if (ownInventory && ctx.dealer) eq.dealerId = ctx.dealer.id;
   // Deleted vehicles stay restorable but only show under the Deleted filter.
   if (!f.status) ne.status = "deleted";
+  // Sample listings are for the public demo storefront, never a dealer's inventory.
+  if (ownInventory) ne.demo = true;
   // Vehicles saved before categories existed have no `category` and count as cars.
   if (f.category === "car") notIn.category = ["lorry", "trailer"];
   else if (f.category) eq.category = f.category;

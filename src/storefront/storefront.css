@@ -5,7 +5,7 @@
 .autohaus {
   --accent: #196947;
   --radius: 12px;
-  --sf-bg: #fff;
+  --sf-bg: transparent;
   --sf-fg: #243b2e;
   --sf-muted: #64756b;
   --sf-subtle: #f3f6f3;

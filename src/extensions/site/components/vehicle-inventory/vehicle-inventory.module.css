@@ -7,7 +7,7 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-  background: #fff;
+  background: transparent;
   color: #243b2e;
   padding: 24px;
   gap: 12px;
@@ -35,7 +35,7 @@
   min-width: 0;
   border-radius: 12px;
   border: 0;
-  background: #fff;
+  background: transparent;
   color: #243b2e;
 }
 /* Phones: the widget inside has its own padding, so don't stack another 48px around it. */
