@@ -68,32 +68,19 @@ function VehicleDetailsView({
       .then(setTheme)
       .catch(() => {});
   }, []);
-  // The editor previews a real vehicle when the site has one (the page's `?slug=` first, then the
-  // newest published listing) and the sample vehicle otherwise. The listings API itself returns
-  // samples while nothing is published.
+  // The editor auto-selects the first vehicle in the inventory, in the marketplace's default
+  // order, so the page is designed around real data. The listings API returns the sample cars
+  // while nothing is published, and the first sample is the fallback if the API can't be reached.
   const [previewVehicle, setPreviewVehicle] = useState<Vehicle | null>(null);
   useEffect(() => {
     if (!designMode) return;
     let active = true;
     const fallback = demoVehicles[0] ?? null;
-    const load = async () => {
-      if (slug) {
-        try {
-          return await cachedApi<Vehicle>(
-            `vehicles?public=1&slug=${encodeURIComponent(slug)}`,
-            cacheTtl.vehicle,
-          );
-        } catch {
-          // A stale or sample slug falls through to the newest listing.
-        }
-      }
-      const page = await cachedApi<{ items: Vehicle[] }>(
-        "vehicles?public=1&sort=recent&limit=1",
-        cacheTtl.listings,
-      );
-      return page.items[0] ?? fallback;
-    };
-    load()
+    cachedApi<{ items: Vehicle[] }>(
+      "vehicles?public=1&sort=recent&limit=1",
+      cacheTtl.listings,
+    )
+      .then(({ items }) => items[0])
       .then((vehicle) => {
         if (active) setPreviewVehicle(vehicle ?? fallback);
       })
@@ -104,7 +91,7 @@ function VehicleDetailsView({
     return () => {
       active = false;
     };
-  }, [designMode, slug]);
+  }, [designMode]);
   return (
     <div
       className="autohaus"
