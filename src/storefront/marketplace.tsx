@@ -65,14 +65,6 @@ function useDebounced<T>(value: T, delay = 300) {
   }, [value, delay]);
   return debounced;
 }
-function demoPage(cursor: number, limit: number, featuredOnly: boolean) {
-  const rows = demoVehicles.filter((v) => !featuredOnly || v.featured);
-  return {
-    items: rows.slice(cursor, cursor + limit),
-    total: rows.length,
-    nextCursor: cursor + limit < rows.length ? cursor + limit : null,
-  };
-}
 export type MarketplaceProps = {
   title?: string;
   description?: string;
@@ -131,9 +123,7 @@ function MarketplaceContent({
   const toasterId = useId();
   const elementStyle = useElementStyle();
   const pageSize = Math.min(100, Math.max(1, Math.round(limit) || 12));
-  const [vehicles, setVehicles] = useState<ListingPage | null>(
-      designMode ? demoPage(0, pageSize, featuredOnly) : null,
-    ),
+  const [vehicles, setVehicles] = useState<ListingPage | null>(null),
     [theme, setTheme] = useState<Theme>(defaultTheme),
     [extraFilters, setExtraFilters] = useState({
       category: "",
@@ -153,7 +143,7 @@ function MarketplaceContent({
     [fuel, setFuel] = useState(""),
     [body, setBody] = useState(""),
     [sort, setSort] = useState("recent"),
-    [loading, setLoading] = useState(!designMode),
+    [loading, setLoading] = useState(true),
     [loadingMore, setLoadingMore] = useState(false),
     [error, setError] = useState(""),
     [navigationError, setNavigationError] = useState(""),
@@ -268,12 +258,10 @@ function MarketplaceContent({
     const append = pagination === "infinite" && cursor > 0;
     (append ? setLoadingMore : setLoading)(true);
     setError("");
-    const request = designMode
-      ? Promise.resolve(demoPage(cursor, pageSize, featuredOnly))
-      : cachedApi<ListingPage>(
-          `vehicles?${query.replace(/&mode=\w+$/, "")}&cursor=${cursor}`,
-          cacheTtl.listings,
-        );
+    const request = cachedApi<ListingPage>(
+      `vehicles?${query.replace(/&mode=\w+$/, "")}&cursor=${cursor}`,
+      cacheTtl.listings,
+    );
     request
       .then((page) => {
         if (!active) return;
@@ -471,7 +459,7 @@ function MarketplaceContent({
         </Alert>
       )}
       <Toaster id={toasterId} position="bottom-right" richColors />
-      {designMode && (
+      {designMode && vehicles?.samples && (
         <Alert className="mb-5">
           {t(
             "Editor preview · sample inventory. On your live site, sample cars show only until you publish your first vehicle.",

@@ -172,10 +172,18 @@ export async function listVehicles(
       result = await queryRows(ctx, "vehicles", sampleQuery, true);
     }
   }
-  const items = result.rows.map((row) => vehicleSchema.parse(row));
+  const parsedRows = result.rows.map((row) => vehicleSchema.parse(row));
+  // Keep sample data out of all internal inventory responses, even if a Wix
+  // query adapter or an older stored row doesn't honor the `ne.demo` filter.
+  const items = publicOnly
+    ? parsedRows
+    : parsedRows.filter((item) => item.demo !== true);
+  const total = publicOnly
+    ? result.total
+    : await countRows(ctx, "vehicles", query, publicOnly || ownInventory);
   if (!publicOnly) {
     console.info("[Vehicle inventory query] Dealer inventory response", {
-      total: result.total,
+      total,
       count: items.length,
       demoCount: items.filter((item) => item.demo).length,
       items: items.map(({ _id, title, dealerId, status, demo }) => ({
@@ -189,8 +197,8 @@ export async function listVehicles(
   }
   return {
     items,
-    total: result.total,
-    nextCursor: f.cursor + f.limit < result.total ? f.cursor + f.limit : null,
+    total,
+    nextCursor: f.cursor + f.limit < total ? f.cursor + f.limit : null,
     samples,
     // Views and clicks are for the dealer and admin dashboards only, never the public site.
     ...(publicOnly

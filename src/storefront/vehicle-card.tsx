@@ -122,16 +122,16 @@ export function VehicleCard({
           <div className="absolute right-2 top-2 z-10">{mediaAction}</div>
         )}
       </div>
-      <div className="flex items-baseline justify-between gap-3 px-4 pt-3">
-        <p data-sf="price" className="text-xl font-semibold">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 pt-3">
+        <p data-sf="price" className="min-w-0 flex-1 text-xl font-semibold">
           {money(v.price, v.currency)}
           {pricedDown && (
-            <span className="ml-2 text-sm font-normal text-muted-foreground line-through">
+            <span className="ml-2 inline-block text-sm font-normal text-muted-foreground line-through">
               {money(v.originalPrice ?? 0, v.currency)}
             </span>
           )}
         </p>
-        <p className="shrink-0 text-sm text-muted-foreground">
+        <p className="ml-auto min-w-0 text-right text-sm text-muted-foreground">
           {isTrailer(v.category) ? (
             <span {...elementStyle("vehicle-mileage")}>{t(v.bodyStyle)}</span>
           ) : (
