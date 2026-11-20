@@ -103,8 +103,20 @@ export const toolSchemas = {
     .strict(),
   createDealer: z.object({ dealer: dealerInput }).strict(),
   updateDealer: z
-    .object({ dealerId: id, patch: dealerInput.partial() })
-    .strict(),
+    .object({
+      dealerId: id,
+      patch: dealerInput.partial(),
+      confirmed: confirmed.optional(),
+    })
+    .strict()
+    .refine(
+      (value) =>
+        value.patch.approvalState === undefined || value.confirmed === true,
+      {
+        message: "Confirm before changing dealer approval state.",
+        path: ["confirmed"],
+      },
+    ),
   getInventorySummary: z.object({}).strict(),
   getVehicleAnalytics: z
     .object({ days: z.number().int().min(1).max(90).default(14) })
@@ -125,7 +137,9 @@ export const toolSchemas = {
     })
     .strict(),
   emailInquiryBuyer: z.object({ inquiryId: id, ...email }).strict(),
-  retryInquiryConfirmation: z.object({ inquiryId: id }).strict(),
+  retryInquiryConfirmation: z
+    .object({ inquiryId: id, confirmed })
+    .strict(),
   listQuoteRequests: z
     .object({
       status: z.enum(["", ...quoteStatuses]).default(""),
@@ -143,7 +157,9 @@ export const toolSchemas = {
   emailQuoteRequester: z.object({ quoteRequestId: id, ...email }).strict(),
   createQuoteInvoice: z.object({ quoteRequestId: id, confirmed }).strict(),
   deleteQuoteRequest: z.object({ quoteRequestId: id, confirmed }).strict(),
-  retryQuoteFollowUp: z.object({ quoteRequestId: id }).strict(),
+  retryQuoteFollowUp: z
+    .object({ quoteRequestId: id, confirmed })
+    .strict(),
   getSettings: z.object({}).strict(),
   updateSettings: z
     .object({ patch: themeSchema.partial(), confirmed })

@@ -33,7 +33,6 @@ import {
 import { audit } from "./audit-service";
 import { vehicleStats } from "./vehicle-stats-service";
 import {
-  recordOpeningPrice,
   recordPriceChange,
 } from "./price-history-service";
 function approvedDealer(ctx: Context) {
@@ -405,7 +404,6 @@ export async function createVehicle(
     updatedAt: now,
   });
   await saveRow(ctx, "vehicles", v, true, access.elevated);
-  await recordOpeningPrice(ctx, v, access.elevated);
   await audit(ctx, "vehicle", id, "create", access.elevated);
   return v;
 }

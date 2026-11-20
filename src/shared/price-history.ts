@@ -1,5 +1,3 @@
-import type { Vehicle } from "./schemas";
-
 export type PricePoint = {
   _id: string;
   vehicleId: string;
@@ -7,39 +5,6 @@ export type PricePoint = {
   currency: string;
   recordedAt: string;
 };
-
-/** Shown when a listing has no saved changes yet, including a dealer-entered original price. */
-export function openingPriceHistory(
-  vehicle: Pick<
-    Vehicle,
-    | "_id"
-    | "price"
-    | "currency"
-    | "createdAt"
-    | "updatedAt"
-    | "originalPrice"
-  >,
-): PricePoint[] {
-  const current: PricePoint = {
-    _id: `${vehicle._id}-current`,
-    vehicleId: vehicle._id,
-    price: vehicle.price,
-    currency: vehicle.currency,
-    recordedAt: vehicle.updatedAt || vehicle.createdAt,
-  };
-  if (vehicle.originalPrice && vehicle.originalPrice !== vehicle.price)
-    return [
-      {
-        _id: `${vehicle._id}-original`,
-        vehicleId: vehicle._id,
-        price: vehicle.originalPrice,
-        currency: vehicle.currency,
-        recordedAt: vehicle.createdAt,
-      },
-      current,
-    ];
-  return [{ ...current, recordedAt: vehicle.createdAt }];
-}
 
 /** Difference from the previous asking price. Null when the currency changed. */
 export function priceDelta(

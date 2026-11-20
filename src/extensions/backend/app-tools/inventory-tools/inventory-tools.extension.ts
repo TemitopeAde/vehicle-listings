@@ -24,7 +24,7 @@ export const descriptions: Record<ToolName, string> = {
   createDealer:
     "Create a new dealership profile with verified contact details. New dealers are pending unless explicitly approved by the collaborator.",
   updateDealer:
-    "Update a dealership profile or approval state. Use to correct contact details, approve or suspend a seller. Requires the dealer ID and validated patch.",
+    "Update a dealership profile or approval state. Use to correct contact details, approve or suspend a seller. Requires the dealer ID and validated patch; pass confirmed true only after the collaborator approves any approval-state change.",
   getInventorySummary:
     "Return counts of real vehicles by availability for the current site. Demo records are excluded. Use to understand current stock.",
   getVehicleAnalytics:
@@ -36,7 +36,7 @@ export const descriptions: Record<ToolName, string> = {
   emailInquiryBuyer:
     "Email the buyer behind an inquiry from the showroom. The server addresses it from the inquiry ID. Draft the subject and HTML body, show them to the user, and pass confirmed true only after they approve sending.",
   retryInquiryConfirmation:
-    "Resend the automatic confirmation email for an inquiry whose confirmation was not queued. Requires the inquiry ID.",
+    "Resend the automatic confirmation email for an inquiry whose confirmation was not queued. Requires the inquiry ID. Pass confirmed true only after the collaborator approves sending the email.",
   listQuoteRequests:
     "List quote requests with the requester's name and message, vehicle, quantity, payment method, timeline, trade-in, listed and quoted price, invoice and status. Contact details and address are never returned. Status is new, in-progress or quoted and updates automatically.",
   getQuoteRequest:
@@ -50,7 +50,7 @@ export const descriptions: Record<ToolName, string> = {
   deleteQuoteRequest:
     "Permanently delete a quote request. Its Wix contact and any invoice stay in Wix. Pass confirmed true only after the user explicitly approves.",
   retryQuoteFollowUp:
-    "Retry the automatic follow-up for a quote request: add the requester to Wix contacts and resend the owner and buyer emails that failed.",
+    "Retry the automatic follow-up for a quote request: add the requester to Wix contacts and resend the owner and buyer emails that failed. Pass confirmed true only after the collaborator approves these actions.",
   getSettings:
     "Get the showroom settings: brand name, accent colour, corner radius, columns, font, vehicle page path, currency and language.",
   updateSettings:

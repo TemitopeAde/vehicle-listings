@@ -3,7 +3,7 @@ import type { Context } from "../context";
 import { queryRows, saveRow } from "../repositories/repository";
 import { currencySchema } from "../../shared/currencies";
 import type { Vehicle } from "../../shared/schemas";
-import { openingPriceHistory, type PricePoint } from "../../shared/price-history";
+import type { PricePoint } from "../../shared/price-history";
 
 const pricePointSchema = z
   .object({
@@ -31,45 +31,6 @@ async function insertPoint(
     recordedAt,
   };
   await saveRow(ctx, "price-history", row, true, elevated);
-}
-
-export async function recordOpeningPrice(
-  ctx: Context,
-  vehicle: Vehicle,
-  elevated = false,
-) {
-  if (vehicle.originalPrice && vehicle.originalPrice !== vehicle.price) {
-    const listedAt = vehicle.createdAt;
-    const currentAt =
-      vehicle.updatedAt > listedAt
-        ? vehicle.updatedAt
-        : new Date(Date.parse(listedAt) + 1000).toISOString();
-    await insertPoint(
-      ctx,
-      vehicle._id,
-      vehicle.originalPrice,
-      vehicle.currency,
-      listedAt,
-      elevated,
-    );
-    await insertPoint(
-      ctx,
-      vehicle._id,
-      vehicle.price,
-      vehicle.currency,
-      currentAt,
-      elevated,
-    );
-    return;
-  }
-  await insertPoint(
-    ctx,
-    vehicle._id,
-    vehicle.price,
-    vehicle.currency,
-    vehicle.createdAt,
-    elevated,
-  );
 }
 
 /** Appends a point when the asking price or its currency changes. */
@@ -128,5 +89,23 @@ export async function priceHistoryFor(ctx: Context, vehicle: Vehicle) {
     const parsed = pricePointSchema.safeParse(row);
     return parsed.success ? [parsed.data] : [];
   });
-  return { items: items.length ? items : openingPriceHistory(vehicle) };
+  if (!items.length) return { items: [] };
+
+  // Older versions wrote one or two synthetic points at listing time. Keep
+  // them only as the baseline for a later real price change; never present
+  // the opening price itself as price history.
+  const createdAt = Date.parse(vehicle.createdAt);
+  const openingCutoff = createdAt + 1000;
+  const changes = items.filter((item) => {
+    const recordedAt = Date.parse(item.recordedAt);
+    return (
+      recordedAt > openingCutoff || item.recordedAt === vehicle.updatedAt
+    );
+  });
+  if (!changes.length) return { items: [] };
+  const firstChangeAt = Date.parse(changes[0]!.recordedAt);
+  const baseline = items
+    .filter((item) => Date.parse(item.recordedAt) < firstChangeAt)
+    .at(-1);
+  return { items: baseline ? [baseline, ...changes] : changes };
 }

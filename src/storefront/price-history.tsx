@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { cacheTtl, cachedApi } from "../shared/client";
-import {
-  openingPriceHistory,
-  type PricePoint,
-} from "../shared/price-history";
+import type { PricePoint } from "../shared/price-history";
 import type { Vehicle } from "../shared/schemas";
 import { PriceHistoryPanel } from "./price-history-panel";
 
@@ -14,12 +11,10 @@ export function PriceHistory({
   vehicle: Vehicle;
   preview?: boolean;
 }) {
-  const [points, setPoints] = useState<PricePoint[] | null>(
-    preview ? openingPriceHistory(vehicle) : null,
-  );
+  const [points, setPoints] = useState<PricePoint[] | null>(preview ? [] : null);
   useEffect(() => {
     if (preview) {
-      setPoints(openingPriceHistory(vehicle));
+      setPoints([]);
       return;
     }
     let active = true;
@@ -31,7 +26,7 @@ export function PriceHistory({
         if (active) setPoints(result.items);
       })
       .catch(() => {
-        if (active) setPoints(openingPriceHistory(vehicle));
+        if (active) setPoints([]);
       });
     return () => {
       active = false;
