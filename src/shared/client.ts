@@ -63,6 +63,7 @@ export async function api<T>(
 /** How long a public storefront read is reused before the API is asked again. */
 export const cacheTtl = {
   settings: 60_000,
+  languages: 60_000,
   makes: 10 * 60_000,
   listings: 2 * 60_000,
   vehicle: 5 * 60_000,
@@ -76,6 +77,16 @@ export function cachedApi<T>(route: string, ttlMs: number): Promise<T> {
 }
 export function peekCached<T>(route: string): T | undefined {
   return storefrontCache.peek<T>(route);
+}
+export function invalidateApiCache(route?: string) {
+  if (route) {
+    storefrontCache.forget(route);
+  } else {
+    storefrontCache.clear();
+  }
+}
+export function setCachedApi<T>(route: string, value: T, ttlMs: number) {
+  storefrontCache.set(route, value, ttlMs);
 }
 export function download(
   name: string,

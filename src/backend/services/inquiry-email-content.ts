@@ -3,6 +3,7 @@ import sanitizeHtml from "sanitize-html";
 import { translate, type Language } from "../../shared/i18n";
 import type { Context } from "../context";
 import { AppError } from "../errors";
+import { getLanguageSettings } from "./language-service";
 import { getSettings } from "./settings-service";
 
 export const escapeEmailText = (value: string) =>
@@ -47,7 +48,7 @@ export function sanitizeEmailBody(html: string) {
 /** Language chosen in dashboard settings. English if settings cannot be read. */
 export async function showroomLanguage(ctx: Context): Promise<Language> {
   try {
-    return (await getSettings(ctx)).language;
+    return (await getLanguageSettings(ctx)).language;
   } catch (error) {
     console.error("Could not read the showroom language", error);
     return "en";

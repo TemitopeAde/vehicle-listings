@@ -83,6 +83,12 @@ export function createApiCache(
       const entry = read(route);
       return entry && entry.expires > now() ? (entry.value as T) : undefined;
     },
+    forget(route: string) {
+      forget(route);
+    },
+    set<T>(route: string, value: T, ttlMs: number) {
+      write(route, { value, expires: now() + ttlMs });
+    },
     clear() {
       for (const route of memory.keys()) forget(route);
       memory.clear();

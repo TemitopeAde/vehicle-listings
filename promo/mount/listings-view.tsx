@@ -1,4 +1,4 @@
-import { Marketplace } from "../storefront/marketplace";
+import { Marketplace } from "../../src/storefront/marketplace";
 export default function PromoListings() {
   return <Marketplace />;
 }

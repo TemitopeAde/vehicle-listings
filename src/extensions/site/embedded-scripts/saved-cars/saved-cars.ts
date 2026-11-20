@@ -45,8 +45,12 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 async function loadLanguage(): Promise<Language> {
   try {
-    const theme = await cachedApi<Theme>("settings", cacheTtl.settings);
-    if (isLanguage(theme.language)) return theme.language;
+    const res = await cachedApi<{ language?: Language; code?: Language }>(
+      "languages",
+      cacheTtl.languages,
+    );
+    const code = res?.code ?? res?.language;
+    if (isLanguage(code)) return code;
   } catch (error) {
     console.error("Could not load saved cars language", error);
   }

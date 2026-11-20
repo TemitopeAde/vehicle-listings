@@ -207,7 +207,7 @@ function GuideStep({
   navigate: (page: string) => void;
 }) {
   const { t } = useI18n();
-  const name = step.element?.[editor] ?? "";
+  const name = step.element?.[editor] ? t(step.element[editor]) : "";
   const shots = Array.isArray(step.screenshots)
     ? step.screenshots
     : (step.screenshots?.[editor] ?? []);

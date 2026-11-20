@@ -55,7 +55,12 @@ import { api } from "./api";
 import { vehicleCsvEnabled } from "./features";
 import { defaultTheme, type Theme, type Vehicle } from "../shared/schemas";
 import { languageOptions, type Language } from "../shared/i18n";
-import { LocaleProvider, localeProps, useI18n } from "../shared/i18n-react";
+import {
+  LocaleProvider,
+  localeProps,
+  useI18n,
+  updateLanguage,
+} from "../shared/i18n-react";
 import "./styles.css";
 const navigation = [
   { label: "Overview", icon: LayoutDashboard },
@@ -101,12 +106,7 @@ function Dashboard() {
     setLanguage(next);
     setSavingLanguage(true);
     try {
-      const current = await api<Theme>("settings");
-      await api<Theme>(
-        "settings",
-        { ...defaultTheme, ...current, language: next },
-        "PATCH",
-      );
+      await updateLanguage(next);
     } catch (e) {
       setLanguage(previous);
       toast.error(t((e as Error).message));
