@@ -62,6 +62,18 @@ export default extensions.editorReactComponent({
         thumbnailUrl: "{{BASE_URL}}/vehicle-inventory-component-thumbnail.png",
       },
     },
+    elements: {
+      vehicleInventoryInventory: {
+        inlineElement: {
+          cssProperties: {
+            borderTop: { defaultValue: "none" },
+            borderBottom: { defaultValue: "none" },
+            borderInlineStart: { defaultValue: "none" },
+            borderInlineEnd: { defaultValue: "none" },
+          },
+        },
+      },
+    },
     layout: {
       resizeDirection: LAYOUT.RESIZE_DIRECTION.horizontal,
       contentResizeDirection: LAYOUT.CONTENT_RESIZE_DIRECTION.vertical,
