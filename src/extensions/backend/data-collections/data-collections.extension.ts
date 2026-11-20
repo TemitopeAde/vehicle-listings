@@ -18,8 +18,6 @@ import quoteRequestsCollection from './quote-requests';
 
 import priceHistoryCollection from './price-history';
 
-import languagesCollection from './languages';
-
 export default extensions.dataCollections({
   id: 'd4d5ed57-96dd-4021-9503-1968a782bb82',
   name: 'Data Collections',
@@ -32,7 +30,6 @@ export default extensions.dataCollections({
     settingsCollection,
     savedCarsCollection,
     quoteRequestsCollection,
-    priceHistoryCollection,
-    languagesCollection
+    priceHistoryCollection
   ],
 });

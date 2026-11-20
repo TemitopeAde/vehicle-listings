@@ -25,19 +25,24 @@ export async function getLanguageSettings(
   ctx: Context,
   deps: LanguageDependencies = defaultDeps,
 ): Promise<LanguageSettings> {
-  const r = await deps.getRow(ctx, "languages", "global", true);
-  if (r) {
-    const code = (r.code ?? r.language) as unknown;
+  // Check language-specific row in settings collection
+  const langRow = await deps.getRow(ctx, "settings", "language", true);
+  if (langRow) {
+    const code = (langRow.code ?? langRow.language) as unknown;
     if (isLanguage(code)) {
       return { language: code, code };
     }
   }
 
-  // Fallback to settings collection if language was stored there
-  const settingsRow = await deps.getRow(ctx, "settings", "global", true);
-  const themeLang = (settingsRow?.theme as { language?: unknown } | undefined)?.language;
-  if (isLanguage(themeLang)) {
-    return { language: themeLang, code: themeLang };
+  // Fallback to global row in settings collection
+  const globalRow = await deps.getRow(ctx, "settings", "global", true);
+  if (globalRow) {
+    const code = (globalRow.code ??
+      globalRow.language ??
+      (globalRow.theme as { language?: unknown } | undefined)?.language) as unknown;
+    if (isLanguage(code)) {
+      return { language: code, code };
+    }
   }
 
   return { language: "en", code: "en" };
@@ -74,32 +79,40 @@ export async function setLanguageSettings(
   }
 
   const code = parsed.data;
-  const old = await deps.getRow(ctx, "languages", "global", true);
+
+  // Save language settings row in settings collection
+  const old = await deps.getRow(ctx, "settings", "language", true);
   await deps.saveRow(
     ctx,
-    "languages",
-    { _id: "global", language: code, code },
+    "settings",
+    { _id: "language", title: "Language settings", language: code, code },
     !old,
     true,
   );
-  await deps.audit(ctx, "languages", "global", "update");
+  await deps.audit(ctx, "settings", "language", "update");
 
-  // Keep settings collection in sync for backward compatibility
+  // Keep global appearance row in settings collection in sync
   try {
-    const settingsOld = await deps.getRow(ctx, "settings", "global", true);
+    const globalOld = await deps.getRow(ctx, "settings", "global", true);
     if (
-      settingsOld &&
-      typeof settingsOld.theme === "object" &&
-      settingsOld.theme !== null
+      globalOld &&
+      typeof globalOld.theme === "object" &&
+      globalOld.theme !== null
     ) {
       const theme = {
-        ...(settingsOld.theme as Record<string, unknown>),
+        ...(globalOld.theme as Record<string, unknown>),
         language: code,
       };
-      await deps.saveRow(ctx, "settings", { ...settingsOld, theme }, false, true);
+      await deps.saveRow(
+        ctx,
+        "settings",
+        { ...globalOld, language: code, code, theme },
+        false,
+        true,
+      );
     }
   } catch {
-    // Non-fatal if settings sync fails
+    // Non-fatal if global row sync fails
   }
 
   return { language: code, code };

@@ -6,6 +6,8 @@ export default {
   displayField: "title",
   fields: [
     { key: "title", displayName: "title", type: "TEXT" },
+    { key: "language", displayName: "language", type: "TEXT" },
+    { key: "code", displayName: "code", type: "TEXT" },
     {
       key: "theme",
       displayName: "theme",
