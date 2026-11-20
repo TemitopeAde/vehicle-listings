@@ -23,7 +23,7 @@ export default {
     },
   ],
   dataPermissions: {
-    itemRead: "CMS_EDITOR",
+    itemRead: "ANYONE",
     itemInsert: "CMS_EDITOR",
     itemUpdate: "CMS_EDITOR",
     itemRemove: "CMS_EDITOR",

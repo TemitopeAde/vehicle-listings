@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import languagesCollection from "../extensions/backend/data-collections/languages";
+import settingsCollection from "../extensions/backend/data-collections/settings";
 import {
   getLanguageSettings,
   setLanguageSettings,
@@ -12,17 +12,16 @@ import { createApiCache } from "../shared/api-cache";
 const managerCtx: Context = { siteId: "site-1", actorId: "admin-1", manager: true };
 const visitorCtx: Context = { siteId: "site-1", actorId: "visitor-1", manager: false };
 
-test("languages data collection is configured correctly", () => {
-  assert.equal(languagesCollection.idSuffix, "languages");
-  assert.equal(languagesCollection.displayName, "Language Settings");
-  assert.equal(languagesCollection.displayField, "language");
-  const fieldKeys = languagesCollection.fields.map((f) => f.key);
+test("settings data collection includes language and code fields", () => {
+  assert.equal(settingsCollection.idSuffix, "settings");
+  assert.equal(settingsCollection.displayName, "Settings");
+  const fieldKeys = settingsCollection.fields.map((f) => f.key);
   assert.ok(fieldKeys.includes("language"));
   assert.ok(fieldKeys.includes("code"));
-  assert.equal(languagesCollection.dataPermissions.itemRead, "ANYONE");
+  assert.ok(fieldKeys.includes("theme"));
 });
 
-test("reads default language when collection is empty", async () => {
+test("reads default language when settings collection has no language record", async () => {
   const store = new Map<string, any>();
   const deps: LanguageDependencies = {
     getRow: async (_ctx, coll, id) => store.get(`${coll}/${id}`) ?? null,
@@ -37,9 +36,14 @@ test("reads default language when collection is empty", async () => {
   assert.deepEqual(result, { language: "en", code: "en" });
 });
 
-test("reads language saved in languages collection", async () => {
+test("reads language saved in settings collection language row", async () => {
   const store = new Map<string, any>();
-  store.set("languages/global", { _id: "global", language: "fr", code: "fr" });
+  store.set("settings/language", {
+    _id: "language",
+    title: "Language settings",
+    language: "fr",
+    code: "fr",
+  });
 
   const deps: LanguageDependencies = {
     getRow: async (_ctx, coll, id) => store.get(`${coll}/${id}`) ?? null,
@@ -54,9 +58,15 @@ test("reads language saved in languages collection", async () => {
   assert.deepEqual(result, { language: "fr", code: "fr" });
 });
 
-test("falls back to settings collection if languages collection has no record", async () => {
+test("reads language from settings collection global row if language row is absent", async () => {
   const store = new Map<string, any>();
-  store.set("settings/global", { _id: "global", theme: { language: "es" } });
+  store.set("settings/global", {
+    _id: "global",
+    title: "Global appearance",
+    language: "es",
+    code: "es",
+    theme: { language: "es" },
+  });
 
   const deps: LanguageDependencies = {
     getRow: async (_ctx, coll, id) => store.get(`${coll}/${id}`) ?? null,
@@ -71,9 +81,13 @@ test("falls back to settings collection if languages collection has no record", 
   assert.deepEqual(result, { language: "es", code: "es" });
 });
 
-test("manager can save language to collection and syncs settings", async () => {
+test("manager can save language to settings collection and syncs global row", async () => {
   const store = new Map<string, any>();
-  store.set("settings/global", { _id: "global", theme: { language: "en", accent: "#000000" } });
+  store.set("settings/global", {
+    _id: "global",
+    title: "Global appearance",
+    theme: { language: "en", accent: "#000000" },
+  });
   const audits: string[] = [];
 
   const deps: LanguageDependencies = {
@@ -90,21 +104,28 @@ test("manager can save language to collection and syncs settings", async () => {
   const result = await setLanguageSettings(managerCtx, { code: "de" }, deps);
   assert.deepEqual(result, { language: "de", code: "de" });
 
-  // Stored in languages collection
-  const storedLang = store.get("languages/global");
-  assert.deepEqual(storedLang, { _id: "global", language: "de", code: "de" });
+  // Stored in settings collection under 'language' row
+  const storedLang = store.get("settings/language");
+  assert.deepEqual(storedLang, {
+    _id: "language",
+    title: "Language settings",
+    language: "de",
+    code: "de",
+  });
 
-  // Synced to settings collection
-  const storedSettings = store.get("settings/global");
-  assert.equal(storedSettings.theme.language, "de");
-  assert.equal(storedSettings.theme.accent, "#000000");
+  // Synced to global row in settings collection
+  const storedGlobal = store.get("settings/global");
+  assert.equal(storedGlobal.language, "de");
+  assert.equal(storedGlobal.code, "de");
+  assert.equal(storedGlobal.theme.language, "de");
+  assert.equal(storedGlobal.theme.accent, "#000000");
 
-  assert.ok(audits.includes("languages/global:update"));
+  assert.ok(audits.includes("settings/language:update"));
 });
 
 test("setLanguageSettings rejects non-manager callers", async () => {
   const deps: LanguageDependencies = {
-    getRow: async () => null,
+    getRow: async () => null as any,
     saveRow: async (_ctx, _coll, row) => row,
     audit: async () => {},
   };
@@ -117,7 +138,7 @@ test("setLanguageSettings rejects non-manager callers", async () => {
 
 test("setLanguageSettings rejects invalid language codes", async () => {
   const deps: LanguageDependencies = {
-    getRow: async () => null,
+    getRow: async () => null as any,
     saveRow: async (_ctx, _coll, row) => row,
     audit: async () => {},
   };
