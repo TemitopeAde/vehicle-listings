@@ -57,10 +57,15 @@ export default extensions.editorReactComponent({
   type: 'vehicle_listings.DealerApplication',
   displayName: 'Dealer application',
   description: 'A form where a logged-in site member applies to become a dealership. Use it on a page where sellers request approval before they can list vehicles.',
-  thumbnailUrl: '{{BASE_URL}}/dealer-application-component-thumbnail.svg',
   editorElement: merge(
     editorElementWithDefaults,
     {
+      presets: {
+        standard: {
+          displayName: "Dealer application",
+          thumbnailUrl: "{{BASE_URL}}/dealer-application-component-thumbnail.png",
+        },
+      },
       layout: {
         resizeDirection: LAYOUT.RESIZE_DIRECTION.horizontal,
         contentResizeDirection: LAYOUT.CONTENT_RESIZE_DIRECTION.vertical,
@@ -68,6 +73,7 @@ export default extensions.editorReactComponent({
     }
   ),
   installation: {
+    presets: { default: "standard" },
     initialSize: {
       width: {
         sizingType: LAYOUT.SIZING_TYPE.pixels,

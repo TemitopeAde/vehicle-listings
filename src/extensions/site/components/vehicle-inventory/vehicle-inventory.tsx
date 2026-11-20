@@ -28,6 +28,7 @@ export const VehicleInventory: FC<VehicleInventoryProps> = (editorProps) => {
   } = props;
   const designMode = useIsEditMode();
   return (
+    <div {...editorProps.wix?.presetsWrapperProps}>
     <section
       id={id}
       dir={direction}
@@ -72,6 +73,7 @@ export const VehicleInventory: FC<VehicleInventoryProps> = (editorProps) => {
         />
       </div>
     </section>
+    </div>
   );
 };
 export default VehicleInventory;

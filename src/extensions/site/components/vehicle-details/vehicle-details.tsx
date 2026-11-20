@@ -20,6 +20,7 @@ export const VehicleDetails: FC<VehicleDetailsProps> = (editorProps) => {
   const slug =
     new URL(currentUrl, "https://wix.invalid").searchParams.get("slug") ?? "";
   return (
+    <div {...editorProps.wix?.presetsWrapperProps}>
     <section
       id={id}
       dir={direction}
@@ -47,6 +48,7 @@ export const VehicleDetails: FC<VehicleDetailsProps> = (editorProps) => {
         />
       </div>
     </section>
+    </div>
   );
 };
 export default VehicleDetails;

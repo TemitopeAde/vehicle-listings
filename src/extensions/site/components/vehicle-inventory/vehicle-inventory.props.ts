@@ -1,4 +1,4 @@
-import type { A11y, Direction } from "@wix/editor-react-types";
+import type { A11y, Direction, Wix } from "@wix/editor-react-types";
 import type {
   WidgetAppearanceProps,
   InventoryFilterProps,
@@ -9,6 +9,8 @@ export type VehicleInventoryProps = WidgetAppearanceProps &
     className?: string;
     direction?: Direction;
     a11y?: A11y;
+    /** Framework props; `presetsWrapperProps` must wrap the root for presets. */
+    wix?: Wix;
     title: string;
     description: string;
     /** @min 1 @max 100 */

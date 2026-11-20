@@ -20,6 +20,7 @@ const DealerApplication: FC<DealerApplicationProps> = (editorProps) => {
     useWidgetSettings("dealer-application"),
   );
   return (
+    <div {...editorProps.wix?.presetsWrapperProps}>
     <section
       id={id}
       dir={direction}
@@ -41,6 +42,7 @@ const DealerApplication: FC<DealerApplicationProps> = (editorProps) => {
         <ApplyPage title={title} />
       </div>
     </section>
+    </div>
   );
 };
 

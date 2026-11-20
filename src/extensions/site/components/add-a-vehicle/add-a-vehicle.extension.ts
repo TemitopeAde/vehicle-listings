@@ -57,10 +57,15 @@ export default extensions.editorReactComponent({
   type: 'vehicle_listings.AddAVehicle',
   displayName: 'Add a vehicle',
   description: 'A form where a logged-in site member prepares a vehicle for sale. Saving stays off until that account has an approved dealership application.',
-  thumbnailUrl: '{{BASE_URL}}/add-a-vehicle-component-thumbnail.svg',
   editorElement: merge(
     editorElementWithDefaults,
     {
+      presets: {
+        standard: {
+          displayName: "Add a vehicle",
+          thumbnailUrl: "{{BASE_URL}}/add-a-vehicle-component-thumbnail.png",
+        },
+      },
       layout: {
         resizeDirection: LAYOUT.RESIZE_DIRECTION.horizontal,
         contentResizeDirection: LAYOUT.CONTENT_RESIZE_DIRECTION.vertical,
@@ -68,6 +73,7 @@ export default extensions.editorReactComponent({
     }
   ),
   installation: {
+    presets: { default: "standard" },
     initialSize: {
       width: {
         sizingType: LAYOUT.SIZING_TYPE.pixels,

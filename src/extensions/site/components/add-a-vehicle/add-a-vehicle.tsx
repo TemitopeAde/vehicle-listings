@@ -20,6 +20,7 @@ const AddAVehicle: FC<AddAVehicleProps> = (editorProps) => {
     useWidgetSettings("add-vehicle"),
   );
   return (
+    <div {...editorProps.wix?.presetsWrapperProps}>
     <section
       id={id}
       dir={direction}
@@ -41,6 +42,7 @@ const AddAVehicle: FC<AddAVehicleProps> = (editorProps) => {
         <SellPage title={title} />
       </div>
     </section>
+    </div>
   );
 };
 
